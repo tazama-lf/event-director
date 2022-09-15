@@ -3,17 +3,22 @@ import { Database } from 'arangojs';
 import { config } from '../config';
 import { iDBService } from '../interfaces/iDBService';
 import { LoggerService } from '../services/logger.service';
+import * as fs from 'fs'
 
 export class ArangoDBService implements iDBService {
   client: Database;
 
   constructor() {
+    const caOption = fs.existsSync("/usr/local/share/ca-certificates/ca-certificates.crt") ? [fs.readFileSync("/usr/local/share/ca-certificates/ca-certificates.crt")] : []
     this.client = new Database({
       url: config.dbURL,
       databaseName: config.dbName,
       auth: {
         username: config.dbUser,
         password: config.dbPassword,
+      },
+      agentOptions: {
+        ca: caOption
       },
     });
 
