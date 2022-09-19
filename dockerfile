@@ -55,7 +55,7 @@ ENV APM_SECRET_TOKEN=
 ENV LOGSTASH_HOST=logstash.development
 ENV LOGSTASH_PORT=8080
 
-ENV DB_URL=https://arango.development.svc:8529
+ENV DB_URL=
 ENV DB_NAME=networkmap
 ENV DB_USER=root
 ENV DB_PASSWORD=''
