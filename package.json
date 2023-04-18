@@ -1,6 +1,6 @@
 {
   "name": "channel-router-setup-processor",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "description": "predicate-builder-service",
   "main": "src/index.ts",
   "types": "build/index.d.ts",

@@ -43,7 +43,7 @@ ENV read_timeout="15s"
 
 ENV prefix_logs="false"
 
-ENV FUNCTION_NAME=channel-router-setup-processor
+ENV FUNCTION_NAME="channel-router-setup-processor-rel-1-1-0"
 ENV NODE_ENV="production"
 ENV REST_PORT=3000
 ENV LOGSTASH_URL=logstash.development:8080
