@@ -3,9 +3,8 @@ import apm from 'elastic-apm-node';
 import os from 'os';
 import App from './app';
 import { config } from './config';
-import { ArangoDBService } from './helpers/arango-client.service';
-import { RedisService } from './helpers/redis';
 import { iDBService } from './interfaces/iDBService';
+import { Services } from './services';
 import { LoggerService } from './services/logger.service';
 
 if (config.apmLogging) {
@@ -19,17 +18,21 @@ if (config.apmLogging) {
   });
 }
 
-export const dbService: iDBService = new ArangoDBService();
-export const cacheClient = new RedisService();
+export const dbService: iDBService = Services.getDatabaseInstance();
+export const cacheClient = Services.getCacheClientInstance();
 
-export const runServer = async (): Promise<void> => {
+let app: App;
+
+const runServer = (): App => {
   /**
    * KOA Rest Server
    */
-  const app = new App();
-  app.listen(config.restPort, () => {
+  const koaApp = new App();
+  koaApp.listen(config.restPort, () => {
     LoggerService.log(`HTTP Server listening on port ${config.restPort}`);
   });
+
+  return koaApp;
 };
 
 process.on('uncaughtException', (err) => {
@@ -40,7 +43,7 @@ process.on('unhandledRejection', (err) => {
   LoggerService.error(`process on unhandledRejection error: ${err}`);
 });
 
-const numCPUs = os.cpus().length > config.maxCPU ? config.maxCPU + 1: os.cpus().length + 1;
+const numCPUs = os.cpus().length > config.maxCPU ? config.maxCPU + 1 : os.cpus().length + 1;
 
 if (cluster.isMaster && config.maxCPU !== 1) {
   console.log(`Primary ${process.pid} is running`);
@@ -58,9 +61,11 @@ if (cluster.isMaster && config.maxCPU !== 1) {
   // Workers can share any TCP connection
   // In this case it is an HTTP server
   try {
-    runServer();
+    app = runServer();
   } catch (err) {
     LoggerService.error(`Error while starting HTTP server on Worker ${process.pid}`, err);
   }
   console.log(`Worker ${process.pid} started`);
 }
+
+export { app };
