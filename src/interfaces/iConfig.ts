@@ -1,4 +1,5 @@
 export interface IConfig {
+  maxCPU: number;
   redis: {
     auth: string;
     db: string;

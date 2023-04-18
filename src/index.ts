@@ -1,11 +1,11 @@
-import { config } from './config';
+import cluster from 'cluster';
 import apm from 'elastic-apm-node';
-import { LoggerService } from './services/logger.service';
+import os from 'os';
 import App from './app';
-import { ArangoDBService } from './helpers/arango-client.service';
-import { RedisService } from './helpers/redis';
-
+import { config } from './config';
 import { iDBService } from './interfaces/iDBService';
+import { Services } from './services';
+import { LoggerService } from './services/logger.service';
 
 if (config.apmLogging) {
   apm.start({
@@ -17,16 +17,22 @@ if (config.apmLogging) {
     transactionIgnoreUrls: ['/health'],
   });
 }
-export const app = new App();
 
-export const runServer = async (): Promise<void> => {
+export const dbService: iDBService = Services.getDatabaseInstance();
+export const cacheClient = Services.getCacheClientInstance();
+
+let app: App;
+
+const runServer = (): App => {
   /**
    * KOA Rest Server
    */
-  const app = new App();
-  app.listen(config.restPort, () => {
+  const koaApp = new App();
+  koaApp.listen(config.restPort, () => {
     LoggerService.log(`HTTP Server listening on port ${config.restPort}`);
   });
+
+  return koaApp;
 };
 
 process.on('uncaughtException', (err) => {
@@ -37,11 +43,29 @@ process.on('unhandledRejection', (err) => {
   LoggerService.error(`process on unhandledRejection error: ${err}`);
 });
 
-try {
-  runServer();
-} catch (err) {
-  LoggerService.error('Error while starting gRPC server', err);
+const numCPUs = os.cpus().length > config.maxCPU ? config.maxCPU + 1 : os.cpus().length + 1;
+
+if (cluster.isMaster && config.maxCPU !== 1) {
+  console.log(`Primary ${process.pid} is running`);
+
+  // Fork workers.
+  for (let i = 1; i < numCPUs; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`worker ${worker.process.pid} died, starting another worker`);
+    cluster.fork();
+  });
+} else {
+  // Workers can share any TCP connection
+  // In this case it is an HTTP server
+  try {
+    app = runServer();
+  } catch (err) {
+    LoggerService.error(`Error while starting HTTP server on Worker ${process.pid}`, err);
+  }
+  console.log(`Worker ${process.pid} started`);
 }
 
-export const dbService: iDBService = new ArangoDBService();
-export const cacheClient = new RedisService();
+export { app };
