@@ -3,9 +3,9 @@ import apm from 'elastic-apm-node';
 import os from 'os';
 import App from './app';
 import { config } from './config';
-import { iDBService } from './interfaces/iDBService';
 import { Services } from './services';
 import { LoggerService } from './services/logger.service';
+import { CreateDatabaseManager, DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
 
 if (config.apmLogging) {
   apm.start({
@@ -18,7 +18,18 @@ if (config.apmLogging) {
   });
 }
 
-export const dbService: iDBService = Services.getDatabaseInstance();
+// Set config for lib (network map db config you want to use)
+const databaseManagerConfig = {
+  networkMap: {
+    certPath: config.dbCertPath,
+    databaseName: config.dbName,
+    user: config.dbUser,
+    password: config.dbPassword,
+    url: config.dbURL,
+  },
+};
+
+let databaseManager: DatabaseManagerInstance<typeof databaseManagerConfig>;
 export const cacheClient = Services.getCacheClientInstance();
 
 let app: App;
@@ -45,6 +56,11 @@ process.on('unhandledRejection', (err) => {
 
 const numCPUs = os.cpus().length > config.maxCPU ? config.maxCPU + 1 : os.cpus().length + 1;
 
+export const init = async () => {
+  const manager = await CreateDatabaseManager(databaseManagerConfig);
+  databaseManager = manager;
+};
+
 if (cluster.isMaster && config.maxCPU !== 1) {
   console.log(`Primary ${process.pid} is running`);
 
@@ -62,10 +78,15 @@ if (cluster.isMaster && config.maxCPU !== 1) {
   // In this case it is an HTTP server
   try {
     app = runServer();
+
+    if (process.env.NODE_ENV !== 'test') {
+      // setup lib - create database instance
+      init();
+    }
   } catch (err) {
     LoggerService.error(`Error while starting HTTP server on Worker ${process.pid}`, err);
   }
   console.log(`Worker ${process.pid} started`);
 }
 
-export { app };
+export { app, databaseManager };

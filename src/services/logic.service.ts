@@ -2,14 +2,23 @@
 import { LoggerService } from './logger.service';
 import { NetworkMap, Rule } from '../classes/network-map';
 import axios from 'axios';
-import { dbService, cacheClient } from '..';
+import { cacheClient, databaseManager } from '..';
 import { config } from '../config';
 
+/**
+ *Create a list of all the rules for this transaction type from the network map
+ *
+ * @param {NetworkMap} networkMap
+ * @param {string} transactionType
+ * @return {*}  {Rule[]}
+ */
 function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   const rules: Rule[] = new Array<Rule>();
 
+  // Find the message object in the network map for the transaction type of THIS transaction
   const MessageChannel = networkMap.messages.find((tran) => tran.txTp === transactionType);
 
+  // Populate a list of all the rules that's required for this transaction type
   if (MessageChannel && MessageChannel.channels && MessageChannel.channels.length > 0) {
     for (const channel of MessageChannel.channels) {
       if (channel.typologies && channel.typologies.length > 0)
@@ -28,9 +37,9 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   return rules;
 }
 
-let networkMap: NetworkMap;
-let cachedActiveNetworkMap: NetworkMap;
 export const handleTransaction = async (req: any) => {
+  let networkMap: NetworkMap;
+  let cachedActiveNetworkMap: NetworkMap;
   let prunedMap;
   const cacheKey = `${req.TxTp}`;
   // check if there's an active network map in memory
@@ -41,7 +50,7 @@ export const handleTransaction = async (req: any) => {
     prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === req.TxTp);
   } else {
     // Fetch the network map from db
-    const networkConfigurationList = await dbService.getNetworkMap();
+    const networkConfigurationList = await databaseManager.getNetworkMap();
     if (networkConfigurationList && networkConfigurationList[0]) {
       networkMap = networkConfigurationList[0][0];
       // save networkmap in redis cache
