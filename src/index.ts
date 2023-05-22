@@ -61,6 +61,17 @@ export const init = async () => {
   databaseManager = manager;
 };
 
+(async () => {
+  try {
+    if (process.env.NODE_ENV !== 'test') {
+      // setup lib - create database instance
+      await init();
+    }
+  } catch (err) {
+    LoggerService.error('Error while starting HTTP server', err as Error);
+  }
+})();
+
 if (cluster.isMaster && config.maxCPU !== 1) {
   console.log(`Primary ${process.pid} is running`);
 
@@ -78,11 +89,6 @@ if (cluster.isMaster && config.maxCPU !== 1) {
   // In this case it is an HTTP server
   try {
     app = runServer();
-
-    if (process.env.NODE_ENV !== 'test') {
-      // setup lib - create database instance
-      init();
-    }
   } catch (err) {
     LoggerService.error(`Error while starting HTTP server on Worker ${process.pid}`, err);
   }
