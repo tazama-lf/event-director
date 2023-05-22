@@ -208,9 +208,6 @@ describe('Logic Service', () => {
     });
 
     it('should respond with empty network submap no network map is found', async () => {
-      jest.setTimeout(6000);
-      await new Promise((r) => setTimeout(r, 6000));
-
       getNetworkMapSpy = jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
         return new Promise((resolve, reject) => {
           resolve(JSON.parse('{}'));
