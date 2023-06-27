@@ -195,7 +195,7 @@ describe('Logic Service', () => {
 
     it('should respond with empty network submap no network map is found', async () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve('{}');
+        return Promise.resolve(JSON.parse('{}'));
       });
 
       const expectedReq = getMockRequest001();
@@ -209,7 +209,7 @@ describe('Logic Service', () => {
 
     it('Should handle failure to post to rule', async () => {
       jest.spyOn(axios, 'post').mockImplementation(() => {
-        return Promise.resolve((resolve, reject) => {
+        return Promise.resolve(() => {
           throw new Error('Testing purposes');
         });
       });
