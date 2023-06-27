@@ -45,10 +45,7 @@ beforeAll(async () => {
   await init();
 });
 
-afterAll(async (done) => {
-  cacheClient.client.quit();
-  databaseManager._networkMap.close();
-  app.terminate();
+afterAll((done) => {
   done();
 });
 
