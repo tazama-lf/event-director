@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LoggerService } from './logger.service';
-import { NetworkMap, Rule } from '../classes/network-map';
+import { Message, NetworkMap, Rule } from '../classes/network-map';
 import axios from 'axios';
 import { cacheClient, databaseManager } from '..';
 import { config } from '../config';
@@ -25,7 +25,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
         for (const typology of channel.typologies) {
           if (typology.rules && typology.rules.length > 0)
             for (const rule of typology.rules) {
-              const ruleIndex = rules.findIndex((r: Rule) => `${r.id}` === `${rule.id}`);
+              const ruleIndex = rules.findIndex((r: Rule) => `${r.id}` === `${rule.id}` && `${r.cfg}` === `${rule.cfg}`);
               if (ruleIndex < 0) {
                 rules.push(rule);
               }
@@ -40,7 +40,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
 export const handleTransaction = async (req: any) => {
   let networkMap: NetworkMap;
   let cachedActiveNetworkMap: NetworkMap;
-  let prunedMap;
+  let prunedMap: Message[];
   const cacheKey = `${req.TxTp}`;
   // check if there's an active network map in memory
   const activeNetworkMap = await cacheClient.getJson(cacheKey);
@@ -75,6 +75,7 @@ export const handleTransaction = async (req: any) => {
     });
 
     // Deduplicate all rules
+    // TODO CACHE DE-DUPED RULES
     const rules = getRuleMap(networkMap, req.TxTp);
 
     // Send transaction to all rules

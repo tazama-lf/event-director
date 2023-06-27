@@ -29,6 +29,9 @@ jobs:
   lint-and-test:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -38,5 +41,7 @@ jobs:
           node-version: '16'
       - name: Install dependencies
         run: npm install
+        env:
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
       - name: Run unit tests
         run: npm run test

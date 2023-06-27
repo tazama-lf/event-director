@@ -85,8 +85,8 @@ describe('Logic Service', () => {
   });
 
   describe('Handle Transaction', () => {
-    it('should handle successful request for Pain001', async () => {
-      const expectedReq = getMockRequest001();
+    it('should handle successful request for Pain013', async () => {
+      const expectedReq = getMockRequest013();
 
       const result = await handleTransaction(expectedReq);
 
@@ -103,8 +103,8 @@ describe('Logic Service', () => {
       }
     });
 
-    it('should handle successful request for Pain013', async () => {
-      const expectedReq = getMockRequest013();
+    it('should handle successful request for Pain001', async () => {
+      const expectedReq = getMockRequest001();
 
       const result = await handleTransaction(expectedReq);
 
