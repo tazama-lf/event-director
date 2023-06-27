@@ -1,11 +1,11 @@
-import cluster from 'cluster';
 import apm from 'elastic-apm-node';
+import { init } from 'nats-lib';
 import os from 'os';
-import App from './app';
 import { config } from './config';
-import { Services } from './services';
 import { LoggerService } from './services/logger.service';
 import { CreateDatabaseManager, DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
+import { handleTransaction } from './services/logic.service';
+import cluster from 'cluster';
 
 if (config.apmLogging) {
   apm.start({
@@ -27,23 +27,26 @@ const databaseManagerConfig = {
     password: config.dbPassword,
     url: config.dbURL,
   },
+  redisConfig: {
+    db: config.redis.db,
+    host: config.redis.host,
+    password: config.redis.auth,
+    port: config.redis.port,
+  },
 };
 
 let databaseManager: DatabaseManagerInstance<typeof databaseManagerConfig>;
-export const cacheClient = Services.getCacheClientInstance();
 
-let app: App;
-
-const runServer = (): App => {
-  /**
-   * KOA Rest Server
-   */
-  const koaApp = new App();
-  koaApp.listen(config.restPort, () => {
-    LoggerService.log(`HTTP Server listening on port ${config.restPort}`);
-  });
-
-  return koaApp;
+export const runServer = async () => {
+  for (let retryCount = 0; retryCount < 10; retryCount++) {
+    console.log('Connecting to nats server...');
+    if (!(await init(handleTransaction))) {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    } else {
+      console.log('Connected to nats');
+      break;
+    }
+  }
 };
 
 process.on('uncaughtException', (err) => {
@@ -55,8 +58,9 @@ process.on('unhandledRejection', (err) => {
 });
 
 const numCPUs = os.cpus().length > config.maxCPU ? config.maxCPU + 1 : os.cpus().length + 1;
+// runServer();
 
-export const init = async () => {
+export const dbInit = async () => {
   const manager = await CreateDatabaseManager(databaseManagerConfig);
   databaseManager = manager;
 };
@@ -65,14 +69,14 @@ export const init = async () => {
   try {
     if (process.env.NODE_ENV !== 'test') {
       // setup lib - create database instance
-      await init();
+      await dbInit();
     }
   } catch (err) {
     LoggerService.error('Error while starting HTTP server', err as Error);
   }
 })();
 
-if (cluster.isMaster && config.maxCPU !== 1) {
+if (cluster.isPrimary && config.maxCPU !== 1) {
   console.log(`Primary ${process.pid} is running`);
 
   // Fork workers.
@@ -88,11 +92,11 @@ if (cluster.isMaster && config.maxCPU !== 1) {
   // Workers can share any TCP connection
   // In this case it is an HTTP server
   try {
-    if (process.env.NODE_ENV !== 'test') app = runServer();
+    runServer();
   } catch (err) {
     LoggerService.error(`Error while starting HTTP server on Worker ${process.pid}`, err);
   }
   console.log(`Worker ${process.pid} started`);
 }
 
-export { app, databaseManager };
+export { databaseManager };

@@ -2,7 +2,7 @@ export interface IConfig {
   maxCPU: number;
   redis: {
     auth: string;
-    db: string;
+    db: number;
     host: string;
     port: number;
     timeout: number;

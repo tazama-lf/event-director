@@ -2,7 +2,7 @@
 import { LoggerService } from './logger.service';
 import { Message, NetworkMap, Rule } from '../classes/network-map';
 import axios from 'axios';
-import { cacheClient, databaseManager } from '..';
+import { databaseManager } from '..';
 import { config } from '../config';
 
 /**
@@ -37,34 +37,37 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   return rules;
 }
 
-export const handleTransaction = async (req: any) => {
-  let networkMap: NetworkMap;
+export const handleTransaction = async (req: string) => {
+  let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
-  let prunedMap: Message[];
-  const cacheKey = `${req.TxTp}`;
+  let prunedMap: Message[] = [];
+
+  const parsedRequest = JSON.parse(req);
+
+  const cacheKey = `${parsedRequest.TxTp}`;
   // check if there's an active network map in memory
-  const activeNetworkMap = await cacheClient.getJson(cacheKey);
+  const activeNetworkMap = await databaseManager.getJson(cacheKey);
   if (activeNetworkMap) {
-    cachedActiveNetworkMap = Object.assign(JSON.parse(activeNetworkMap));
+    cachedActiveNetworkMap = Object.assign(JSON.parse(activeNetworkMap[0]));
     networkMap = cachedActiveNetworkMap;
-    prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === req.TxTp);
+    prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.TxTp);
   } else {
     // Fetch the network map from db
     const networkConfigurationList = await databaseManager.getNetworkMap();
     if (networkConfigurationList && networkConfigurationList[0]) {
       networkMap = networkConfigurationList[0][0];
       // save networkmap in redis cache
-      await cacheClient.setJson(cacheKey, JSON.stringify(networkMap), 'EX', config.redis.timeout);
-      prunedMap = networkMap.messages.filter((msg) => msg.txTp === req.TxTp);
+      await databaseManager.setJson(cacheKey, JSON.stringify(networkMap), config.redis.timeout);
+      prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.TxTp);
     } else {
       LoggerService.log('No network map found in DB');
       const result = {
         rulesSentTo: [],
         failedToSend: [],
         networkMap: {},
-        transaction: req,
+        transaction: parsedRequest,
       };
-      return result;
+      // return result;
     }
   }
   if (prunedMap && prunedMap[0]) {
@@ -75,8 +78,7 @@ export const handleTransaction = async (req: any) => {
     });
 
     // Deduplicate all rules
-    // TODO CACHE DE-DUPED RULES
-    const rules = getRuleMap(networkMap, req.TxTp);
+    const rules = getRuleMap(networkMap, parsedRequest.TxTp);
 
     // Send transaction to all rules
     const promises: Array<Promise<void>> = [];
@@ -92,9 +94,9 @@ export const handleTransaction = async (req: any) => {
       rulesSentTo: sentTo,
       failedToSend: failedRules,
       transaction: req,
-      networkMap: networkMap,
+      networkMap,
     };
-    return result;
+    // return result;
   } else {
     LoggerService.log('No coresponding message found in Network map');
     const result = {
@@ -103,7 +105,7 @@ export const handleTransaction = async (req: any) => {
       networkMap: {},
       transaction: req,
     };
-    return result;
+    // return result;
   }
 };
 
