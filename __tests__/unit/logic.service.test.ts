@@ -1,6 +1,6 @@
 /* eslint-disable */
 import axios from 'axios';
-import { app, cacheClient, databaseManager, init } from '../../src';
+import { cacheClient, databaseManager, init } from '../../src';
 import { handleTransaction } from '../../src/services/logic.service';
 
 const getMockRequestInvalid = () => {
@@ -50,30 +50,21 @@ afterAll((done) => {
 });
 
 describe('Logic Service', () => {
-  let getNetworkMapSpy: jest.SpyInstance;
-  let postSpy: jest.SpyInstance;
-  let getJsonSpy: jest.SpyInstance;
-  let setJsonSpy: jest.SpyInstance;
-
   beforeEach(() => {
-    getNetworkMapSpy = jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-      return new Promise((resolve, reject) => {
-        resolve(JSON.parse(networkMap));
-      });
+    jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
+      return Promise.resolve(JSON.parse(networkMap));
     });
 
-    postSpy = jest.spyOn(axios, 'post').mockImplementation(() => {
-      return new Promise((resolve, reject) => {
-        resolve({ status: 200 });
-      });
+    jest.spyOn(axios, 'post').mockImplementation(() => {
+      return Promise.resolve({ status: 200 });
     });
 
-    getJsonSpy = jest.spyOn(cacheClient, 'getJson').mockImplementation((key: string): Promise<string> => {
-      return new Promise<string>((resolve, reject) => resolve(''));
+    jest.spyOn(cacheClient, 'getJson').mockImplementation((key: string): Promise<string> => {
+      return Promise.resolve('');
     });
 
-    setJsonSpy = jest.spyOn(cacheClient, 'setJson').mockImplementation((key: string): Promise<string> => {
-      return new Promise<string>((resolve, reject) => resolve(''));
+    jest.spyOn(cacheClient, 'setJson').mockImplementation((key: string): Promise<string> => {
+      return Promise.resolve<string>('');
     });
 
     /* eslint-disable */
@@ -155,11 +146,9 @@ describe('Logic Service', () => {
     });
 
     it('should handle successful request for Pacs008, has cached map', async () => {
-      getJsonSpy = jest.spyOn(cacheClient, 'getJson').mockImplementation((key: string): Promise<string> => {
-        return new Promise<string>((resolve, reject) =>
-          resolve(
-            '{"messages":[{"id":"001@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.001.001.11","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.013.001.09","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"029@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"030@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"031@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"004@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.002.001.12","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]},{"id":"005@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.008.001.10","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]}]}',
-          ),
+      jest.spyOn(cacheClient, 'getJson').mockImplementation((key: string): Promise<string> => {
+        return Promise.resolve<string>(
+          '{"messages":[{"id":"001@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.001.001.11","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.013.001.09","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"029@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"030@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"031@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"004@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.002.001.12","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]},{"id":"005@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.008.001.10","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]}]}',
         );
       });
 
@@ -205,8 +194,8 @@ describe('Logic Service', () => {
     });
 
     it('should respond with empty network submap no network map is found', async () => {
-      getNetworkMapSpy = jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return new Promise((resolve, reject) => {
+      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
+        return Promise.resolve((resolve, reject) => {
           resolve(JSON.parse('{}'));
         });
       });
@@ -221,8 +210,8 @@ describe('Logic Service', () => {
     });
 
     it('Should handle failure to post to rule', async () => {
-      postSpy = jest.spyOn(axios, 'post').mockImplementation(() => {
-        return new Promise((resolve, reject) => {
+      jest.spyOn(axios, 'post').mockImplementation(() => {
+        return Promise.resolve((resolve, reject) => {
           throw new Error('Testing purposes');
         });
       });
