@@ -10,7 +10,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: pnpm / install
+    name: install, build, test
+    permissions:
+      packages: write
+      contents: read
     strategy:
       matrix:
         node-version: [16]
@@ -19,22 +22,6 @@ jobs:
       - uses: pnpm/action-setup@v2 
         with: 
           version: 7
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      - name: Install dependencies 
-        run: pnpm install
-  lint-and-test:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
       - name: Setup Node.js (.npmrc)
         uses: actions/setup-node@v3
         with:
