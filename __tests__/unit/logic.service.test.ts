@@ -80,13 +80,13 @@ describe('Logic Service', () => {
 
       const resultsRequiredToBeSent = ['003@1.0', '028@1.0'];
 
-      var rulesSentTo = result.rulesSentTo;
+      const rulesSentTo = result.rulesSentTo;
       const rulesNotSentTo = result.failedToSend;
       const allRules = [...rulesSentTo, ...rulesNotSentTo];
 
-      for (let i = 0; i < resultsRequiredToBeSent.length; i++) {
-        var checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
-        console.log(resultsRequiredToBeSent[i] + ' Send was ' + checkIfRuleIsSend);
+      for (const resultsRequiredToBeSentRule of resultsRequiredToBeSent) {
+        const checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSentRule) > -1;
+        console.log(resultsRequiredToBeSentRule + ' Send was ' + checkIfRuleIsSend);
         expect(checkIfRuleIsSend).toEqual(true);
       }
     });
@@ -98,13 +98,13 @@ describe('Logic Service', () => {
 
       const resultsRequiredToBeSent = ['003@1.0', '028@1.0'];
 
-      var rulesSentTo = result.rulesSentTo;
+      const rulesSentTo = result.rulesSentTo;
       const rulesNotSentTo = result.failedToSend;
       const allRules = [...rulesSentTo, ...rulesNotSentTo];
 
-      for (let i = 0; i < resultsRequiredToBeSent.length; i++) {
-        var checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
-        console.log(resultsRequiredToBeSent[i] + ' Send was ' + checkIfRuleIsSend);
+      for (const resultsRequiredToBeSentRule of resultsRequiredToBeSent) {
+        const checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSentRule) > -1;
+        console.log(resultsRequiredToBeSentRule + ' Send was ' + checkIfRuleIsSend);
         expect(checkIfRuleIsSend).toEqual(true);
       }
     });
@@ -116,13 +116,13 @@ describe('Logic Service', () => {
 
       const resultsRequiredToBeSent = ['018@1.0.0'];
 
-      var rulesSentTo = result.rulesSentTo;
+      const rulesSentTo = result.rulesSentTo;
       const rulesNotSentTo = result.failedToSend;
       const allRules = [...rulesSentTo, ...rulesNotSentTo];
 
-      for (let i = 0; i < resultsRequiredToBeSent.length; i++) {
-        var checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
-        console.log(resultsRequiredToBeSent[i] + ' Send was ' + checkIfRuleIsSend);
+      for (const resultsRequiredToBeSentRule of resultsRequiredToBeSent) {
+        const checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSentRule) > -1;
+        console.log(resultsRequiredToBeSentRule + ' Send was ' + checkIfRuleIsSend);
         expect(checkIfRuleIsSend).toEqual(true);
       }
     });
@@ -134,13 +134,13 @@ describe('Logic Service', () => {
 
       const resultsRequiredToBeSent = ['018@1.0.0'];
 
-      var rulesSentTo = result.rulesSentTo;
+      const rulesSentTo = result.rulesSentTo;
       const rulesNotSentTo = result.failedToSend;
       const allRules = [...rulesSentTo, ...rulesNotSentTo];
 
-      for (let i = 0; i < resultsRequiredToBeSent.length; i++) {
-        var checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
-        console.log(resultsRequiredToBeSent[i] + ' Send was ' + checkIfRuleIsSend);
+      for (const resultsRequiredToBeSentRule of resultsRequiredToBeSent) {
+        const checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSentRule) > -1;
+        console.log(resultsRequiredToBeSentRule + ' Send was ' + checkIfRuleIsSend);
         expect(checkIfRuleIsSend).toEqual(true);
       }
     });
@@ -158,29 +158,21 @@ describe('Logic Service', () => {
 
       const resultsRequiredToBeSent = ['018@1.0.0'];
 
-      var rulesSentTo = result.rulesSentTo;
+      const rulesSentTo = result.rulesSentTo;
       const rulesNotSentTo = result.failedToSend;
       const allRules = [...rulesSentTo, ...rulesNotSentTo];
 
-      for (let i = 0; i < resultsRequiredToBeSent.length; i++) {
-        var checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
-        console.log(resultsRequiredToBeSent[i] + ' Send was ' + checkIfRuleIsSend);
+      for (const resultsRequiredToBeSentRule of resultsRequiredToBeSent) {
+        const checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSentRule) > -1;
+        console.log(resultsRequiredToBeSentRule + ' Send was ' + checkIfRuleIsSend);
         expect(checkIfRuleIsSend).toEqual(true);
       }
     });
 
     it('should handle unsuccessful request', async () => {
       const expectedReq = getMockRequestInvalid();
-
       const result = await handleTransaction(expectedReq);
-
-      const resultsRequiredToBeSent = ['018@1.0.0'];
-
-      var rulesSentTo = result.rulesSentTo;
-      const rulesNotSentTo = result.failedToSend;
-      const allRules = [...rulesSentTo, ...rulesNotSentTo];
-
-      expect(rulesSentTo).toHaveLength(0);
+      expect(result.rulesSentTo).toHaveLength(0);
     });
 
     it('should respond with active cached network map from redis', async () => {
