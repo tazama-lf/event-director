@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { LoggerService } from './logger.service';
-import { Message, NetworkMap, Rule } from '../classes/network-map';
-import axios from 'axios';
+import { Message, NetworkMap, Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
+import { responseCallback } from '@frmscoe/frms-coe-startup-lib/lib/types/onMessageFunction';
 import { databaseManager } from '..';
-import { config } from '../config';
+import { LoggerService } from './logger.service';
 
 /**
  *Create a list of all the rules for this transaction type from the network map
@@ -37,18 +36,18 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   return rules;
 }
 
-export const handleTransaction = async (req: string) => {
+export const handleTransaction = async (req: unknown, handleResponse: responseCallback) => {
   let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
   let prunedMap: Message[] = [];
 
-  const parsedRequest = JSON.parse(req);
+  const parsedRequest = req as any;
 
   const cacheKey = `${parsedRequest.TxTp}`;
   // check if there's an active network map in memory
   const activeNetworkMap = await databaseManager.getJson(cacheKey);
   if (activeNetworkMap) {
-    cachedActiveNetworkMap = Object.assign(JSON.parse(activeNetworkMap[0]));
+    cachedActiveNetworkMap = Object.assign(JSON.parse(activeNetworkMap));
     networkMap = cachedActiveNetworkMap;
     prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.TxTp);
   } else {
@@ -57,7 +56,7 @@ export const handleTransaction = async (req: string) => {
     if (networkConfigurationList && networkConfigurationList[0]) {
       networkMap = networkConfigurationList[0][0];
       // save networkmap in redis cache
-      await databaseManager.setJson(cacheKey, JSON.stringify(networkMap), config.redis.timeout);
+      // await databaseManager.setJson(cacheKey, JSON.stringify(networkMap), config.redis.timeout);
       prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.TxTp);
     } else {
       LoggerService.log('No network map found in DB');
@@ -67,7 +66,7 @@ export const handleTransaction = async (req: string) => {
         networkMap: {},
         transaction: parsedRequest,
       };
-      // return result;
+      LoggerService.debug(JSON.stringify(result));
     }
   }
   if (prunedMap && prunedMap[0]) {
@@ -86,7 +85,7 @@ export const handleTransaction = async (req: string) => {
     const sentTo: Array<string> = [];
 
     for (const rule of rules) {
-      promises.push(sendRuleToRuleProcessor(rule, networkSubMap, req, sentTo, failedRules));
+      promises.push(sendRuleToRuleProcessor(rule, networkSubMap, req, handleResponse, sentTo, failedRules));
     }
     await Promise.all(promises);
 
@@ -96,7 +95,7 @@ export const handleTransaction = async (req: string) => {
       transaction: req,
       networkMap,
     };
-    // return result;
+    LoggerService.debug(JSON.stringify(result));
   } else {
     LoggerService.log('No coresponding message found in Network map');
     const result = {
@@ -105,21 +104,19 @@ export const handleTransaction = async (req: string) => {
       networkMap: {},
       transaction: req,
     };
-    // return result;
+    LoggerService.debug(JSON.stringify(result));
   }
 };
 
-const sendRuleToRuleProcessor = async (rule: Rule, networkMap: NetworkMap, req: any, sentTo: Array<string>, failedRules: Array<string>) => {
-  const toSend = { transaction: req, networkMap };
+const sendRuleToRuleProcessor = async (rule: Rule, networkMap: NetworkMap, req: any, handleResponse: responseCallback, sentTo: Array<string>, failedRules: Array<string>) => {
   try {
-    const ruleRes = await axios.post(`${rule.host}/execute`, toSend);
-    if (ruleRes.status === 200) {
+    const toSend = { transaction: req, networkMap };
+    handleResponse(JSON.stringify(toSend),[rule.host]);
       sentTo.push(rule.id);
       LoggerService.log(`Successfully sent to ${rule.id}`);
-    }
-  } catch (error) {
-    failedRules.push(rule.id);
-    LoggerService.trace(`Failed to send to Rule ${rule.id}`);
-    LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${error}`);
+  } catch (error){
+      failedRules.push(rule.id);
+      LoggerService.trace(`Failed to send to Rule ${rule.id}`);
+      LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${error}`);
   }
 };

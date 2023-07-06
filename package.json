@@ -28,12 +28,15 @@
     },
     {
       "name": "Uche Akogwu"
+    },
+    {
+      "name": "Jean-Pierre Nell"
     }
   ],
   "license": "ISC",
   "dependencies": {
-    "@frmscoe/frms-coe-lib": "^0.1.24",
-    "@frmscoe/frms-coe-startup-lib": "^0.0.1",
+    "@frmscoe/frms-coe-lib": "^0.1.28",
+    "@frmscoe/frms-coe-startup-lib": "^0.0.8",
     "@log4js-node/logstash-http": "^1.1.0",
     "arangojs": "^8.3.0",
     "async": "^3.2.4",

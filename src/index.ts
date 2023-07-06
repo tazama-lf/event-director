@@ -1,11 +1,11 @@
 import apm from 'elastic-apm-node';
-import { init } from 'nats-lib';
 import os from 'os';
 import { config } from './config';
 import { LoggerService } from './services/logger.service';
 import { CreateDatabaseManager, DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
 import { handleTransaction } from './services/logic.service';
 import cluster from 'cluster';
+import { init } from '@frmscoe/frms-coe-startup-lib';
 
 if (config.apmLogging) {
   apm.start({
@@ -37,7 +37,7 @@ const databaseManagerConfig = {
 
 let databaseManager: DatabaseManagerInstance<typeof databaseManagerConfig>;
 
-export const runServer = async () => {
+const runServer = async () => {
   for (let retryCount = 0; retryCount < 10; retryCount++) {
     console.log('Connecting to nats server...');
     if (!(await init(handleTransaction))) {
@@ -58,10 +58,9 @@ process.on('unhandledRejection', (err) => {
 });
 
 const numCPUs = os.cpus().length > config.maxCPU ? config.maxCPU + 1 : os.cpus().length + 1;
-// runServer();
-
 export const dbInit = async () => {
   const manager = await CreateDatabaseManager(databaseManagerConfig);
+  console.log(manager.isReadyCheck());
   databaseManager = manager;
 };
 
@@ -80,7 +79,7 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
   console.log(`Primary ${process.pid} is running`);
 
   // Fork workers.
-  for (let i = 1; i < numCPUs; i++) {
+  for (let i = 1; i < 2; i++) {
     cluster.fork();
   }
 
@@ -92,7 +91,9 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
   // Workers can share any TCP connection
   // In this case it is an HTTP server
   try {
-    runServer();
+    if (config.nodeEnv !== "test"){
+      runServer();
+    }
   } catch (err) {
     LoggerService.error(`Error while starting HTTP server on Worker ${process.pid}`, err);
   }
