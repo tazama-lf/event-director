@@ -110,7 +110,7 @@ export const handleTransaction = async (req: unknown) => {
 const sendRuleToRuleProcessor = async (rule: Rule, networkMap: NetworkMap, req: any, dataCache: DataCache, sentTo: Array<string>, failedRules: Array<string>) => {
   try {
     const toSend = { transaction: req, networkMap, DataCache: dataCache };
-    server.handleResponse(toSend, [rule.host]);
+    await server.handleResponse(toSend, [rule.host]);
     sentTo.push(rule.id);
     LoggerService.log(`Successfully sent to ${rule.id}`);
   } catch (error) {

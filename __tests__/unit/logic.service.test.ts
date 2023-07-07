@@ -69,8 +69,8 @@ describe('Logic Service', () => {
     });
 
     /* eslint-disable */
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    jest.spyOn(console, 'info').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => { });
+    jest.spyOn(console, 'info').mockImplementation(() => { });
     jest.spyOn(LoggerService, 'debug').mockImplementation((message) => {
       debugLog = message;
     });
@@ -247,17 +247,17 @@ describe('Logic Service', () => {
 
     it('Should handle failure to post to rule', async () => {
       const expectedReq = getMockRequest013();
-      
-      server.handleResponse = (reponse: unknown): Promise<void> => {
-        throw new Error('Testing purposes');
-      };
+
+      // server.handleResponse = (reponse: unknown): Promise<void> => {
+      //   throw new Error('Testing purposes');
+      // };
 
       responseSpy = jest.spyOn(server, 'handleResponse').mockRejectedValue(() => {
-        throw new Error('Testing purposes');
+        new Error('Testing purposes');
       });
 
       await handleTransaction(expectedReq);
-      expect(responseSpy).toHaveBeenCalledTimes(0);
+      expect(responseSpy).toHaveBeenCalledTimes(2);
     });
   });
 });
