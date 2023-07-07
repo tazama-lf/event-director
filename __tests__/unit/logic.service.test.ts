@@ -253,7 +253,7 @@ describe('Logic Service', () => {
       // };
 
       responseSpy = jest.spyOn(server, 'handleResponse').mockRejectedValue(() => {
-        new Error('Testing purposes');
+        throw new Error('Testing purposes');
       });
 
       await handleTransaction(expectedReq);
