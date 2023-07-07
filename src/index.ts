@@ -5,7 +5,7 @@ import { LoggerService } from './services/logger.service';
 import { CreateDatabaseManager, DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
 import { handleTransaction } from './services/logic.service';
 import cluster from 'cluster';
-import { StartupFactory, IStartupService } from 'startup';
+import { StartupFactory, IStartupService } from '@frmscoe/frms-coe-startup-lib';
 
 if (config.apmLogging) {
   apm.start({
@@ -38,17 +38,18 @@ const databaseManagerConfig = {
 let databaseManager: DatabaseManagerInstance<typeof databaseManagerConfig>;
 export let server: IStartupService;
 
-const runServer = async () => {
+export const runServer = async () => {
   server = new StartupFactory();
-  for (let retryCount = 0; retryCount < 10; retryCount++) {
-    console.log('Connecting to nats server...');
-    if (!(await server.init(handleTransaction))) {
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-    } else {
-      console.log('Connected to nats');
-      break;
+  if (config.nodeEnv !== 'test')
+    for (let retryCount = 0; retryCount < 10; retryCount++) {
+      console.log('Connecting to nats server...');
+      if (!(await server.init(handleTransaction))) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      } else {
+        console.log('Connected to nats');
+        break;
+      }
     }
-  }
 };
 
 process.on('uncaughtException', (err) => {

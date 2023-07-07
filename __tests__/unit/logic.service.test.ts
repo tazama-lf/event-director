@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { databaseManager, dbInit } from '../../src';
+import { databaseManager, dbInit, runServer, server } from '../../src';
 import { LoggerService } from '../../src/services/logger.service';
 import { handleTransaction } from '../../src/services/logic.service';
 import * as startUpLib from '@frmscoe/frms-coe-startup-lib';
@@ -44,6 +44,7 @@ const networkMap =
 
 beforeAll(async () => {
   await dbInit();
+  await runServer();
 });
 
 afterAll((done) => {
@@ -78,13 +79,13 @@ describe('Logic Service', () => {
   describe('Handle Transaction', () => {
     it('should handle successful request for Pain013', async () => {
       const expectedReq = getMockRequest013();
-      responseSpy = jest.spyOn(startUpLib, 'handleResponse').mockImplementation(jest.fn());
+      responseSpy = jest.spyOn(server, 'handleResponse').mockImplementation(jest.fn());
 
-      const handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
-      await handleTransaction(expectedReq, handleResponse);
+      await handleTransaction(expectedReq);
       const resultsRequiredToBeSent = ['003@1.0', '028@1.0'];
 
       const result = JSON.parse(debugLog as string);
@@ -102,11 +103,11 @@ describe('Logic Service', () => {
     it('should handle successful request for Pain001', async () => {
       const expectedReq = getMockRequest001();
 
-      const handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
-      await handleTransaction(expectedReq, handleResponse);
+      await handleTransaction(expectedReq);
 
       const resultsRequiredToBeSent = ['003@1.0', '028@1.0'];
       const result = JSON.parse(debugLog);
@@ -125,11 +126,11 @@ describe('Logic Service', () => {
     it('should handle successful request for Pacs002', async () => {
       const expectedReq = getMockRequest002();
 
-      const handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
-      await handleTransaction(expectedReq, handleResponse);
+      await handleTransaction(expectedReq);
 
       const result = JSON.parse(debugLog);
       const resultsRequiredToBeSent = ['018@1.0.0'];
@@ -148,11 +149,11 @@ describe('Logic Service', () => {
     it('should handle successful request for Pacs008', async () => {
       const expectedReq = getMockRequest008();
 
-      const handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
-      await handleTransaction(expectedReq, handleResponse);
+      await handleTransaction(expectedReq);
 
       const resultsRequiredToBeSent = ['018@1.0.0'];
       const result = JSON.parse(debugLog);
@@ -177,10 +178,10 @@ describe('Logic Service', () => {
 
       const expectedReq = getMockRequest008();
 
-      const handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
       };
-      await handleTransaction(expectedReq, handleResponse);
+      await handleTransaction(expectedReq);
       const result = JSON.parse(debugLog);
 
       const resultsRequiredToBeSent = ['018@1.0.0'];
@@ -198,11 +199,11 @@ describe('Logic Service', () => {
 
     it('should handle unsuccessful request', async () => {
       const expectedReq = getMockRequestInvalid();
-      const handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
-      await handleTransaction(expectedReq, handleResponse);
+      await handleTransaction(expectedReq);
       const result = JSON.parse(debugLog);
       expect(result.rulesSentTo).toHaveLength(0);
     });
@@ -211,12 +212,12 @@ describe('Logic Service', () => {
       const expectedReq = getMockRequest001();
 
       let result: any;
-      const handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (reponse: unknown): Promise<void> => {
         result = reponse as any;
         return Promise.resolve();
       };
 
-      await handleTransaction(expectedReq, handleResponse);
+      await handleTransaction(expectedReq);
       expect(JSON.stringify(debugLog)).toContain(
         '{\\"rulesSentTo\\":[\\"003@1.0\\",\\"028@1.0\\"],\\"failedToSend\\":[],\\"transaction\\":{\\"TxTp\\":\\"pain.001.001.11\\",\\"CstmrCdtTrfInitn\\":{\\"GrpHdr\\":{\\"MsgId\\":\\"2669e349-500d-44ba-9e27-7767a16608a0\\",\\"CreDtTm\\":\\"2021-10-07T09:25:31.000Z\\",\\"NbOfTxs\\":1,\\"InitgPty\\":{\\"Nm\\":\\"IvanReeseRussel-Klein\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1967-11-23\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-783078685\\"}}},\\"PmtInf\\":{\\"PmtInfId\\":\\"b51ec534-ee48-4575-b6a9-ead2955b8069\\",\\"PmtMtd\\":\\"TRA\\",\\"ReqdAdvcTp\\":{\\"DbtAdvc\\":{\\"Cd\\":\\"ADWD\\",\\"Prtry\\":\\"Advicewithtransactiondetails\\"}},\\"ReqdExctnDt\\":{\\"Dt\\":\\"2021-10-07\\",\\"DtTm\\":\\"2021-10-07T09:25:31.000Z\\"},\\"Dbtr\\":{\\"Nm\\":\\"IvanReeseRussel-Klein\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1957-10-05\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-783078685\\"}},\\"DbtrAcct\\":{\\"Id\\":{\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"PASSPORT\\"}}},\\"Nm\\":\\"IvanRussel-Klein\\"},\\"DbtrAgt\\":{\\"FinInstnId\\":{\\"ClrSysMmbId\\":{\\"MmbId\\":\\"dfsp001\\"}}},\\"CdtTrfTxInf\\":{\\"PmtId\\":{\\"EndToEndId\\":\\"b51ec534-ee48-4575-b6a9-ead2955b8069\\"},\\"PmtTpInf\\":{\\"CtgyPurp\\":{\\"Prtry\\":\\"TRANSFER\\"}},\\"Amt\\":{\\"InstdAmt\\":{\\"Amt\\":{\\"Amt\\":\\"50431891779910900\\",\\"Ccy\\":\\"USD\\"}},\\"EqvtAmt\\":{\\"Amt\\":{\\"Amt\\":\\"50431891779910900\\",\\"Ccy\\":\\"USD\\"},\\"CcyOfTrf\\":\\"USD\\"}},\\"ChrgBr\\":\\"DEBT\\",\\"CdtrAgt\\":{\\"FinInstnId\\":{\\"ClrSysMmbId\\":{\\"MmbId\\":\\"dfsp002\\"}}},\\"Cdtr\\":{\\"Nm\\":\\"AprilSamAdamson\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1923-04-26\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27782722305\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-782722305\\"}},\\"CdtrAcct\\":{\\"Id\\":{\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}},\\"Nm\\":\\"AprilAdamson\\"},\\"Purp\\":{\\"Cd\\":\\"MP2P\\"},\\"RgltryRptg\\":{\\"Dtls\\":{\\"Tp\\":\\"BALANCEOFPAYMENTS\\",\\"Cd\\":\\"100\\"}},\\"RmtInf\\":{\\"Ustrd\\":\\"PaymentofUSD49932566118723700.89fromIvantoApril\\"},\\"SplmtryData\\":{\\"Envlp\\":{\\"Doc\\":{\\"Cdtr\\":{\\"FrstNm\\":\\"Ivan\\",\\"MddlNm\\":\\"Reese\\",\\"LastNm\\":\\"Russel-Klein\\",\\"MrchntClssfctnCd\\":\\"BLANK\\"},\\"Dbtr\\":{\\"FrstNm\\":\\"April\\",\\"MddlNm\\":\\"Sam\\",\\"LastNm\\":\\"Adamson\\",\\"MrchntClssfctnCd\\":\\"BLANK\\"},\\"DbtrFinSvcsPrvdrFees\\":{\\"Ccy\\":\\"USD\\",\\"Amt\\":\\"499325661187237\\"},\\"Xprtn\\":\\"2021-10-07T09:30:31.000Z\\"}}}}},\\"SplmtryData\\":{\\"Envlp\\":{\\"Doc\\":{\\"InitgPty\\":{\\"InitrTp\\":\\"CONSUMER\\",\\"Glctn\\":{\\"Lat\\":\\"-3.1291\\",\\"Long\\":\\"39.0006\\"}}}}}}},\\"networkMap\\":{\\"messages\\":[{\\"id\\":\\"001@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080\\",\\"cfg\\":\\"1.0\\",\\"txTp\\":\\"pain.001.001.11\\",\\"channels\\":[{\\"id\\":\\"001@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor\\",\\"cfg\\":\\"1.0\\",\\"typologies\\":[{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-typology-processor\\",\\"cfg\\":\\"1.0\\",\\"rules\\":[{\\"id\\":\\"003@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-003\\",\\"cfg\\":\\"1.0\\"},{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-028\\",\\"cfg\\":\\"1.0\\"}]}]}]},{\\"id\\":\\"002@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080\\",\\"cfg\\":\\"1.0\\",\\"txTp\\":\\"pain.013.001.09\\",\\"channels\\":[{\\"id\\":\\"001@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor\\",\\"cfg\\":\\"1.0\\",\\"typologies\\":[{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-typology-processor\\",\\"cfg\\":\\"1.0\\",\\"rules\\":[{\\"id\\":\\"003@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-003\\",\\"cfg\\":\\"1.0\\"},{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-028\\",\\"cfg\\":\\"1.0\\"}]},{\\"id\\":\\"029@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-typology-processor\\",\\"cfg\\":\\"1.0\\",\\"rules\\":[{\\"id\\":\\"003@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-003\\",\\"cfg\\":\\"1.0\\"},{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-028\\",\\"cfg\\":\\"1.0\\"}]}]},{\\"id\\":\\"002@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor\\",\\"cfg\\":\\"1.0\\",\\"typologies\\":[{\\"id\\":\\"030@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-typology-processor\\",\\"cfg\\":\\"1.0\\",\\"rules\\":[{\\"id\\":\\"003@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-003\\",\\"cfg\\":\\"1.0\\"},{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-028\\",\\"cfg\\":\\"1.0\\"}]},{\\"id\\":\\"031@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-typology-processor\\",\\"cfg\\":\\"1.0\\",\\"rules\\":[{\\"id\\":\\"003@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-003\\",\\"cfg\\":\\"1.0\\"},{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-028\\",\\"cfg\\":\\"1.0\\"}]}]}]},{\\"id\\":\\"004@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0\\",\\"cfg\\":\\"1.0.0\\",\\"txTp\\":\\"pacs.002.001.12\\",\\"channels\\":[{\\"id\\":\\"001@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0\\",\\"cfg\\":\\"1.0.0\\",\\"typologies\\":[{\\"id\\":\\"028@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0\\",\\"cfg\\":\\"1.0.0\\",\\"rules\\":[{\\"id\\":\\"018@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0\\",\\"cfg\\":\\"1.0.0\\"}]}]}]},{\\"id\\":\\"005@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0\\",\\"cfg\\":\\"1.0.0\\",\\"txTp\\":\\"pacs.008.001.10\\",\\"channels\\":[{\\"id\\":\\"001@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0\\",\\"cfg\\":\\"1.0.0\\",\\"typologies\\":[{\\"id\\":\\"028@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0\\",\\"cfg\\":\\"1.0.0\\",\\"rules\\":[{\\"id\\":\\"018@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0\\",\\"cfg\\":\\"1.0.0\\"}]}]}]}]}}',
       );
@@ -230,7 +231,7 @@ describe('Logic Service', () => {
       const expectedReq = getMockRequest001();
 
       let result: any;
-      const handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (reponse: unknown): Promise<void> => {
         result = reponse as any;
         return Promise.resolve();
       };
@@ -238,7 +239,7 @@ describe('Logic Service', () => {
       // let ruleSendTo = ""
       // jest.spyOn(console, 'debug').mockImplementation((message) => {ruleSendTo = message});
 
-      await handleTransaction(expectedReq, handleResponse);
+      await handleTransaction(expectedReq);
       expect(JSON.stringify(debugLog)).toContain(
         '{\\"rulesSentTo\\":[],\\"failedToSend\\":[],\\"networkMap\\":{},\\"transaction\\":{\\"TxTp\\":\\"pain.001.001.11\\",\\"CstmrCdtTrfInitn\\":{\\"GrpHdr\\":{\\"MsgId\\":\\"2669e349-500d-44ba-9e27-7767a16608a0\\",\\"CreDtTm\\":\\"2021-10-07T09:25:31.000Z\\",\\"NbOfTxs\\":1,\\"InitgPty\\":{\\"Nm\\":\\"IvanReeseRussel-Klein\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1967-11-23\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-783078685\\"}}},\\"PmtInf\\":{\\"PmtInfId\\":\\"b51ec534-ee48-4575-b6a9-ead2955b8069\\",\\"PmtMtd\\":\\"TRA\\",\\"ReqdAdvcTp\\":{\\"DbtAdvc\\":{\\"Cd\\":\\"ADWD\\",\\"Prtry\\":\\"Advicewithtransactiondetails\\"}},\\"ReqdExctnDt\\":{\\"Dt\\":\\"2021-10-07\\",\\"DtTm\\":\\"2021-10-07T09:25:31.000Z\\"},\\"Dbtr\\":{\\"Nm\\":\\"IvanReeseRussel-Klein\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1957-10-05\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-783078685\\"}},\\"DbtrAcct\\":{\\"Id\\":{\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"PASSPORT\\"}}},\\"Nm\\":\\"IvanRussel-Klein\\"},\\"DbtrAgt\\":{\\"FinInstnId\\":{\\"ClrSysMmbId\\":{\\"MmbId\\":\\"dfsp001\\"}}},\\"CdtTrfTxInf\\":{\\"PmtId\\":{\\"EndToEndId\\":\\"b51ec534-ee48-4575-b6a9-ead2955b8069\\"},\\"PmtTpInf\\":{\\"CtgyPurp\\":{\\"Prtry\\":\\"TRANSFER\\"}},\\"Amt\\":{\\"InstdAmt\\":{\\"Amt\\":{\\"Amt\\":\\"50431891779910900\\",\\"Ccy\\":\\"USD\\"}},\\"EqvtAmt\\":{\\"Amt\\":{\\"Amt\\":\\"50431891779910900\\",\\"Ccy\\":\\"USD\\"},\\"CcyOfTrf\\":\\"USD\\"}},\\"ChrgBr\\":\\"DEBT\\",\\"CdtrAgt\\":{\\"FinInstnId\\":{\\"ClrSysMmbId\\":{\\"MmbId\\":\\"dfsp002\\"}}},\\"Cdtr\\":{\\"Nm\\":\\"AprilSamAdamson\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1923-04-26\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27782722305\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-782722305\\"}},\\"CdtrAcct\\":{\\"Id\\":{\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}},\\"Nm\\":\\"AprilAdamson\\"},\\"Purp\\":{\\"Cd\\":\\"MP2P\\"},\\"RgltryRptg\\":{\\"Dtls\\":{\\"Tp\\":\\"BALANCEOFPAYMENTS\\",\\"Cd\\":\\"100\\"}},\\"RmtInf\\":{\\"Ustrd\\":\\"PaymentofUSD49932566118723700.89fromIvantoApril\\"},\\"SplmtryData\\":{\\"Envlp\\":{\\"Doc\\":{\\"Cdtr\\":{\\"FrstNm\\":\\"Ivan\\",\\"MddlNm\\":\\"Reese\\",\\"LastNm\\":\\"Russel-Klein\\",\\"MrchntClssfctnCd\\":\\"BLANK\\"},\\"Dbtr\\":{\\"FrstNm\\":\\"April\\",\\"MddlNm\\":\\"Sam\\",\\"LastNm\\":\\"Adamson\\",\\"MrchntClssfctnCd\\":\\"BLANK\\"},\\"DbtrFinSvcsPrvdrFees\\":{\\"Ccy\\":\\"USD\\",\\"Amt\\":\\"499325661187237\\"},\\"Xprtn\\":\\"2021-10-07T09:30:31.000Z\\"}}}}},\\"SplmtryData\\":{\\"Envlp\\":{\\"Doc\\":{\\"InitgPty\\":{\\"InitrTp\\":\\"CONSUMER\\",\\"Glctn\\":{\\"Lat\\":\\"-3.1291\\",\\"Long\\":\\"39.0006\\"}}}}}}}}',
       );
@@ -247,15 +248,15 @@ describe('Logic Service', () => {
     it('Should handle failure to post to rule', async () => {
       const expectedReq = getMockRequest013();
       
-      const handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (reponse: unknown): Promise<void> => {
         throw new Error('Testing purposes');
       };
 
-      responseSpy = jest.spyOn(startUpLib, 'handleResponse').mockRejectedValue(() => {
+      responseSpy = jest.spyOn(server, 'handleResponse').mockRejectedValue(() => {
         throw new Error('Testing purposes');
       });
 
-      await handleTransaction(expectedReq, handleResponse);
+      await handleTransaction(expectedReq);
       expect(responseSpy).toHaveBeenCalledTimes(0);
     });
   });
