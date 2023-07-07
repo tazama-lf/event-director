@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Message, NetworkMap, Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
-import { responseCallback } from '@frmscoe/frms-coe-startup-lib/lib/types/onMessageFunction';
-import { databaseManager } from '..';
+import { DataCache, Message, NetworkMap, Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
+import { databaseManager, server } from '..';
 import { LoggerService } from './logger.service';
 
 /**
@@ -36,7 +35,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   return rules;
 }
 
-export const handleTransaction = async (req: unknown, handleResponse: responseCallback) => {
+export const handleTransaction = async (req: unknown) => {
   let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
   let prunedMap: Message[] = [];
@@ -85,7 +84,7 @@ export const handleTransaction = async (req: unknown, handleResponse: responseCa
     const sentTo: Array<string> = [];
 
     for (const rule of rules) {
-      promises.push(sendRuleToRuleProcessor(rule, networkSubMap, req, handleResponse, sentTo, failedRules));
+      promises.push(sendRuleToRuleProcessor(rule, networkSubMap, req, parsedRequest.DataCache, sentTo, failedRules));
     }
     await Promise.all(promises);
 
@@ -108,15 +107,15 @@ export const handleTransaction = async (req: unknown, handleResponse: responseCa
   }
 };
 
-const sendRuleToRuleProcessor = async (rule: Rule, networkMap: NetworkMap, req: any, handleResponse: responseCallback, sentTo: Array<string>, failedRules: Array<string>) => {
+const sendRuleToRuleProcessor = async (rule: Rule, networkMap: NetworkMap, req: any, dataCache: DataCache, sentTo: Array<string>, failedRules: Array<string>) => {
   try {
-    const toSend = { transaction: req, networkMap };
-    handleResponse(JSON.stringify(toSend),[rule.host]);
-      sentTo.push(rule.id);
-      LoggerService.log(`Successfully sent to ${rule.id}`);
-  } catch (error){
-      failedRules.push(rule.id);
-      LoggerService.trace(`Failed to send to Rule ${rule.id}`);
-      LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${error}`);
+    const toSend = { transaction: req, networkMap, DataCache: dataCache };
+    server.handleResponse(toSend, [rule.host]);
+    sentTo.push(rule.id);
+    LoggerService.log(`Successfully sent to ${rule.id}`);
+  } catch (error) {
+    failedRules.push(rule.id);
+    LoggerService.trace(`Failed to send to Rule ${rule.id}`);
+    LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${error}`);
   }
 };

@@ -5,7 +5,7 @@ import { LoggerService } from './services/logger.service';
 import { CreateDatabaseManager, DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
 import { handleTransaction } from './services/logic.service';
 import cluster from 'cluster';
-import { init } from '@frmscoe/frms-coe-startup-lib';
+import { StartupFactory, IStartupService } from 'startup';
 
 if (config.apmLogging) {
   apm.start({
@@ -36,11 +36,13 @@ const databaseManagerConfig = {
 };
 
 let databaseManager: DatabaseManagerInstance<typeof databaseManagerConfig>;
+export let server: IStartupService;
 
 const runServer = async () => {
+  server = new StartupFactory();
   for (let retryCount = 0; retryCount < 10; retryCount++) {
     console.log('Connecting to nats server...');
-    if (!(await init(handleTransaction))) {
+    if (!(await server.init(handleTransaction))) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
     } else {
       console.log('Connected to nats');
@@ -91,7 +93,7 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
   // Workers can share any TCP connection
   // In this case it is an HTTP server
   try {
-    if (config.nodeEnv !== "test"){
+    if (config.nodeEnv !== "test") {
       runServer();
     }
   } catch (err) {
