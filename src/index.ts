@@ -94,7 +94,9 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
   // In this case it is an HTTP server
   try {
     if (config.nodeEnv !== "test") {
-      runServer();
+      async () => {
+        await runServer();
+      }
     }
   } catch (err) {
     LoggerService.error(`Error while starting HTTP server on Worker ${process.pid}`, err);
