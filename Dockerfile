@@ -12,7 +12,7 @@ COPY ./package.json ./
 COPY ./package-lock.json ./
 COPY ./tsconfig.json ./
 COPY ./.npmrc ./
-ENV GH_TOKEN=
+ARG GH_TOKEN
 
 # Install dependencies for production
 RUN npm ci --omit=dev --ignore-scripts
@@ -30,9 +30,6 @@ ENV NPM_CONFIG_LOGLEVEL warn
 
 WORKDIR /home/app
 
-# Environment variables for openfaas
-ENV cgi_headers="true"
-#ENV fprocess="node ./build/index.js"
 ENV mode="http"
 ENV upstream_url="http://127.0.0.1:3000"
 ENV exec_timeout="90s"
