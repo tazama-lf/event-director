@@ -38,18 +38,10 @@
     "@frmscoe/frms-coe-lib": "^0.1.28",
     "@frmscoe/frms-coe-startup-lib": "^0.0.11",
     "@log4js-node/logstash-http": "^1.1.0",
-    "arangojs": "^8.3.0",
-    "async": "^3.2.4",
-    "axios": "^1.4.0",
-    "copyfiles": "^2.4.1",
     "dotenv": "^16.3.1",
     "elastic-apm-node": "^3.47.0",
-    "express": "^4.18.2",
     "log4js": "^6.9.1",
-    "nats": "^2.15.1",
-    "redis": "^4.6.7",
-    "tslib": "^2.6.0",
-    "typescript": "^4.4.4"
+    "tslib": "^2.6.0"
   },
   "devDependencies": {
     "@types/async": "^3.2.20",
@@ -82,7 +74,8 @@
     "replace": "1.2.2",
     "rimraf": "^5.0.1",
     "ts-jest": "^29.1.0",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "typescript": "^4.4.4"
   },
   "husky": {
     "hooks": {

@@ -1,6 +1,7 @@
 version: "2"
 services:
   node:
+    container_name: crsp
     build:
       dockerfile: Dockerfile
       context: .
