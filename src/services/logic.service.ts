@@ -55,7 +55,7 @@ export const handleTransaction = async (req: any): Promise<any> => {
     } else {
       LoggerService.log('No network map found in DB');
       const result = {
-        prcgTm: calculateDuration(startHrTime, process.hrtime()),
+        prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()),
         rulesSentTo: [],
         failedToSend: [],
         networkMap: {},
@@ -86,7 +86,7 @@ export const handleTransaction = async (req: any): Promise<any> => {
     await Promise.all(promises);
 
     const result = {
-      prcgTm: calculateDuration(startHrTime, endHrTime),
+      prcgTmCRSP: calculateDuration(startHrTime, endHrTime),
       rulesSentTo: sentTo,
       failedToSend: failedRules,
       transaction: req,
@@ -96,7 +96,7 @@ export const handleTransaction = async (req: any): Promise<any> => {
   } else {
     LoggerService.log('No coresponding message found in Network map');
     const result = {
-      prcgTm: calculateDuration(startHrTime, process.hrtime()),
+      prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()),
       rulesSentTo: [],
       failedToSend: [],
       networkMap: {},
