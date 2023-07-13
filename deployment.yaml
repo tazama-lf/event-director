@@ -26,7 +26,6 @@ spec:
               containerPort: 8080
               protocol: TCP
           resources: {}
-		  imagePullPolicy: Always
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
