@@ -5,6 +5,10 @@ import axios from 'axios';
 import { dbService, cacheClient } from '..';
 import { config } from '../config';
 
+const calculateDuration = (startHrTime: Array<number>, endHrTime: Array<number>): number => {
+  return (endHrTime[0] - startHrTime[0]) * 1000 + (endHrTime[1] - startHrTime[1]) / 1000000;
+};
+
 function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   const rules: Rule[] = new Array<Rule>();
 
@@ -30,7 +34,8 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
 
 let networkMap: NetworkMap;
 let cachedActiveNetworkMap: NetworkMap;
-export const handleTransaction = async (req: any) => {
+export const handleTransaction = async (req: any): Promise<any> => {
+  const startHrTime = process.hrtime();
   let prunedMap;
   const cacheKey = `${req.TxTp}`;
   // check if there's an active network map in memory
@@ -50,6 +55,7 @@ export const handleTransaction = async (req: any) => {
     } else {
       LoggerService.log('No network map found in DB');
       const result = {
+        prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()),
         rulesSentTo: [],
         failedToSend: [],
         networkMap: {},
@@ -72,6 +78,7 @@ export const handleTransaction = async (req: any) => {
     const promises: Array<Promise<void>> = [];
     const failedRules: Array<string> = [];
     const sentTo: Array<string> = [];
+    const endHrTime = process.hrtime();
 
     for (const rule of rules) {
       promises.push(sendRuleToRuleProcessor(rule, networkSubMap, req, sentTo, failedRules));
@@ -79,6 +86,7 @@ export const handleTransaction = async (req: any) => {
     await Promise.all(promises);
 
     const result = {
+      prcgTmCRSP: calculateDuration(startHrTime, endHrTime),
       rulesSentTo: sentTo,
       failedToSend: failedRules,
       transaction: req,
@@ -88,6 +96,7 @@ export const handleTransaction = async (req: any) => {
   } else {
     LoggerService.log('No coresponding message found in Network map');
     const result = {
+      prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()),
       rulesSentTo: [],
       failedToSend: [],
       networkMap: {},
