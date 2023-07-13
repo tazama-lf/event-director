@@ -31,35 +31,10 @@ jobs:
           scope: '@frmscoe'
       - name: Install dependencies
         run: npm ci
-      - name: Run build
-        run: npm run build
         env:
-          GH_TOKEN: '${{ secrets.GH_TOKEN }}'
-
-  lint-and-test:
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
-    strategy:
-      matrix:
-        node-version: [16]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Node.js (.npmrc)
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
-          registry-url: https://npm.pkg.github.com/
-          # Defaults to the user or organization that owns the workflow file
-          scope: '@frmscoe'
-      - name: Install dependencies
-        run: npm ci
-        env:
-          GH_TOKEN: '${{ secrets.GH_TOKEN }}'
-#      - name: Lint
-#        run: npm run lint
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
       - name: Run unit tests
         run: npm run test
         env:
-          NODE_ENV: 'test'
+            NODE_ENV: 'test'
+            STARTUP_TYPE: 'nats'
