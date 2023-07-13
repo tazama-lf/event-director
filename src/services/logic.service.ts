@@ -37,13 +37,13 @@ let cachedActiveNetworkMap: NetworkMap;
 export const handleTransaction = async (req: any): Promise<any> => {
   const startHrTime = process.hrtime();
   let prunedMap;
-  const cacheKey = `${req.TxTp}`;
+  const cacheKey = `${req.transaction.TxTp}`;
   // check if there's an active network map in memory
   const activeNetworkMap = await cacheClient.getJson(cacheKey);
   if (activeNetworkMap) {
     cachedActiveNetworkMap = Object.assign(JSON.parse(activeNetworkMap));
     networkMap = cachedActiveNetworkMap;
-    prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === req.TxTp);
+    prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === req.transaction.TxTp);
   } else {
     // Fetch the network map from db
     const networkConfigurationList = await dbService.getNetworkMap();
@@ -51,7 +51,7 @@ export const handleTransaction = async (req: any): Promise<any> => {
       networkMap = networkConfigurationList[0][0];
       // save networkmap in redis cache
       await cacheClient.setJson(cacheKey, JSON.stringify(networkMap), 'EX', config.redis.timeout);
-      prunedMap = networkMap.messages.filter((msg) => msg.txTp === req.TxTp);
+      prunedMap = networkMap.messages.filter((msg) => msg.txTp === req.transaction.TxTp);
     } else {
       LoggerService.log('No network map found in DB');
       const result = {
@@ -59,7 +59,8 @@ export const handleTransaction = async (req: any): Promise<any> => {
         rulesSentTo: [],
         failedToSend: [],
         networkMap: {},
-        transaction: req,
+        transaction: req.transaction,
+        DataCache: req.DataCache,
       };
       return result;
     }
@@ -72,7 +73,7 @@ export const handleTransaction = async (req: any): Promise<any> => {
     });
 
     // Deduplicate all rules
-    const rules = getRuleMap(networkMap, req.TxTp);
+    const rules = getRuleMap(networkMap, req.transaction.TxTp);
 
     // Send transaction to all rules
     const promises: Array<Promise<void>> = [];
@@ -89,25 +90,27 @@ export const handleTransaction = async (req: any): Promise<any> => {
       prcgTmCRSP: calculateDuration(startHrTime, endHrTime),
       rulesSentTo: sentTo,
       failedToSend: failedRules,
-      transaction: req,
+      transaction: req.transaction,
+      DataCache: req.DataCache,
       networkMap: networkMap,
     };
     return result;
   } else {
-    LoggerService.log('No coresponding message found in Network map');
+    LoggerService.log('No corresponding message found in Network map');
     const result = {
       prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()),
       rulesSentTo: [],
       failedToSend: [],
       networkMap: {},
-      transaction: req,
+      transaction: req.transaction,
+      DataCache: req.DataCache,
     };
     return result;
   }
 };
 
 const sendRuleToRuleProcessor = async (rule: Rule, networkMap: NetworkMap, req: any, sentTo: Array<string>, failedRules: Array<string>) => {
-  const toSend = { transaction: req, networkMap };
+  const toSend = { transaction: req.transaction, networkMap, DataCache: req.DataCache };
   try {
     const ruleRes = await axios.post(`${rule.host}/execute`, toSend);
     if (ruleRes.status === 200) {

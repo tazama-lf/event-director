@@ -82,7 +82,7 @@ describe('Logic Service', () => {
 
   describe('Handle Transaction', () => {
     it('should handle successful request for Pain001', async () => {
-      const expectedReq = getMockRequest001();
+      const expectedReq = { transaction: getMockRequest001() };
 
       const result = await handleTransaction(expectedReq);
 
@@ -100,7 +100,7 @@ describe('Logic Service', () => {
     });
 
     it('should handle successful request for Pain013', async () => {
-      const expectedReq = getMockRequest013();
+      const expectedReq = { transaction: getMockRequest013()};
 
       const result = await handleTransaction(expectedReq);
 
@@ -118,7 +118,7 @@ describe('Logic Service', () => {
     });
 
     it('should handle successful request for Pacs002', async () => {
-      const expectedReq = getMockRequest002();
+      const expectedReq = { transaction: getMockRequest002() };
 
       const result = await handleTransaction(expectedReq);
 
@@ -136,7 +136,7 @@ describe('Logic Service', () => {
     });
 
     it('should handle successful request for Pacs008', async () => {
-      const expectedReq = getMockRequest008();
+      const expectedReq = { transaction: getMockRequest008()};
 
       const result = await handleTransaction(expectedReq);
 
@@ -162,7 +162,7 @@ describe('Logic Service', () => {
         );
       });
 
-      const expectedReq = getMockRequest008();
+      const expectedReq = { transaction: getMockRequest008() };
 
       const result = await handleTransaction(expectedReq);
 
@@ -180,7 +180,7 @@ describe('Logic Service', () => {
     });
 
     it('should handle unsuccessful request', async () => {
-      const expectedReq = getMockRequestInvalid();
+      const expectedReq = { transaction: getMockRequestInvalid() };
 
       const result = await handleTransaction(expectedReq);
 
@@ -194,7 +194,7 @@ describe('Logic Service', () => {
     });
 
     it('should respond with active cached network map from redis', async () => {
-      const expectedReq = getMockRequest001();
+      const expectedReq = { transaction: getMockRequest001() };
 
       let result = await handleTransaction(expectedReq);
       delete result.prcgTmCRSP;
@@ -215,7 +215,7 @@ describe('Logic Service', () => {
         });
       });
 
-      const expectedReq = getMockRequest001();
+      const expectedReq = { transaction: getMockRequest001() };
 
       const result = await handleTransaction(expectedReq);
       delete result.prcgTmCRSP;
@@ -232,7 +232,7 @@ describe('Logic Service', () => {
           throw new Error('Testing purposes');
         });
       });
-      const expectedReq = getMockRequest013();
+      const expectedReq = { transaction: getMockRequest013() };
 
       const result = await handleTransaction(expectedReq);
       expect(result).toBeDefined();
