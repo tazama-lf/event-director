@@ -1,4 +1,3 @@
-/* eslint-disable */
 import axios from 'axios';
 import { app, cacheClient, dbService } from '../../src';
 import { handleTransaction } from '../../src/services/logic.service';
@@ -49,30 +48,25 @@ afterAll(async (done) => {
 });
 
 describe('Logic Service', () => {
-  let getNetworkMapSpy: jest.SpyInstance;
-  let postSpy: jest.SpyInstance;
-  let getJsonSpy: jest.SpyInstance;
-  let setJsonSpy: jest.SpyInstance;
-
   beforeEach(() => {
-    getNetworkMapSpy = jest.spyOn(dbService, 'getNetworkMap').mockImplementation(() => {
-      return new Promise((resolve, reject) => {
+    jest.spyOn(dbService, 'getNetworkMap').mockImplementation(() => {
+      return new Promise((resolve) => {
         resolve(JSON.parse(networkMap));
       });
     });
 
-    postSpy = jest.spyOn(axios, 'post').mockImplementation(() => {
-      return new Promise((resolve, reject) => {
+    jest.spyOn(axios, 'post').mockImplementation(() => {
+      return new Promise((resolve) => {
         resolve({ status: 200 });
       });
     });
 
-    getJsonSpy = jest.spyOn(cacheClient, 'getJson').mockImplementation((key: string): Promise<string> => {
-      return new Promise<string>((resolve, reject) => resolve(''));
+    jest.spyOn(cacheClient, 'getJson').mockImplementation((): Promise<string> => {
+      return new Promise<string>((resolve) => resolve(''));
     });
 
-    setJsonSpy = jest.spyOn(cacheClient, 'setJson').mockImplementation((key: string): Promise<string> => {
-      return new Promise<string>((resolve, reject) => resolve(''));
+    jest.spyOn(cacheClient, 'setJson').mockImplementation((): Promise<string> => {
+      return new Promise<string>((resolve) => resolve(''));
     });
 
     /* eslint-disable */
@@ -88,12 +82,12 @@ describe('Logic Service', () => {
 
       const resultsRequiredToBeSent = ['003@1.0', '028@1.0'];
 
-      var rulesSentTo = result.rulesSentTo;
+      let rulesSentTo = result.rulesSentTo;
       const rulesNotSentTo = result.failedToSend;
       const allRules = [...rulesSentTo, ...rulesNotSentTo];
 
       for (let i = 0; i < resultsRequiredToBeSent.length; i++) {
-        var checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
+        let checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
         console.log(resultsRequiredToBeSent[i] + ' Send was ' + checkIfRuleIsSend);
         expect(checkIfRuleIsSend).toEqual(true);
       }
@@ -106,12 +100,12 @@ describe('Logic Service', () => {
 
       const resultsRequiredToBeSent = ['003@1.0', '028@1.0'];
 
-      var rulesSentTo = result.rulesSentTo;
+      let rulesSentTo = result.rulesSentTo;
       const rulesNotSentTo = result.failedToSend;
       const allRules = [...rulesSentTo, ...rulesNotSentTo];
 
       for (let i = 0; i < resultsRequiredToBeSent.length; i++) {
-        var checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
+        let checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
         console.log(resultsRequiredToBeSent[i] + ' Send was ' + checkIfRuleIsSend);
         expect(checkIfRuleIsSend).toEqual(true);
       }
@@ -124,12 +118,12 @@ describe('Logic Service', () => {
 
       const resultsRequiredToBeSent = ['018@1.0.0'];
 
-      var rulesSentTo = result.rulesSentTo;
+      let rulesSentTo = result.rulesSentTo;
       const rulesNotSentTo = result.failedToSend;
       const allRules = [...rulesSentTo, ...rulesNotSentTo];
 
       for (let i = 0; i < resultsRequiredToBeSent.length; i++) {
-        var checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
+        let checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
         console.log(resultsRequiredToBeSent[i] + ' Send was ' + checkIfRuleIsSend);
         expect(checkIfRuleIsSend).toEqual(true);
       }
@@ -142,19 +136,19 @@ describe('Logic Service', () => {
 
       const resultsRequiredToBeSent = ['018@1.0.0'];
 
-      var rulesSentTo = result.rulesSentTo;
+      let rulesSentTo = result.rulesSentTo;
       const rulesNotSentTo = result.failedToSend;
       const allRules = [...rulesSentTo, ...rulesNotSentTo];
 
       for (let i = 0; i < resultsRequiredToBeSent.length; i++) {
-        var checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
+        let checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
         console.log(resultsRequiredToBeSent[i] + ' Send was ' + checkIfRuleIsSend);
         expect(checkIfRuleIsSend).toEqual(true);
       }
     });
 
     it('should handle successful request for Pacs008, has cached map', async () => {
-      getJsonSpy = jest.spyOn(cacheClient, 'getJson').mockImplementation((key: string): Promise<string> => {
+      jest.spyOn(cacheClient, 'getJson').mockImplementation((key: string): Promise<string> => {
         return new Promise<string>((resolve, reject) =>
           resolve(
             '{"messages":[{"id":"001@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.001.001.11","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.013.001.09","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"029@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"030@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"031@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"004@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.002.001.12","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]},{"id":"005@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.008.001.10","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]}]}',
@@ -168,12 +162,12 @@ describe('Logic Service', () => {
 
       const resultsRequiredToBeSent = ['018@1.0.0'];
 
-      var rulesSentTo = result.rulesSentTo;
+      let rulesSentTo = result.rulesSentTo;
       const rulesNotSentTo = result.failedToSend;
       const allRules = [...rulesSentTo, ...rulesNotSentTo];
 
       for (let i = 0; i < resultsRequiredToBeSent.length; i++) {
-        var checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
+        let checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSent[i]) > -1;
         console.log(resultsRequiredToBeSent[i] + ' Send was ' + checkIfRuleIsSend);
         expect(checkIfRuleIsSend).toEqual(true);
       }
@@ -186,7 +180,7 @@ describe('Logic Service', () => {
 
       const resultsRequiredToBeSent = ['018@1.0.0'];
 
-      var rulesSentTo = result.rulesSentTo;
+      let rulesSentTo = result.rulesSentTo;
       const rulesNotSentTo = result.failedToSend;
       const allRules = [...rulesSentTo, ...rulesNotSentTo];
 
@@ -209,7 +203,7 @@ describe('Logic Service', () => {
       jest.setTimeout(6000);
       await new Promise((r) => setTimeout(r, 6000));
 
-      getNetworkMapSpy = jest.spyOn(dbService, 'getNetworkMap').mockImplementation(() => {
+      jest.spyOn(dbService, 'getNetworkMap').mockImplementation(() => {
         return new Promise((resolve, reject) => {
           resolve(JSON.parse('{}'));
         });
@@ -227,7 +221,7 @@ describe('Logic Service', () => {
     });
 
     it('Should handle failure to post to rule', async () => {
-      postSpy = jest.spyOn(axios, 'post').mockImplementation(() => {
+      jest.spyOn(axios, 'post').mockImplementation(() => {
         return new Promise((resolve, reject) => {
           throw new Error('Testing purposes');
         });
