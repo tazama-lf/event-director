@@ -72,7 +72,7 @@ describe('Logic Service', () => {
     jest.spyOn(console, 'info').mockImplementation(() => {});
     jest.spyOn(LoggerService, 'debug').mockImplementation((message) => {
       const withoutTm = JSON.parse(message);
-      delete withoutTm.prcgTmCRSP;
+      delete withoutTm.metaData;
       debugLog = JSON.stringify(withoutTm);
     });
   });
