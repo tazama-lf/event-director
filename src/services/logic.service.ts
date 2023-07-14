@@ -96,7 +96,7 @@ export const handleTransaction = async (req: unknown) => {
     await Promise.all(promises);
 
     const result = {
-      prcgTmCRSP: calculateDuration(startHrTime, endHrTime),
+      metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startHrTime, endHrTime) },
       rulesSentTo: sentTo,
       failedToSend: failedRules,
       transaction: req,
@@ -106,7 +106,7 @@ export const handleTransaction = async (req: unknown) => {
   } else {
     LoggerService.log('No coresponding message found in Network map');
     const result = {
-      prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()),
+      metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()) },
       rulesSentTo: [],
       failedToSend: [],
       networkMap: {},
