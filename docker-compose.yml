@@ -1,0 +1,8 @@
+services:
+  node:
+    container_name: crsp
+    build:
+      dockerfile: Dockerfile
+      context: .
+      args:
+        - GH_TOKEN
