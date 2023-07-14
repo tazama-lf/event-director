@@ -47,13 +47,13 @@ export const handleTransaction = async (req: unknown) => {
 
   const parsedRequest = req as any;
 
-  const cacheKey = `${parsedRequest.TxTp}`;
+  const cacheKey = `${parsedRequest.transaction.TxTp}`;
   // check if there's an active network map in memory
   const activeNetworkMap = await databaseManager.getJson(cacheKey);
   if (activeNetworkMap) {
     cachedActiveNetworkMap = Object.assign(JSON.parse(activeNetworkMap));
     networkMap = cachedActiveNetworkMap;
-    prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.TxTp);
+    prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
   } else {
     // Fetch the network map from db
     const networkConfigurationList = await databaseManager.getNetworkMap();
@@ -61,7 +61,7 @@ export const handleTransaction = async (req: unknown) => {
       networkMap = networkConfigurationList[0][0];
       // save networkmap in redis cache
       // await databaseManager.setJson(cacheKey, JSON.stringify(networkMap), config.redis.timeout);
-      prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.TxTp);
+      prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
     } else {
       LoggerService.log('No network map found in DB');
       const result = {
@@ -69,7 +69,8 @@ export const handleTransaction = async (req: unknown) => {
         rulesSentTo: [],
         failedToSend: [],
         networkMap: {},
-        transaction: parsedRequest,
+        transaction: parsedRequest.transaction,
+        DataCache: parsedRequest.DataCache,
       };
       LoggerService.debug(JSON.stringify(result));
     }
@@ -82,7 +83,7 @@ export const handleTransaction = async (req: unknown) => {
     });
 
     // Deduplicate all rules
-    const rules = getRuleMap(networkMap, parsedRequest.TxTp);
+    const rules = getRuleMap(networkMap, parsedRequest.transaction.TxTp);
 
     // Send transaction to all rules
     const promises: Array<Promise<void>> = [];
@@ -91,7 +92,7 @@ export const handleTransaction = async (req: unknown) => {
     const endHrTime = process.hrtime();
 
     for (const rule of rules) {
-      promises.push(sendRuleToRuleProcessor(rule, networkSubMap, req, parsedRequest.DataCache, sentTo, failedRules));
+      promises.push(sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache, sentTo, failedRules));
     }
     await Promise.all(promises);
 
@@ -99,7 +100,8 @@ export const handleTransaction = async (req: unknown) => {
       metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startHrTime, endHrTime) },
       rulesSentTo: sentTo,
       failedToSend: failedRules,
-      transaction: req,
+      transaction: parsedRequest.transaction,
+      DataCache: parsedRequest.DataCache,
       networkMap,
     };
     LoggerService.debug(JSON.stringify(result));
@@ -110,7 +112,8 @@ export const handleTransaction = async (req: unknown) => {
       rulesSentTo: [],
       failedToSend: [],
       networkMap: {},
-      transaction: req,
+      transaction: parsedRequest.transaction,
+      DataCache: parsedRequest.DataCache,
     };
     LoggerService.debug(JSON.stringify(result));
   }

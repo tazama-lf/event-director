@@ -79,7 +79,7 @@ describe('Logic Service', () => {
 
   describe('Handle Transaction', () => {
     it('should handle successful request for Pain013', async () => {
-      const expectedReq = getMockRequest013();
+      const expectedReq = { transaction: getMockRequest013() };
       responseSpy = jest.spyOn(server, 'handleResponse').mockImplementation(jest.fn());
 
       server.handleResponse = (reponse: unknown): Promise<void> => {
@@ -102,7 +102,7 @@ describe('Logic Service', () => {
     });
 
     it('should handle successful request for Pain001', async () => {
-      const expectedReq = getMockRequest001();
+      const expectedReq = { transaction: getMockRequest001() };
 
       server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
@@ -125,7 +125,7 @@ describe('Logic Service', () => {
     });
 
     it('should handle successful request for Pacs002', async () => {
-      const expectedReq = getMockRequest002();
+      const expectedReq = { transaction: getMockRequest002() };
 
       server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
@@ -148,7 +148,7 @@ describe('Logic Service', () => {
     });
 
     it('should handle successful request for Pacs008', async () => {
-      const expectedReq = getMockRequest008();
+      const expectedReq = { transaction: getMockRequest008() };
 
       server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
@@ -177,7 +177,7 @@ describe('Logic Service', () => {
         );
       });
 
-      const expectedReq = getMockRequest008();
+      const expectedReq = { transaction: getMockRequest008() };
 
       server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
@@ -199,7 +199,7 @@ describe('Logic Service', () => {
     });
 
     it('should handle unsuccessful request', async () => {
-      const expectedReq = getMockRequestInvalid();
+      const expectedReq = { transaction: getMockRequestInvalid() };
       server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
       };
@@ -210,11 +210,9 @@ describe('Logic Service', () => {
     });
 
     it('should respond with active cached network map from redis', async () => {
-      const expectedReq = getMockRequest001();
+      const expectedReq = { transaction: getMockRequest001() };
 
-      let result: any;
       server.handleResponse = (reponse: unknown): Promise<void> => {
-        result = reponse as any;
         return Promise.resolve();
       };
 
@@ -229,16 +227,11 @@ describe('Logic Service', () => {
         return Promise.resolve(JSON.parse('{}'));
       });
 
-      const expectedReq = getMockRequest001();
+      const expectedReq = { transaction: getMockRequest001() };
 
-      let result: any;
       server.handleResponse = (reponse: unknown): Promise<void> => {
-        result = reponse as any;
         return Promise.resolve();
       };
-
-      // let ruleSendTo = ""
-      // jest.spyOn(console, 'debug').mockImplementation((message) => {ruleSendTo = message});
 
       await handleTransaction(expectedReq);
       expect(JSON.stringify(debugLog)).toContain(
@@ -247,11 +240,7 @@ describe('Logic Service', () => {
     });
 
     it('Should handle failure to post to rule', async () => {
-      const expectedReq = getMockRequest013();
-
-      // server.handleResponse = (reponse: unknown): Promise<void> => {
-      //   throw new Error('Testing purposes');
-      // };
+      const expectedReq = { transaction: getMockRequest013() };
 
       responseSpy = jest.spyOn(server, 'handleResponse').mockRejectedValue(() => {
         throw new Error('Testing purposes');
