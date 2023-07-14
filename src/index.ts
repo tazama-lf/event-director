@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-console */
 import apm from 'elastic-apm-node';
 import os from 'os';
 import { config } from './config';
@@ -95,7 +97,7 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
   // In this case it is an HTTP server
   (async () => {
     try {
-      if (config.nodeEnv !== "test") {
+      if (config.nodeEnv !== 'test') {
         await runServer();
       }
     } catch (err) {

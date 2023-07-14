@@ -3,6 +3,10 @@ import { DataCache, Message, NetworkMap, Rule } from '@frmscoe/frms-coe-lib/lib/
 import { databaseManager, server } from '..';
 import { LoggerService } from './logger.service';
 
+const calculateDuration = (startHrTime: Array<number>, endHrTime: Array<number>): number => {
+  return (endHrTime[0] - startHrTime[0]) * 1000 + (endHrTime[1] - startHrTime[1]) / 1000000;
+};
+
 /**
  *Create a list of all the rules for this transaction type from the network map
  *
@@ -36,6 +40,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
 }
 
 export const handleTransaction = async (req: unknown) => {
+  const startHrTime = process.hrtime();
   let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
   let prunedMap: Message[] = [];
@@ -60,6 +65,7 @@ export const handleTransaction = async (req: unknown) => {
     } else {
       LoggerService.log('No network map found in DB');
       const result = {
+        prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()),
         rulesSentTo: [],
         failedToSend: [],
         networkMap: {},
@@ -82,6 +88,7 @@ export const handleTransaction = async (req: unknown) => {
     const promises: Array<Promise<void>> = [];
     const failedRules: Array<string> = [];
     const sentTo: Array<string> = [];
+    const endHrTime = process.hrtime();
 
     for (const rule of rules) {
       promises.push(sendRuleToRuleProcessor(rule, networkSubMap, req, parsedRequest.DataCache, sentTo, failedRules));
@@ -89,6 +96,7 @@ export const handleTransaction = async (req: unknown) => {
     await Promise.all(promises);
 
     const result = {
+      prcgTmCRSP: calculateDuration(startHrTime, endHrTime),
       rulesSentTo: sentTo,
       failedToSend: failedRules,
       transaction: req,
@@ -98,6 +106,7 @@ export const handleTransaction = async (req: unknown) => {
   } else {
     LoggerService.log('No coresponding message found in Network map');
     const result = {
+      prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()),
       rulesSentTo: [],
       failedToSend: [],
       networkMap: {},
@@ -107,7 +116,14 @@ export const handleTransaction = async (req: unknown) => {
   }
 };
 
-const sendRuleToRuleProcessor = async (rule: Rule, networkMap: NetworkMap, req: any, dataCache: DataCache, sentTo: Array<string>, failedRules: Array<string>) => {
+const sendRuleToRuleProcessor = async (
+  rule: Rule,
+  networkMap: NetworkMap,
+  req: any,
+  dataCache: DataCache,
+  sentTo: Array<string>,
+  failedRules: Array<string>,
+) => {
   try {
     const toSend = { transaction: req, networkMap, DataCache: dataCache };
     await server.handleResponse(toSend, [rule.host]);

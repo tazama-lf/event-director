@@ -1,8 +1,7 @@
-/* eslint-disable */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { databaseManager, dbInit, runServer, server } from '../../src';
 import { LoggerService } from '../../src/services/logger.service';
 import { handleTransaction } from '../../src/services/logic.service';
-import * as startUpLib from '@frmscoe/frms-coe-startup-lib';
 
 const getMockRequestInvalid = () => {
   const quote = JSON.parse(
@@ -60,19 +59,21 @@ describe('Logic Service', () => {
       return Promise.resolve(JSON.parse(networkMap));
     });
 
-    jest.spyOn(databaseManager, 'getJson').mockImplementation((key: string): Promise<string> => {
+    jest.spyOn(databaseManager, 'getJson').mockImplementation((): Promise<string> => {
       return Promise.resolve('');
     });
 
-    jest.spyOn(databaseManager, 'setJson').mockImplementation((key: string): Promise<any> => {
+    jest.spyOn(databaseManager, 'setJson').mockImplementation((): Promise<any> => {
       return Promise.resolve<string>('');
     });
 
     /* eslint-disable */
-    jest.spyOn(console, 'error').mockImplementation(() => { });
-    jest.spyOn(console, 'info').mockImplementation(() => { });
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'info').mockImplementation(() => {});
     jest.spyOn(LoggerService, 'debug').mockImplementation((message) => {
-      debugLog = message;
+      const withoutTm = JSON.parse(message);
+      delete withoutTm.prcgTmCRSP;
+      debugLog = JSON.stringify(withoutTm);
     });
   });
 
