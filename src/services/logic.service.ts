@@ -132,7 +132,6 @@ const sendRuleToRuleProcessor = async (
 ) => {
   try {
     const toSend = { transaction: req, networkMap, DataCache: dataCache, metaData };
-    LoggerService.log(`Elk search key sgdflkauieg12342 ${toSend}`);
     await server.handleResponse(toSend, [rule.host]);
     sentTo.push(rule.id);
     LoggerService.log(`Successfully sent to ${rule.id}`);
