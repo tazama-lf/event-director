@@ -89,7 +89,7 @@ export const handleTransaction = async (req: unknown) => {
     const promises: Array<Promise<void>> = [];
     const failedRules: Array<string> = [];
     const sentTo: Array<string> = [];
-    const metaData = { metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()) } };
+    const metaData = { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()) };
 
     for (const rule of rules) {
       promises.push(
