@@ -89,15 +89,17 @@ export const handleTransaction = async (req: unknown) => {
     const promises: Array<Promise<void>> = [];
     const failedRules: Array<string> = [];
     const sentTo: Array<string> = [];
-    const endHrTime = process.hrtime();
+    const metaData = { metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()) } };
 
     for (const rule of rules) {
-      promises.push(sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache, sentTo, failedRules));
+      promises.push(
+        sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache, sentTo, failedRules, metaData),
+      );
     }
     await Promise.all(promises);
 
     const result = {
-      metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startHrTime, endHrTime) },
+      metaData,
       rulesSentTo: sentTo,
       failedToSend: failedRules,
       transaction: parsedRequest.transaction,
@@ -126,9 +128,11 @@ const sendRuleToRuleProcessor = async (
   dataCache: DataCache,
   sentTo: Array<string>,
   failedRules: Array<string>,
+  metaData: any,
 ) => {
   try {
-    const toSend = { transaction: req, networkMap, DataCache: dataCache };
+    const toSend = { transaction: req, networkMap, DataCache: dataCache, metaData };
+    LoggerService.log(`Elk search key sgdflkauieg12342 ${toSend}`);
     await server.handleResponse(toSend, [rule.host]);
     sentTo.push(rule.id);
     LoggerService.log(`Successfully sent to ${rule.id}`);
