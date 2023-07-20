@@ -3,8 +3,9 @@ import { DataCache, Message, NetworkMap, Rule } from '@frmscoe/frms-coe-lib/lib/
 import { databaseManager, server } from '..';
 import { LoggerService } from './logger.service';
 
-const calculateDuration = (startHrTime: Array<number>, endHrTime: Array<number>): number => {
-  return (endHrTime[0] - startHrTime[0]) * 1000 + (endHrTime[1] - startHrTime[1]) / 1000000;
+const calculateDuration = (startTime: bigint): number => {
+  const endTime = process.hrtime.bigint();
+  return Number(endTime - startTime);
 };
 
 /**
@@ -40,7 +41,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
 }
 
 export const handleTransaction = async (req: unknown) => {
-  const startHrTime = process.hrtime();
+  const startTime = process.hrtime.bigint();
   let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
   let prunedMap: Message[] = [];
@@ -65,7 +66,7 @@ export const handleTransaction = async (req: unknown) => {
     } else {
       LoggerService.log('No network map found in DB');
       const result = {
-        prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()),
+        prcgTmCRSP: calculateDuration(startTime),
         rulesSentTo: [],
         failedToSend: [],
         networkMap: {},
@@ -89,7 +90,7 @@ export const handleTransaction = async (req: unknown) => {
     const promises: Array<Promise<void>> = [];
     const failedRules: Array<string> = [];
     const sentTo: Array<string> = [];
-    const metaData = { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()) };
+    const metaData = { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) };
 
     for (const rule of rules) {
       promises.push(
@@ -110,7 +111,7 @@ export const handleTransaction = async (req: unknown) => {
   } else {
     LoggerService.log('No coresponding message found in Network map');
     const result = {
-      metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startHrTime, process.hrtime()) },
+      metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) },
       rulesSentTo: [],
       failedToSend: [],
       networkMap: {},
