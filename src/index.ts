@@ -4,10 +4,10 @@ import apm from 'elastic-apm-node';
 import os from 'os';
 import { config } from './config';
 import { LoggerService } from './services/logger.service';
-import { CreateDatabaseManager, DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
+import { CreateDatabaseManager, type DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
 import { handleTransaction } from './services/logic.service';
 import cluster from 'cluster';
-import { StartupFactory, IStartupService } from '@frmscoe/frms-coe-startup-lib';
+import { StartupFactory, type IStartupService } from '@frmscoe/frms-coe-startup-lib';
 
 if (config.apmLogging) {
   apm.start({
@@ -31,16 +31,16 @@ const databaseManagerConfig = {
   },
   redisConfig: {
     db: config.redis.db,
-    host: config.redis.host,
-    password: config.redis.auth,
-    port: config.redis.port,
+    servers: config.redis.servers,
+    password: config.redis.password,
+    isCluster: config.redis.isCluster,
   },
 };
 
 let databaseManager: DatabaseManagerInstance<typeof databaseManagerConfig>;
 export let server: IStartupService;
 
-export const runServer = async () => {
+export const runServer = async (): Promise<void> => {
   server = new StartupFactory();
   if (config.nodeEnv !== 'test')
     for (let retryCount = 0; retryCount < 10; retryCount++) {
@@ -55,15 +55,15 @@ export const runServer = async () => {
 };
 
 process.on('uncaughtException', (err) => {
-  LoggerService.error(`process on uncaughtException error: ${err}`);
+  LoggerService.error(`process on uncaughtException error: ${JSON.stringify(err)}`);
 });
 
 process.on('unhandledRejection', (err) => {
-  LoggerService.error(`process on unhandledRejection error: ${err}`);
+  LoggerService.error(`process on unhandledRejection error: ${JSON.stringify(err)}`);
 });
 
 const numCPUs = os.cpus().length > config.maxCPU ? config.maxCPU + 1 : os.cpus().length + 1;
-export const dbInit = async () => {
+export const dbInit = async (): Promise<void> => {
   const manager = await CreateDatabaseManager(databaseManagerConfig);
   console.log(manager.isReadyCheck());
   databaseManager = manager;
@@ -89,7 +89,7 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
   }
 
   cluster.on('exit', (worker, code, signal) => {
-    console.log(`worker ${worker.process.pid} died, starting another worker`);
+    console.log(`worker ${Number(worker.process.pid)} died, starting another worker`);
     cluster.fork();
   });
 } else {

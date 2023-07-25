@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DataCache, Message, NetworkMap, Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
+import { type DataCache, type Message, NetworkMap, type Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
 import { databaseManager, server } from '..';
 import { LoggerService } from './logger.service';
 
@@ -40,7 +40,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   return rules;
 }
 
-export const handleTransaction = async (req: unknown) => {
+export const handleTransaction = async (req: unknown): Promise<void> => {
   const startTime = process.hrtime.bigint();
   let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
@@ -48,6 +48,7 @@ export const handleTransaction = async (req: unknown) => {
 
   const parsedRequest = req as any;
 
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   const cacheKey = `${parsedRequest.transaction.TxTp}`;
   // check if there's an active network map in memory
   const activeNetworkMap = await databaseManager.getJson(cacheKey);
@@ -88,8 +89,8 @@ export const handleTransaction = async (req: unknown) => {
 
     // Send transaction to all rules
     const promises: Array<Promise<void>> = [];
-    const failedRules: Array<string> = [];
-    const sentTo: Array<string> = [];
+    const failedRules: string[] = [];
+    const sentTo: string[] = [];
     const metaData = { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) };
 
     for (const rule of rules) {
@@ -127,10 +128,10 @@ const sendRuleToRuleProcessor = async (
   networkMap: NetworkMap,
   req: any,
   dataCache: DataCache,
-  sentTo: Array<string>,
-  failedRules: Array<string>,
+  sentTo: string[],
+  failedRules: string[],
   metaData: any,
-) => {
+): Promise<void> => {
   try {
     const toSend = { transaction: req, networkMap, DataCache: dataCache, metaData };
     await server.handleResponse(toSend, [rule.host]);
@@ -139,6 +140,6 @@ const sendRuleToRuleProcessor = async (
   } catch (error) {
     failedRules.push(rule.id);
     LoggerService.trace(`Failed to send to Rule ${rule.id}`);
-    LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${error}`);
+    LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${JSON.stringify(error)}`);
   }
 };
