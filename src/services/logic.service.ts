@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DataCache, Message, NetworkMap, Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
+import apm from 'elastic-apm-node';
 import { databaseManager, server } from '..';
 import { LoggerService } from './logger.service';
 
@@ -41,6 +42,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
 }
 
 export const handleTransaction = async (req: unknown) => {
+  const span = apm.startSpan('handleTransaction');
   const startTime = process.hrtime.bigint();
   let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
@@ -57,7 +59,9 @@ export const handleTransaction = async (req: unknown) => {
     prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
   } else {
     // Fetch the network map from db
+    const spanNetworkMap = apm.startSpan('db.get.NetworkMap', { childOf: span?.ids['span.id'] });
     const networkConfigurationList = await databaseManager.getNetworkMap();
+    spanNetworkMap?.end();
     if (networkConfigurationList && networkConfigurationList[0]) {
       networkMap = networkConfigurationList[0][0];
       // save networkmap in redis cache
@@ -94,7 +98,16 @@ export const handleTransaction = async (req: unknown) => {
 
     for (const rule of rules) {
       promises.push(
-        sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache, sentTo, failedRules, metaData),
+        sendRuleToRuleProcessor(
+          rule,
+          networkSubMap,
+          parsedRequest.transaction,
+          parsedRequest.DataCache,
+          sentTo,
+          failedRules,
+          metaData,
+          span?.ids['span.id'],
+        ),
       );
     }
     await Promise.all(promises);
@@ -120,6 +133,7 @@ export const handleTransaction = async (req: unknown) => {
     };
     LoggerService.debug(JSON.stringify(result));
   }
+  span?.end();
 };
 
 const sendRuleToRuleProcessor = async (
@@ -130,7 +144,11 @@ const sendRuleToRuleProcessor = async (
   sentTo: Array<string>,
   failedRules: Array<string>,
   metaData: any,
+  parentSpanId: string | undefined,
 ) => {
+  const span = apm.startSpan(`send.${rule.getStrValue()}.to.proc`, {
+    childOf: parentSpanId,
+  });
   try {
     const toSend = { transaction: req, networkMap, DataCache: dataCache, metaData };
     await server.handleResponse(toSend, [rule.host]);
@@ -141,4 +159,5 @@ const sendRuleToRuleProcessor = async (
     LoggerService.trace(`Failed to send to Rule ${rule.id}`);
     LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${error}`);
   }
+  span?.end();
 };
