@@ -55,11 +55,11 @@ export const runServer = async (): Promise<void> => {
 };
 
 process.on('uncaughtException', (err) => {
-  LoggerService.error(`process on uncaughtException error: ${JSON.stringify(err)}`);
+  LoggerService.error(`process on uncaughtException error: ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
 });
 
 process.on('unhandledRejection', (err) => {
-  LoggerService.error(`process on unhandledRejection error: ${JSON.stringify(err)}`);
+  LoggerService.error(`process on unhandledRejection error: ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
 });
 
 const numCPUs = os.cpus().length > config.maxCPU ? config.maxCPU + 1 : os.cpus().length + 1;
