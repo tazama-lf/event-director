@@ -42,7 +42,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
 }
 
 export const handleTransaction = async (req: unknown) => {
-  const span = apm.startSpan('handleTransaction');
+  const apmTransaction = apm.startTransaction('handleTransaction');
   const startTime = process.hrtime.bigint();
   let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
@@ -59,7 +59,7 @@ export const handleTransaction = async (req: unknown) => {
     prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
   } else {
     // Fetch the network map from db
-    const spanNetworkMap = apm.startSpan('db.get.NetworkMap', { childOf: span?.ids['span.id'] });
+    const spanNetworkMap = apm.startSpan('db.get.NetworkMap', { childOf: apmTransaction?.ids['transaction.id'] });
     const networkConfigurationList = await databaseManager.getNetworkMap();
     spanNetworkMap?.end();
     if (networkConfigurationList && networkConfigurationList[0]) {
@@ -106,7 +106,7 @@ export const handleTransaction = async (req: unknown) => {
           sentTo,
           failedRules,
           metaData,
-          span?.ids['span.id'],
+          apmTransaction?.ids['transaction.id'],
         ),
       );
     }
@@ -133,7 +133,7 @@ export const handleTransaction = async (req: unknown) => {
     };
     LoggerService.debug(JSON.stringify(result));
   }
-  span?.end();
+  apmTransaction?.end();
 };
 
 const sendRuleToRuleProcessor = async (
