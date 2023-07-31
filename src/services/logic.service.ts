@@ -41,7 +41,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   return rules;
 }
 
-export const handleTransaction = async (req: unknown) => {
+export const handleTransaction = async (req: unknown): Promise<void> => {
   const apmTransaction = apm.startTransaction('handleTransaction');
   const startTime = process.hrtime.bigint();
   let networkMap: NetworkMap = new NetworkMap();
@@ -99,16 +99,7 @@ export const handleTransaction = async (req: unknown) => {
 
     for (const rule of rules) {
       promises.push(
-        sendRuleToRuleProcessor(
-          rule,
-          networkSubMap,
-          parsedRequest.transaction,
-          parsedRequest.DataCache,
-          sentTo,
-          failedRules,
-          metaData,
-          apmTransaction?.ids['transaction.id'],
-        ),
+        sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache, sentTo, failedRules, metaData),
       );
     }
     await Promise.all(promises);
@@ -145,11 +136,8 @@ const sendRuleToRuleProcessor = async (
   sentTo: string[],
   failedRules: string[],
   metaData: any,
-  parentSpanId: string | undefined,
 ): Promise<void> => {
-  const span = apm.startSpan(`send.${rule.getStrValue()}.to.proc`, {
-    childOf: parentSpanId,
-  });
+  const span = apm.startSpan(`send.rule.to.proc`);
   try {
     const toSend = { transaction: req, networkMap, DataCache: dataCache, metaData };
     await server.handleResponse(toSend, [rule.host]);
