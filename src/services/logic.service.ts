@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import apm from 'elastic-apm-node';
 import { type DataCache, type Message, NetworkMap, type Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
 import { databaseManager, server } from '..';
 import { LoggerService } from './logger.service';
@@ -41,6 +42,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
 }
 
 export const handleTransaction = async (req: unknown): Promise<void> => {
+  const apmTransaction = apm.startTransaction('handleTransaction');
   const startTime = process.hrtime.bigint();
   let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
@@ -58,7 +60,9 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
   } else {
     // Fetch the network map from db
+    const spanNetworkMap = apm.startSpan('db.get.NetworkMap', { childOf: apmTransaction?.ids['transaction.id'] });
     const networkConfigurationList = await databaseManager.getNetworkMap();
+    spanNetworkMap?.end();
     if (networkConfigurationList && networkConfigurationList[0]) {
       networkMap = networkConfigurationList[0][0];
       // save networkmap in redis cache
@@ -121,6 +125,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     };
     LoggerService.debug(JSON.stringify(result));
   }
+  apmTransaction?.end();
 };
 
 const sendRuleToRuleProcessor = async (
@@ -132,6 +137,7 @@ const sendRuleToRuleProcessor = async (
   failedRules: string[],
   metaData: any,
 ): Promise<void> => {
+  const span = apm.startSpan(`send.rule.to.proc`);
   try {
     const toSend = { transaction: req, networkMap, DataCache: dataCache, metaData };
     await server.handleResponse(toSend, [rule.host]);
@@ -142,4 +148,5 @@ const sendRuleToRuleProcessor = async (
     LoggerService.trace(`Failed to send to Rule ${rule.id}`);
     LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${JSON.stringify(error)}`);
   }
+  span?.end();
 };
