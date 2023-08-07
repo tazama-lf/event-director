@@ -42,13 +42,15 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
 }
 
 export const handleTransaction = async (req: unknown): Promise<void> => {
-  const apmTransaction = apm.startTransaction('handleTransaction');
   const startTime = process.hrtime.bigint();
   let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
   let prunedMap: Message[] = [];
 
   const parsedRequest = req as any;
+  LoggerService.log(JSON.stringify(parsedRequest.metaData?.traceParent));
+  const traceParent = parsedRequest.metaData?.traceParent;
+  const apmTransaction = apm.startTransaction('handleTransaction', { childOf: traceParent });
 
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   const cacheKey = `${parsedRequest.transaction.TxTp}`;
@@ -60,7 +62,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
   } else {
     // Fetch the network map from db
-    const spanNetworkMap = apm.startSpan('db.get.NetworkMap', { childOf: apmTransaction?.ids['transaction.id'] });
+    const spanNetworkMap = apm.startSpan('db.get.NetworkMap');
     const networkConfigurationList = await databaseManager.getNetworkMap();
     spanNetworkMap?.end();
     if (networkConfigurationList && networkConfigurationList[0]) {
@@ -139,13 +141,17 @@ const sendRuleToRuleProcessor = async (
 ): Promise<void> => {
   const span = apm.startSpan(`send.rule.to.proc`);
   try {
-    const toSend = { transaction: req, networkMap, DataCache: dataCache, metaData };
+    const toSend = {
+      transaction: req,
+      networkMap,
+      DataCache: dataCache,
+      metaData: { ...metaData, traceParent: `${apm.currentTraceparent ?? ''}` },
+    };
     await server.handleResponse(toSend, [rule.host]);
     sentTo.push(rule.id);
     LoggerService.log(`Successfully sent to ${rule.id}`);
   } catch (error) {
     failedRules.push(rule.id);
-    LoggerService.trace(`Failed to send to Rule ${rule.id}`);
     LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${JSON.stringify(error)}`);
   }
   span?.end();
