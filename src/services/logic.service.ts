@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { NetworkMap, type DataCache, type Message, type Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
 import apm from 'elastic-apm-node';
-import { type DataCache, type Message, NetworkMap, type Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
-import { databaseManager, server } from '..';
+import { databaseManager, nodeCache, server } from '..';
+import { config } from '../config';
 import { LoggerService } from './logger.service';
 
 const calculateDuration = (startTime: bigint): number => {
@@ -55,9 +56,9 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   const cacheKey = `${parsedRequest.transaction.TxTp}`;
   // check if there's an active network map in memory
-  const activeNetworkMap = await databaseManager.getJson(cacheKey);
+  const activeNetworkMap = nodeCache.get(cacheKey);
   if (activeNetworkMap) {
-    cachedActiveNetworkMap = Object.assign(JSON.parse(activeNetworkMap));
+    cachedActiveNetworkMap = activeNetworkMap as NetworkMap;
     networkMap = cachedActiveNetworkMap;
     prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
   } else {
@@ -67,8 +68,8 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     spanNetworkMap?.end();
     if (networkConfigurationList && networkConfigurationList[0]) {
       networkMap = networkConfigurationList[0][0];
-      // save networkmap in redis cache
-      // await databaseManager.setJson(cacheKey, JSON.stringify(networkMap), config.redis.timeout);
+      // save networkmap in memory cache
+      nodeCache.set(cacheKey, networkMap, config.cacheTTL);
       prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
     } else {
       LoggerService.log('No network map found in DB');

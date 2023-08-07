@@ -8,6 +8,7 @@ import { CreateDatabaseManager, type DatabaseManagerInstance } from '@frmscoe/fr
 import { handleTransaction } from './services/logic.service';
 import cluster from 'cluster';
 import { StartupFactory, type IStartupService } from '@frmscoe/frms-coe-startup-lib';
+import NodeCache from 'node-cache';
 
 if (config.apmLogging) {
   apm.start({
@@ -38,6 +39,7 @@ const databaseManagerConfig = {
 };
 
 let databaseManager: DatabaseManagerInstance<typeof databaseManagerConfig>;
+export const nodeCache = new NodeCache();
 export let server: IStartupService;
 
 export const runServer = async (): Promise<void> => {

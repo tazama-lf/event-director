@@ -42,6 +42,7 @@
     "dotenv": "^16.3.1",
     "elastic-apm-node": "^3.47.0",
     "log4js": "^6.9.1",
+    "node-cache": "^5.1.2",
     "tslib": "^2.6.0"
   },
   "devDependencies": {
