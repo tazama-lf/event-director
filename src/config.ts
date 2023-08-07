@@ -30,4 +30,5 @@ export const config: IConfig = {
   apmSecretToken: process.env.APM_SECRET_TOKEN as string,
   apmURL: process.env.APM_URL as string,
   nodeEnv: process.env.NODE_ENV as string,
+  cacheTTL: parseInt(process.env.cacheTTL ?? '300', 10),
 };

@@ -17,4 +17,5 @@ export interface IConfig {
   apmSecretToken: string;
   apmURL: string;
   nodeEnv: string;
+  cacheTTL: number;
 }
