@@ -141,13 +141,17 @@ const sendRuleToRuleProcessor = async (
 ): Promise<void> => {
   const span = apm.startSpan(`send.rule.to.proc`);
   try {
-    const toSend = { transaction: req, networkMap, DataCache: dataCache, metaData };
+    const toSend = {
+      transaction: req,
+      networkMap,
+      DataCache: dataCache,
+      metaData: { ...metaData, traceParent: `${apm.currentTraceparent ?? ''}` },
+    };
     await server.handleResponse(toSend, [rule.host]);
     sentTo.push(rule.id);
     LoggerService.log(`Successfully sent to ${rule.id}`);
   } catch (error) {
     failedRules.push(rule.id);
-    LoggerService.trace(`Failed to send to Rule ${rule.id}`);
     LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${JSON.stringify(error)}`);
   }
   span?.end();
