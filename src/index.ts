@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-console */
-import apm from 'elastic-apm-node';
+import './apm';
 import os from 'os';
 import { config } from './config';
 import { LoggerService } from './services/logger.service';
@@ -9,17 +9,6 @@ import { handleTransaction } from './services/logic.service';
 import cluster from 'cluster';
 import { StartupFactory, type IStartupService } from '@frmscoe/frms-coe-startup-lib';
 import NodeCache from 'node-cache';
-
-if (config.apmLogging) {
-  apm.start({
-    serviceName: config.functionName,
-    secretToken: config.apmSecretToken,
-    serverUrl: config.apmURL,
-    usePathAsTransactionName: true,
-    active: config.apmLogging,
-    transactionIgnoreUrls: ['/health'],
-  });
-}
 
 // Set config for lib (network map db config you want to use)
 const databaseManagerConfig = {
