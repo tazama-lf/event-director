@@ -140,7 +140,7 @@ const sendRuleToRuleProcessor = async (
   failedRules: string[],
   metaData: any,
 ): Promise<void> => {
-  const span = apm.startSpan(`send.rule.to.proc`);
+  const span = apm.startSpan(`send.rule${rule.id}.to.proc`);
   try {
     const toSend = {
       transaction: req,
