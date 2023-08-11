@@ -51,7 +51,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
   const parsedRequest = req as any;
   LoggerService.log(JSON.stringify(parsedRequest.metaData?.traceParent));
   const traceParent = parsedRequest.metaData?.traceParent;
-  const apmTransaction = apm.startTransaction('handleTransaction', { childOf: traceParent });
+  const apmTransaction = apm.startTransaction('crsp.handleTransaction', { childOf: traceParent });
 
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   const cacheKey = `${parsedRequest.transaction.TxTp}`;
