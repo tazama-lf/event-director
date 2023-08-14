@@ -21,8 +21,11 @@ export const config: IConfig = {
   dbPassword: process.env.DB_PASSWORD as string,
   dbCertPath: process.env.DATABASE_CERT_PATH as string,
   restPort: parseInt(process.env.REST_PORT ?? '3000', 10),
-  logstashHost: process.env.LOGSTASH_HOST as string,
-  logstashPort: parseInt(process.env.LOGSTASH_PORT ?? '8080', 10),
+  logger: {
+    logstashHost: process.env.LOGSTASH_HOST as string,
+    logstashPort: parseInt(process.env.LOGSTASH_PORT ?? '0', 10),
+    logstashLevel: (process.env.LOGSTASH_LEVEL as string) || 'info',
+  },
   arangoHost: process.env.ARANGO_HOST as string,
   arangoPort: parseInt(process.env.arangoPort ?? '', 10),
   functionName: process.env.FUNCTION_NAME as string,

@@ -3,8 +3,7 @@
 import './apm';
 import os from 'os';
 import { config } from './config';
-import { LoggerService } from './services/logger.service';
-import { CreateDatabaseManager, type DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
+import { CreateDatabaseManager, LoggerService, type DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
 import { handleTransaction } from './services/logic.service';
 import cluster from 'cluster';
 import { StartupFactory, type IStartupService } from '@frmscoe/frms-coe-startup-lib';
@@ -27,6 +26,7 @@ const databaseManagerConfig = {
   },
 };
 
+export const loggerService: LoggerService = new LoggerService();
 let databaseManager: DatabaseManagerInstance<typeof databaseManagerConfig>;
 export const nodeCache = new NodeCache();
 export let server: IStartupService;
@@ -35,22 +35,22 @@ export const runServer = async (): Promise<void> => {
   server = new StartupFactory();
   if (config.nodeEnv !== 'test')
     for (let retryCount = 0; retryCount < 10; retryCount++) {
-      console.log('Connecting to nats server...');
+      loggerService.log('Connecting to nats server...');
       if (!(await server.init(handleTransaction))) {
         await new Promise((resolve) => setTimeout(resolve, 5000));
       } else {
-        console.log('Connected to nats');
+        loggerService.log('Connected to nats');
         break;
       }
     }
 };
 
 process.on('uncaughtException', (err) => {
-  LoggerService.error(`process on uncaughtException error: ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
+  loggerService.error(`process on uncaughtException error: ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
 });
 
 process.on('unhandledRejection', (err) => {
-  LoggerService.error(`process on unhandledRejection error: ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
+  loggerService.error(`process on unhandledRejection error: ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
 });
 
 const numCPUs = os.cpus().length > config.maxCPU ? config.maxCPU + 1 : os.cpus().length + 1;
@@ -67,12 +67,12 @@ export const dbInit = async (): Promise<void> => {
       await dbInit();
     }
   } catch (err) {
-    LoggerService.error('Error while starting HTTP server', err as Error);
+    loggerService.error('Error while starting HTTP server', err as Error);
   }
 })();
 
 if (cluster.isPrimary && config.maxCPU !== 1) {
-  console.log(`Primary ${process.pid} is running`);
+  loggerService.log(`Primary ${process.pid} is running`);
 
   // Fork workers.
   for (let i = 1; i < 2; i++) {
@@ -80,7 +80,7 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
   }
 
   cluster.on('exit', (worker, code, signal) => {
-    console.log(`worker ${Number(worker.process.pid)} died, starting another worker`);
+    loggerService.log(`worker ${Number(worker.process.pid)} died, starting another worker`);
     cluster.fork();
   });
 } else {
@@ -92,10 +92,10 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
         await runServer();
       }
     } catch (err) {
-      LoggerService.error(`Error while starting HTTP server on Worker ${process.pid}`, err);
+      loggerService.error(`Error while starting HTTP server on Worker ${process.pid}`, err);
     }
   })();
-  console.log(`Worker ${process.pid} started`);
+  loggerService.log(`Worker ${process.pid} started`);
 }
 
 export { databaseManager };
