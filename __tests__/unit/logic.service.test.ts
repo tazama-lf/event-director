@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Pacs002, Pacs008, Pain001, Pain013 } from '@frmscoe/frms-coe-lib/lib/interfaces';
-import { databaseManager, dbInit, nodeCache, runServer, server } from '../../src';
+import { databaseManager, dbInit, nodeCache, runServer, server, loggerService } from '../../src';
 import { handleTransaction } from '../../src/services/logic.service';
 
 const getMockRequestInvalid = () => {
@@ -65,6 +65,13 @@ describe('Logic Service', () => {
 
     jest.spyOn(databaseManager, 'setJson').mockImplementation((): Promise<any> => {
       return Promise.resolve<string>('');
+    });
+
+    /* eslint-disable */
+    jest.spyOn(loggerService, 'debug').mockImplementation((message) => {
+      const withoutTm = JSON.parse(message);
+      delete withoutTm.metaData;
+      debugLog = JSON.stringify(withoutTm);
     });
 
     // Clear NodeCache
