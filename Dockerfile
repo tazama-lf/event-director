@@ -49,6 +49,7 @@ ENV APM_URL=http://apm-server.development:8200
 ENV APM_SECRET_TOKEN=
 ENV LOGSTASH_HOST=logstash.development
 ENV LOGSTASH_PORT=8080
+ENV LOGSTASH_LEVEL='info'
 ENV DB_URL=
 ENV DB_NAME=networkmap
 ENV DB_USER=root

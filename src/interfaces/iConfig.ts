@@ -8,8 +8,11 @@ export interface IConfig {
   dbPassword: string;
   dbCertPath: string;
   restPort: number;
-  logstashHost: string;
-  logstashPort: number;
+  logger: {
+    logstashHost: string;
+    logstashPort: number;
+    logstashLevel: string;
+  };
   arangoHost: string;
   arangoPort: number;
   functionName: string;

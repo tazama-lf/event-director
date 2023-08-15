@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NetworkMap, type DataCache, type Message, type Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
 import apm from 'elastic-apm-node';
-import { databaseManager, nodeCache, server } from '..';
+import { databaseManager, nodeCache, server, loggerService } from '..';
 import { config } from '../config';
-import { LoggerService } from './logger.service';
 
 const calculateDuration = (startTime: bigint): number => {
   const endTime = process.hrtime.bigint();
@@ -49,7 +48,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
   let prunedMap: Message[] = [];
 
   const parsedRequest = req as any;
-  LoggerService.log(JSON.stringify(parsedRequest.metaData?.traceParent));
+  loggerService.log(JSON.stringify(parsedRequest.metaData?.traceParent));
   const traceParent = parsedRequest.metaData?.traceParent;
   const apmTransaction = apm.startTransaction('crsp.handleTransaction', { childOf: traceParent });
 
@@ -72,7 +71,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
       nodeCache.set(cacheKey, networkMap, config.cacheTTL);
       prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
     } else {
-      LoggerService.log('No network map found in DB');
+      loggerService.log('No network map found in DB');
       const result = {
         prcgTmCRSP: calculateDuration(startTime),
         rulesSentTo: [],
@@ -81,7 +80,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
         transaction: parsedRequest.transaction,
         DataCache: parsedRequest.DataCache,
       };
-      LoggerService.debug(JSON.stringify(result));
+      loggerService.debug(JSON.stringify(result));
     }
   }
   if (prunedMap && prunedMap[0]) {
@@ -115,9 +114,9 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
       DataCache: parsedRequest.DataCache,
       networkMap,
     };
-    LoggerService.debug(JSON.stringify(result));
+    loggerService.debug(JSON.stringify(result));
   } else {
-    LoggerService.log('No coresponding message found in Network map');
+    loggerService.log('No coresponding message found in Network map');
     const result = {
       metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) },
       rulesSentTo: [],
@@ -126,7 +125,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
       transaction: parsedRequest.transaction,
       DataCache: parsedRequest.DataCache,
     };
-    LoggerService.debug(JSON.stringify(result));
+    loggerService.debug(JSON.stringify(result));
   }
   apmTransaction?.end();
 };
@@ -150,10 +149,10 @@ const sendRuleToRuleProcessor = async (
     };
     await server.handleResponse(toSend, [rule.host]);
     sentTo.push(rule.id);
-    LoggerService.log(`Successfully sent to ${rule.id}`);
+    loggerService.log(`Successfully sent to ${rule.id}`);
   } catch (error) {
     failedRules.push(rule.id);
-    LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${JSON.stringify(error)}`);
+    loggerService.error(`Failed to send to Rule ${rule.id} with Error: ${JSON.stringify(error)}`);
   }
   span?.end();
 };
