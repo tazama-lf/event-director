@@ -7,7 +7,6 @@ export interface IConfig {
   dbUser: string;
   dbPassword: string;
   dbCertPath: string;
-  restPort: number;
   logger: {
     logstashHost: string;
     logstashPort: number;

@@ -20,7 +20,6 @@ export const config: IConfig = {
   dbUser: process.env.DB_USER as string,
   dbPassword: process.env.DB_PASSWORD as string,
   dbCertPath: process.env.DATABASE_CERT_PATH as string,
-  restPort: parseInt(process.env.REST_PORT ?? '3000', 10),
   logger: {
     logstashHost: process.env.LOGSTASH_HOST as string,
     logstashPort: parseInt(process.env.LOGSTASH_PORT ?? '0', 10),
