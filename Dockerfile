@@ -41,28 +41,34 @@ ENV mode="http"
 ENV upstream_url="http://127.0.0.1:3000"
 ENV prefix_logs="false"
 ENV FUNCTION_NAME=channel-router-setup-processor
-ENV NODE_ENV="production"
-ENV REST_PORT=3000
-ENV LOGSTASH_URL=logstash.development:8080
+ENV NODE_ENV=production
+
+#Apm
 ENV APM_LOGGING=true
-ENV APM_URL=http://apm-server.development:8200
+ENV APM_URL=http://apm-server.development.svc.cluster.local:8200/
 ENV APM_SECRET_TOKEN=
-ENV LOGSTASH_HOST=logstash.development
+
+# Logstash
+ENV LOGSTASH_HOST=logstash.development.svc.cluster.local
 ENV LOGSTASH_PORT=8080
 ENV LOGSTASH_LEVEL='info'
-ENV DB_URL=
-ENV DB_NAME=networkmap
-ENV DB_USER=root
-ENV DB_PASSWORD=
+
+# Database
+ENV DATABASE_URL=
+ENV DATABASE_NAME=networkmap
+ENV DATABASE_USER=root
+ENV DATABASE_PASSWORD=
 ENV DATABASE_CERT_PATH=
+ENV CONFIG_DATABASE=Configuration
+
+# Redis
 ENV REDIS_DB=0
 ENV REDIS_AUTH=
 ENV REDIS_SERVERS=
 ENV REDIS_IS_CLUSTER=
-ENV CONFIG_DATABASE=Configuration
-ENV CONFIG_COLLECTION=configuration
 ENV CACHETTL=300
 
+# Nats
 ENV STARTUP_TYPE=nats
 ENV SERVER_URL=0.0.0.0:4222
 ENV PRODUCER_STREAM=
