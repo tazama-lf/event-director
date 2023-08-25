@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Pacs002, Pacs008, Pain001, Pain013 } from '@frmscoe/frms-coe-lib/lib/interfaces';
-import { databaseManager, dbInit, nodeCache, runServer, server, loggerService } from '../../src';
+import { databaseManager, dbInit, loggerService, nodeCache, runServer, server } from '../../src';
 import { handleTransaction } from '../../src/services/logic.service';
 
 const getMockRequestInvalid = () => {
@@ -39,7 +39,7 @@ const getMockRequest008 = (): Pacs008 => {
 };
 
 const networkMap =
-  '[[{"messages":[{"id":"001@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.001.001.11","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.013.001.09","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"029@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"030@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"031@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"004@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.002.001.12","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]},{"id":"005@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.008.001.10","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]}]}]]';
+  '[[{"messages":[{"id":"001@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.001.001.11","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.013.001.09","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"029@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"030@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"031@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"004@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.002.001.12","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]},{"id":"005@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.008.001.10","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]}]}]]';
 
 beforeAll(async () => {
   await dbInit();
@@ -52,6 +52,9 @@ afterAll((done) => {
 
 describe('Logic Service', () => {
   let debugLog = '';
+  let loggerSpy: jest.SpyInstance;
+  let debugLoggerSpy: jest.SpyInstance;
+  let errorLoggerSpy: jest.SpyInstance;
   let responseSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -59,20 +62,15 @@ describe('Logic Service', () => {
       return Promise.resolve(JSON.parse(networkMap));
     });
 
-    jest.spyOn(databaseManager, 'getJson').mockImplementation((): Promise<string> => {
-      return Promise.resolve('');
-    });
-
     jest.spyOn(databaseManager, 'setJson').mockImplementation((): Promise<any> => {
       return Promise.resolve<string>('');
     });
 
+    loggerSpy = jest.spyOn(loggerService, 'log');
+    errorLoggerSpy = jest.spyOn(loggerService, 'error');
+    debugLoggerSpy = jest.spyOn(loggerService, 'debug');
+
     /* eslint-disable */
-    jest.spyOn(loggerService, 'debug').mockImplementation((message) => {
-      const withoutTm = JSON.parse(message);
-      delete withoutTm.metaData;
-      debugLog = JSON.stringify(withoutTm);
-    });
 
     // Clear NodeCache
     nodeCache.flushAll();
@@ -88,18 +86,15 @@ describe('Logic Service', () => {
       };
 
       await handleTransaction(expectedReq);
-      const resultsRequiredToBeSent = ['003@1.0', '028@1.0'];
 
-      const result = JSON.parse(debugLog as string);
-      const rulesSentTo = result!.rulesSentTo;
-      const rulesNotSentTo = result!.failedToSend;
-      const allRules = [...rulesSentTo, ...rulesNotSentTo];
+      const result = debugLog;
 
-      for (const resultsRequiredToBeSentRule of resultsRequiredToBeSent) {
-        const checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSentRule) > -1;
-        console.log(resultsRequiredToBeSentRule + ' Send was ' + checkIfRuleIsSend);
-        expect(checkIfRuleIsSend).toEqual(true);
-      }
+      expect(loggerSpy).toBeCalledTimes(3);
+      expect(loggerSpy).toBeCalledWith('Successfully sent to 003@1.0');
+      expect(loggerSpy).toBeCalledWith('Successfully sent to 028@1.0');
+      expect(errorLoggerSpy).toBeCalledTimes(0);
+      expect(debugLoggerSpy).toBeCalledTimes(1);
+      expect(result).toBeDefined;
     });
 
     it('should handle successful request for Pain001', async () => {
@@ -111,18 +106,14 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      const resultsRequiredToBeSent = ['003@1.0', '028@1.0'];
-      const result = JSON.parse(debugLog);
+      const result = debugLog;
 
-      const rulesSentTo = result!.rulesSentTo;
-      const rulesNotSentTo = result!.failedToSend;
-      const allRules = [...rulesSentTo, ...rulesNotSentTo];
-
-      for (const resultsRequiredToBeSentRule of resultsRequiredToBeSent) {
-        const checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSentRule) > -1;
-        console.log(resultsRequiredToBeSentRule + ' Send was ' + checkIfRuleIsSend);
-        expect(checkIfRuleIsSend).toEqual(true);
-      }
+      expect(loggerSpy).toBeCalledTimes(3);
+      expect(loggerSpy).toBeCalledWith('Successfully sent to 003@1.0');
+      expect(loggerSpy).toBeCalledWith('Successfully sent to 028@1.0');
+      expect(errorLoggerSpy).toBeCalledTimes(0);
+      expect(debugLoggerSpy).toBeCalledTimes(1);
+      expect(result).toBeDefined;
     });
 
     it('should handle successful request for Pacs002', async () => {
@@ -134,18 +125,13 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      const result = JSON.parse(debugLog);
-      const resultsRequiredToBeSent = ['018@1.0.0'];
+      const result = debugLog;
 
-      const rulesSentTo = result!.rulesSentTo;
-      const rulesNotSentTo = result!.failedToSend;
-      const allRules = [...rulesSentTo, ...rulesNotSentTo];
-
-      for (const resultsRequiredToBeSentRule of resultsRequiredToBeSent) {
-        const checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSentRule) > -1;
-        console.log(resultsRequiredToBeSentRule + ' Send was ' + checkIfRuleIsSend);
-        expect(checkIfRuleIsSend).toEqual(true);
-      }
+      expect(loggerSpy).toBeCalledTimes(2);
+      expect(loggerSpy).toBeCalledWith('Successfully sent to 018@1.0');
+      expect(errorLoggerSpy).toBeCalledTimes(0);
+      expect(debugLoggerSpy).toBeCalledTimes(1);
+      expect(result).toBeDefined;
     });
 
     it('should handle successful request for Pacs008', async () => {
@@ -157,64 +143,60 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      const resultsRequiredToBeSent = ['018@1.0.0'];
-      const result = JSON.parse(debugLog);
+      const result = debugLog;
 
-      const rulesSentTo = result!.rulesSentTo;
-      const rulesNotSentTo = result!.failedToSend;
-      const allRules = [...rulesSentTo, ...rulesNotSentTo];
-
-      for (const resultsRequiredToBeSentRule of resultsRequiredToBeSent) {
-        const checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSentRule) > -1;
-        console.log(resultsRequiredToBeSentRule + ' Send was ' + checkIfRuleIsSend);
-        expect(checkIfRuleIsSend).toEqual(true);
-      }
+      expect(loggerSpy).toBeCalledTimes(2);
+      expect(loggerSpy).toBeCalledWith('Successfully sent to 018@1.0');
+      expect(errorLoggerSpy).toBeCalledTimes(0);
+      expect(debugLoggerSpy).toBeCalledTimes(1);
+      expect(result).toBeDefined;
     });
 
     it('should handle successful request for Pacs008, has cached map', async () => {
-      jest.spyOn(databaseManager, 'getJson').mockImplementation((key: string): Promise<string> => {
-        return Promise.resolve<string>(
-          '{"messages":[{"id":"001@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.001.001.11","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.013.001.09","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"029@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"030@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"031@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"004@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.002.001.12","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]},{"id":"005@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.008.001.10","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]}]}',
-        );
-      });
-
       const expectedReq = { transaction: getMockRequest008() };
+
+      let netMap = JSON.parse(
+        '{"messages":[{"id":"001@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.001.001.11","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.013.001.09","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"029@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"030@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"031@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"004@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.002.001.12","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]},{"id":"005@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.008.001.10","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]}]}',
+      );
+      nodeCache.set(expectedReq.transaction.TxTp, netMap);
+
+      const nodeCacheSpy = jest.spyOn(nodeCache, 'get');
 
       server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
       };
       await handleTransaction(expectedReq);
-      const result = JSON.parse(debugLog);
+      const result = debugLog;
 
-      const resultsRequiredToBeSent = ['018@1.0.0'];
-
-      const rulesSentTo = result.rulesSentTo;
-      const rulesNotSentTo = result.failedToSend;
-      const allRules = [...rulesSentTo, ...rulesNotSentTo];
-
-      for (const resultsRequiredToBeSentRule of resultsRequiredToBeSent) {
-        const checkIfRuleIsSend = allRules.indexOf(resultsRequiredToBeSentRule) > -1;
-        console.log(resultsRequiredToBeSentRule + ' Send was ' + checkIfRuleIsSend);
-        expect(checkIfRuleIsSend).toEqual(true);
-      }
+      expect(nodeCacheSpy).toHaveReturnedWith(netMap);
+      expect(loggerSpy).toBeCalledTimes(2);
+      expect(loggerSpy).toBeCalledWith('Successfully sent to 018@1.0');
+      expect(errorLoggerSpy).toBeCalledTimes(0);
+      expect(debugLoggerSpy).toBeCalledTimes(2);
+      expect(result).toBeDefined;
     });
 
-    it('should handle unsuccessful request', async () => {
+    it('should handle unsuccessful request - no network map', async () => {
       const expectedReq = { transaction: getMockRequestInvalid() };
       server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
       await handleTransaction(expectedReq);
-      const result = JSON.parse(debugLog);
-      expect(result.rulesSentTo).toHaveLength(0);
+      const result = debugLog;
+
+      expect(loggerSpy).toBeCalledTimes(2);
+      expect(loggerSpy).toHaveBeenCalledWith('No coresponding message found in Network map');
+      expect(errorLoggerSpy).toBeCalledTimes(0);
+      expect(debugLoggerSpy).toBeCalledTimes(1);
+      expect(result).toBeDefined;
     });
 
     it('should respond with active cached network map from memory', async () => {
       const expectedReq = { transaction: getMockRequest001() };
 
       let netMap = JSON.parse(
-        '{"messages":[{"id":"001@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.001.001.11","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.013.001.09","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"029@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"030@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"031@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"004@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.002.001.12","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]},{"id":"005@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.008.001.10","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]}]}',
+        '{"messages":[{"id":"001@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.001.001.11","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080","cfg":"1.0","txTp":"pain.013.001.09","channels":[{"id":"001@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"029@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]},{"id":"002@1.0","host":"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor","cfg":"1.0","typologies":[{"id":"030@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]},{"id":"031@1.0","host":"http://gateway.openfaas:8080/function/off-typology-processor","cfg":"1.0","rules":[{"id":"003@1.0","host":"http://gateway.openfaas:8080/function/off-rule-003","cfg":"1.0"},{"id":"028@1.0","host":"http://gateway.openfaas:8080/function/off-rule-028","cfg":"1.0"}]}]}]},{"id":"004@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.002.001.12","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]},{"id":"005@1.0.0","host":"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","txTp":"pacs.008.001.10","channels":[{"id":"001@1.0.0","host":"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0","cfg":"1.0.0","typologies":[{"id":"028@1.0.0","host":"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0","cfg":"1.0.0","rules":[{"id":"018@1.0","host":"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0","cfg":"1.0.0"}]}]}]}]}',
       );
       nodeCache.set(expectedReq.transaction.TxTp, netMap);
 
@@ -225,10 +207,13 @@ describe('Logic Service', () => {
       };
 
       await handleTransaction(expectedReq);
+
       expect(nodeCacheSpy).toHaveReturnedWith(netMap);
-      expect(JSON.stringify(debugLog)).toContain(
-        '{\\"rulesSentTo\\":[\\"003@1.0\\",\\"028@1.0\\"],\\"failedToSend\\":[],\\"transaction\\":{\\"TxTp\\":\\"pain.001.001.11\\",\\"CstmrCdtTrfInitn\\":{\\"GrpHdr\\":{\\"MsgId\\":\\"2669e349-500d-44ba-9e27-7767a16608a0\\",\\"CreDtTm\\":\\"2021-10-07T09:25:31.000Z\\",\\"NbOfTxs\\":1,\\"InitgPty\\":{\\"Nm\\":\\"IvanReeseRussel-Klein\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1967-11-23\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-783078685\\"}}},\\"PmtInf\\":{\\"PmtInfId\\":\\"b51ec534-ee48-4575-b6a9-ead2955b8069\\",\\"PmtMtd\\":\\"TRA\\",\\"ReqdAdvcTp\\":{\\"DbtAdvc\\":{\\"Cd\\":\\"ADWD\\",\\"Prtry\\":\\"Advicewithtransactiondetails\\"}},\\"ReqdExctnDt\\":{\\"Dt\\":\\"2021-10-07\\",\\"DtTm\\":\\"2021-10-07T09:25:31.000Z\\"},\\"Dbtr\\":{\\"Nm\\":\\"IvanReeseRussel-Klein\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1957-10-05\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-783078685\\"}},\\"DbtrAcct\\":{\\"Id\\":{\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"PASSPORT\\"}}},\\"Nm\\":\\"IvanRussel-Klein\\"},\\"DbtrAgt\\":{\\"FinInstnId\\":{\\"ClrSysMmbId\\":{\\"MmbId\\":\\"dfsp001\\"}}},\\"CdtTrfTxInf\\":{\\"PmtId\\":{\\"EndToEndId\\":\\"b51ec534-ee48-4575-b6a9-ead2955b8069\\"},\\"PmtTpInf\\":{\\"CtgyPurp\\":{\\"Prtry\\":\\"TRANSFER\\"}},\\"Amt\\":{\\"InstdAmt\\":{\\"Amt\\":{\\"Amt\\":\\"50431891779910900\\",\\"Ccy\\":\\"USD\\"}},\\"EqvtAmt\\":{\\"Amt\\":{\\"Amt\\":\\"50431891779910900\\",\\"Ccy\\":\\"USD\\"},\\"CcyOfTrf\\":\\"USD\\"}},\\"ChrgBr\\":\\"DEBT\\",\\"CdtrAgt\\":{\\"FinInstnId\\":{\\"ClrSysMmbId\\":{\\"MmbId\\":\\"dfsp002\\"}}},\\"Cdtr\\":{\\"Nm\\":\\"AprilSamAdamson\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1923-04-26\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27782722305\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-782722305\\"}},\\"CdtrAcct\\":{\\"Id\\":{\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}},\\"Nm\\":\\"AprilAdamson\\"},\\"Purp\\":{\\"Cd\\":\\"MP2P\\"},\\"RgltryRptg\\":{\\"Dtls\\":{\\"Tp\\":\\"BALANCEOFPAYMENTS\\",\\"Cd\\":\\"100\\"}},\\"RmtInf\\":{\\"Ustrd\\":\\"PaymentofUSD49932566118723700.89fromIvantoApril\\"},\\"SplmtryData\\":{\\"Envlp\\":{\\"Doc\\":{\\"Cdtr\\":{\\"FrstNm\\":\\"Ivan\\",\\"MddlNm\\":\\"Reese\\",\\"LastNm\\":\\"Russel-Klein\\",\\"MrchntClssfctnCd\\":\\"BLANK\\"},\\"Dbtr\\":{\\"FrstNm\\":\\"April\\",\\"MddlNm\\":\\"Sam\\",\\"LastNm\\":\\"Adamson\\",\\"MrchntClssfctnCd\\":\\"BLANK\\"},\\"DbtrFinSvcsPrvdrFees\\":{\\"Ccy\\":\\"USD\\",\\"Amt\\":\\"499325661187237\\"},\\"Xprtn\\":\\"2021-10-07T09:30:31.000Z\\"}}}}},\\"SplmtryData\\":{\\"Envlp\\":{\\"Doc\\":{\\"InitgPty\\":{\\"InitrTp\\":\\"CONSUMER\\",\\"Glctn\\":{\\"Lat\\":\\"-3.1291\\",\\"Long\\":\\"39.0006\\"}}}}}}},\\"networkMap\\":{\\"messages\\":[{\\"id\\":\\"001@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080\\",\\"cfg\\":\\"1.0\\",\\"txTp\\":\\"pain.001.001.11\\",\\"channels\\":[{\\"id\\":\\"001@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor\\",\\"cfg\\":\\"1.0\\",\\"typologies\\":[{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-typology-processor\\",\\"cfg\\":\\"1.0\\",\\"rules\\":[{\\"id\\":\\"003@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-003\\",\\"cfg\\":\\"1.0\\"},{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-028\\",\\"cfg\\":\\"1.0\\"}]}]}]},{\\"id\\":\\"002@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080\\",\\"cfg\\":\\"1.0\\",\\"txTp\\":\\"pain.013.001.09\\",\\"channels\\":[{\\"id\\":\\"001@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor\\",\\"cfg\\":\\"1.0\\",\\"typologies\\":[{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-typology-processor\\",\\"cfg\\":\\"1.0\\",\\"rules\\":[{\\"id\\":\\"003@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-003\\",\\"cfg\\":\\"1.0\\"},{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-028\\",\\"cfg\\":\\"1.0\\"}]},{\\"id\\":\\"029@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-typology-processor\\",\\"cfg\\":\\"1.0\\",\\"rules\\":[{\\"id\\":\\"003@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-003\\",\\"cfg\\":\\"1.0\\"},{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-028\\",\\"cfg\\":\\"1.0\\"}]}]},{\\"id\\":\\"002@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor\\",\\"cfg\\":\\"1.0\\",\\"typologies\\":[{\\"id\\":\\"030@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-typology-processor\\",\\"cfg\\":\\"1.0\\",\\"rules\\":[{\\"id\\":\\"003@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-003\\",\\"cfg\\":\\"1.0\\"},{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-028\\",\\"cfg\\":\\"1.0\\"}]},{\\"id\\":\\"031@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-typology-processor\\",\\"cfg\\":\\"1.0\\",\\"rules\\":[{\\"id\\":\\"003@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-003\\",\\"cfg\\":\\"1.0\\"},{\\"id\\":\\"028@1.0\\",\\"host\\":\\"http://gateway.openfaas:8080/function/off-rule-028\\",\\"cfg\\":\\"1.0\\"}]}]}]},{\\"id\\":\\"004@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0\\",\\"cfg\\":\\"1.0.0\\",\\"txTp\\":\\"pacs.002.001.12\\",\\"channels\\":[{\\"id\\":\\"001@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0\\",\\"cfg\\":\\"1.0.0\\",\\"typologies\\":[{\\"id\\":\\"028@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0\\",\\"cfg\\":\\"1.0.0\\",\\"rules\\":[{\\"id\\":\\"018@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0\\",\\"cfg\\":\\"1.0.0\\"}]}]}]},{\\"id\\":\\"005@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0\\",\\"cfg\\":\\"1.0.0\\",\\"txTp\\":\\"pacs.008.001.10\\",\\"channels\\":[{\\"id\\":\\"001@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0\\",\\"cfg\\":\\"1.0.0\\",\\"typologies\\":[{\\"id\\":\\"028@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0\\",\\"cfg\\":\\"1.0.0\\",\\"rules\\":[{\\"id\\":\\"018@1.0.0\\",\\"host\\":\\"https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0\\",\\"cfg\\":\\"1.0.0\\"}]}]}]}]}}',
-      );
+      expect(loggerSpy).toBeCalledTimes(3);
+      expect(loggerSpy).toBeCalledWith('Successfully sent to 003@1.0');
+      expect(loggerSpy).toBeCalledWith('Successfully sent to 028@1.0');
+      expect(errorLoggerSpy).toBeCalledTimes(0);
+      expect(debugLoggerSpy).toBeCalledTimes(2);
     });
 
     it('should respond with empty network submap no network map is found', async () => {
@@ -243,9 +228,12 @@ describe('Logic Service', () => {
       };
 
       await handleTransaction(expectedReq);
-      expect(JSON.stringify(debugLog)).toContain(
-        '{\\"rulesSentTo\\":[],\\"failedToSend\\":[],\\"networkMap\\":{},\\"transaction\\":{\\"TxTp\\":\\"pain.001.001.11\\",\\"CstmrCdtTrfInitn\\":{\\"GrpHdr\\":{\\"MsgId\\":\\"2669e349-500d-44ba-9e27-7767a16608a0\\",\\"CreDtTm\\":\\"2021-10-07T09:25:31.000Z\\",\\"NbOfTxs\\":1,\\"InitgPty\\":{\\"Nm\\":\\"IvanReeseRussel-Klein\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1967-11-23\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-783078685\\"}}},\\"PmtInf\\":{\\"PmtInfId\\":\\"b51ec534-ee48-4575-b6a9-ead2955b8069\\",\\"PmtMtd\\":\\"TRA\\",\\"ReqdAdvcTp\\":{\\"DbtAdvc\\":{\\"Cd\\":\\"ADWD\\",\\"Prtry\\":\\"Advicewithtransactiondetails\\"}},\\"ReqdExctnDt\\":{\\"Dt\\":\\"2021-10-07\\",\\"DtTm\\":\\"2021-10-07T09:25:31.000Z\\"},\\"Dbtr\\":{\\"Nm\\":\\"IvanReeseRussel-Klein\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1957-10-05\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-783078685\\"}},\\"DbtrAcct\\":{\\"Id\\":{\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"PASSPORT\\"}}},\\"Nm\\":\\"IvanRussel-Klein\\"},\\"DbtrAgt\\":{\\"FinInstnId\\":{\\"ClrSysMmbId\\":{\\"MmbId\\":\\"dfsp001\\"}}},\\"CdtTrfTxInf\\":{\\"PmtId\\":{\\"EndToEndId\\":\\"b51ec534-ee48-4575-b6a9-ead2955b8069\\"},\\"PmtTpInf\\":{\\"CtgyPurp\\":{\\"Prtry\\":\\"TRANSFER\\"}},\\"Amt\\":{\\"InstdAmt\\":{\\"Amt\\":{\\"Amt\\":\\"50431891779910900\\",\\"Ccy\\":\\"USD\\"}},\\"EqvtAmt\\":{\\"Amt\\":{\\"Amt\\":\\"50431891779910900\\",\\"Ccy\\":\\"USD\\"},\\"CcyOfTrf\\":\\"USD\\"}},\\"ChrgBr\\":\\"DEBT\\",\\"CdtrAgt\\":{\\"FinInstnId\\":{\\"ClrSysMmbId\\":{\\"MmbId\\":\\"dfsp002\\"}}},\\"Cdtr\\":{\\"Nm\\":\\"AprilSamAdamson\\",\\"Id\\":{\\"PrvtId\\":{\\"DtAndPlcOfBirth\\":{\\"BirthDt\\":\\"1923-04-26\\",\\"CityOfBirth\\":\\"Unknown\\",\\"CtryOfBirth\\":\\"ZZ\\"},\\"Othr\\":{\\"Id\\":\\"+27782722305\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}}},\\"CtctDtls\\":{\\"MobNb\\":\\"+27-782722305\\"}},\\"CdtrAcct\\":{\\"Id\\":{\\"Othr\\":{\\"Id\\":\\"+27783078685\\",\\"SchmeNm\\":{\\"Prtry\\":\\"MSISDN\\"}}},\\"Nm\\":\\"AprilAdamson\\"},\\"Purp\\":{\\"Cd\\":\\"MP2P\\"},\\"RgltryRptg\\":{\\"Dtls\\":{\\"Tp\\":\\"BALANCEOFPAYMENTS\\",\\"Cd\\":\\"100\\"}},\\"RmtInf\\":{\\"Ustrd\\":\\"PaymentofUSD49932566118723700.89fromIvantoApril\\"},\\"SplmtryData\\":{\\"Envlp\\":{\\"Doc\\":{\\"Cdtr\\":{\\"FrstNm\\":\\"Ivan\\",\\"MddlNm\\":\\"Reese\\",\\"LastNm\\":\\"Russel-Klein\\",\\"MrchntClssfctnCd\\":\\"BLANK\\"},\\"Dbtr\\":{\\"FrstNm\\":\\"April\\",\\"MddlNm\\":\\"Sam\\",\\"LastNm\\":\\"Adamson\\",\\"MrchntClssfctnCd\\":\\"BLANK\\"},\\"DbtrFinSvcsPrvdrFees\\":{\\"Ccy\\":\\"USD\\",\\"Amt\\":\\"499325661187237\\"},\\"Xprtn\\":\\"2021-10-07T09:30:31.000Z\\"}}}}},\\"SplmtryData\\":{\\"Envlp\\":{\\"Doc\\":{\\"InitgPty\\":{\\"InitrTp\\":\\"CONSUMER\\",\\"Glctn\\":{\\"Lat\\":\\"-3.1291\\",\\"Long\\":\\"39.0006\\"}}}}}}}}',
-      );
+
+      expect(loggerSpy).toBeCalledTimes(3);
+      expect(loggerSpy).toBeCalledWith('No network map found in DB');
+      expect(loggerSpy).toBeCalledWith('No coresponding message found in Network map');
+      expect(errorLoggerSpy).toBeCalledTimes(0);
+      expect(debugLoggerSpy).toBeCalledTimes(2);
     });
 
     it('Should handle failure to post to rule', async () => {
@@ -257,6 +245,11 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
       expect(responseSpy).toHaveBeenCalledTimes(2);
+      expect(loggerSpy).toBeCalledTimes(1);
+      expect(errorLoggerSpy).toBeCalledTimes(2);
+      expect(errorLoggerSpy).toBeCalledWith('Failed to send to Rule 003@1.0 with Error: undefined');
+      expect(errorLoggerSpy).toBeCalledWith('Failed to send to Rule 028@1.0 with Error: undefined');
+      expect(debugLoggerSpy).toBeCalledTimes(1);
     });
   });
 });
