@@ -60,6 +60,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     cachedActiveNetworkMap = activeNetworkMap as NetworkMap;
     networkMap = cachedActiveNetworkMap;
     prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
+    loggerService.debug(`Using cached networkMap ${prunedMap.toString()}`);
   } else {
     // Fetch the network map from db
     const spanNetworkMap = apm.startSpan('db.get.NetworkMap');
@@ -95,21 +96,15 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
 
     // Send transaction to all rules
     const promises: Array<Promise<void>> = [];
-    const failedRules: string[] = [];
-    const sentTo: string[] = [];
     const metaData = { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) };
 
     for (const rule of rules) {
-      promises.push(
-        sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache, sentTo, failedRules, metaData),
-      );
+      promises.push(sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache, metaData));
     }
     await Promise.all(promises);
 
     const result = {
       metaData,
-      rulesSentTo: sentTo,
-      failedToSend: failedRules,
       transaction: parsedRequest.transaction,
       DataCache: parsedRequest.DataCache,
       networkMap,
@@ -119,8 +114,6 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     loggerService.log('No coresponding message found in Network map');
     const result = {
       metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) },
-      rulesSentTo: [],
-      failedToSend: [],
       networkMap: {},
       transaction: parsedRequest.transaction,
       DataCache: parsedRequest.DataCache,
@@ -135,8 +128,6 @@ const sendRuleToRuleProcessor = async (
   networkMap: NetworkMap,
   req: any,
   dataCache: DataCache,
-  sentTo: string[],
-  failedRules: string[],
   metaData: any,
 ): Promise<void> => {
   const span = apm.startSpan(`send.rule${rule.id}.to.proc`);
@@ -148,10 +139,8 @@ const sendRuleToRuleProcessor = async (
       metaData: { ...metaData, traceParent: `${apm.currentTraceparent ?? ''}` },
     };
     await server.handleResponse(toSend, [rule.host]);
-    sentTo.push(rule.id);
     loggerService.log(`Successfully sent to ${rule.id}`);
   } catch (error) {
-    failedRules.push(rule.id);
     loggerService.error(`Failed to send to Rule ${rule.id} with Error: ${JSON.stringify(error)}`);
   }
   span?.end();
