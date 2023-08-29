@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DataCache, Message, NetworkMap, Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
-import { databaseManager, server } from '..';
-import { LoggerService } from './logger.service';
+import { NetworkMap, type DataCache, type Message, type Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
+import apm from 'elastic-apm-node';
+import { databaseManager, nodeCache, server, loggerService } from '..';
+import { config } from '../config';
 
 const calculateDuration = (startTime: bigint): number => {
   const endTime = process.hrtime.bigint();
@@ -40,31 +41,38 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   return rules;
 }
 
-export const handleTransaction = async (req: unknown) => {
+export const handleTransaction = async (req: unknown): Promise<void> => {
   const startTime = process.hrtime.bigint();
   let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
   let prunedMap: Message[] = [];
 
   const parsedRequest = req as any;
+  loggerService.log(JSON.stringify(parsedRequest.metaData?.traceParent));
+  const traceParent = parsedRequest.metaData?.traceParent;
+  const apmTransaction = apm.startTransaction('crsp.handleTransaction', { childOf: traceParent });
 
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   const cacheKey = `${parsedRequest.transaction.TxTp}`;
   // check if there's an active network map in memory
-  const activeNetworkMap = await databaseManager.getJson(cacheKey);
+  const activeNetworkMap = nodeCache.get(cacheKey);
   if (activeNetworkMap) {
-    cachedActiveNetworkMap = Object.assign(JSON.parse(activeNetworkMap));
+    cachedActiveNetworkMap = activeNetworkMap as NetworkMap;
     networkMap = cachedActiveNetworkMap;
     prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
+    loggerService.debug(`Using cached networkMap ${prunedMap.toString()}`);
   } else {
     // Fetch the network map from db
+    const spanNetworkMap = apm.startSpan('db.get.NetworkMap');
     const networkConfigurationList = await databaseManager.getNetworkMap();
+    spanNetworkMap?.end();
     if (networkConfigurationList && networkConfigurationList[0]) {
       networkMap = networkConfigurationList[0][0];
-      // save networkmap in redis cache
-      // await databaseManager.setJson(cacheKey, JSON.stringify(networkMap), config.redis.timeout);
+      // save networkmap in memory cache
+      nodeCache.set(cacheKey, networkMap, config.cacheTTL);
       prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
     } else {
-      LoggerService.log('No network map found in DB');
+      loggerService.log('No network map found in DB');
       const result = {
         prcgTmCRSP: calculateDuration(startTime),
         rulesSentTo: [],
@@ -73,7 +81,7 @@ export const handleTransaction = async (req: unknown) => {
         transaction: parsedRequest.transaction,
         DataCache: parsedRequest.DataCache,
       };
-      LoggerService.debug(JSON.stringify(result));
+      loggerService.debug(JSON.stringify(result));
     }
   }
   if (prunedMap && prunedMap[0]) {
@@ -88,38 +96,31 @@ export const handleTransaction = async (req: unknown) => {
 
     // Send transaction to all rules
     const promises: Array<Promise<void>> = [];
-    const failedRules: Array<string> = [];
-    const sentTo: Array<string> = [];
     const metaData = { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) };
 
     for (const rule of rules) {
-      promises.push(
-        sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache, sentTo, failedRules, metaData),
-      );
+      promises.push(sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache, metaData));
     }
     await Promise.all(promises);
 
     const result = {
       metaData,
-      rulesSentTo: sentTo,
-      failedToSend: failedRules,
       transaction: parsedRequest.transaction,
       DataCache: parsedRequest.DataCache,
       networkMap,
     };
-    LoggerService.debug(JSON.stringify(result));
+    loggerService.debug(JSON.stringify(result));
   } else {
-    LoggerService.log('No coresponding message found in Network map');
+    loggerService.log('No coresponding message found in Network map');
     const result = {
       metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) },
-      rulesSentTo: [],
-      failedToSend: [],
       networkMap: {},
       transaction: parsedRequest.transaction,
       DataCache: parsedRequest.DataCache,
     };
-    LoggerService.debug(JSON.stringify(result));
+    loggerService.debug(JSON.stringify(result));
   }
+  apmTransaction?.end();
 };
 
 const sendRuleToRuleProcessor = async (
@@ -127,18 +128,20 @@ const sendRuleToRuleProcessor = async (
   networkMap: NetworkMap,
   req: any,
   dataCache: DataCache,
-  sentTo: Array<string>,
-  failedRules: Array<string>,
   metaData: any,
-) => {
+): Promise<void> => {
+  const span = apm.startSpan(`send.rule${rule.id}.to.proc`);
   try {
-    const toSend = { transaction: req, networkMap, DataCache: dataCache, metaData };
+    const toSend = {
+      transaction: req,
+      networkMap,
+      DataCache: dataCache,
+      metaData: { ...metaData, traceParent: `${apm.currentTraceparent ?? ''}` },
+    };
     await server.handleResponse(toSend, [rule.host]);
-    sentTo.push(rule.id);
-    LoggerService.log(`Successfully sent to ${rule.id}`);
+    loggerService.log(`Successfully sent to ${rule.id}`);
   } catch (error) {
-    failedRules.push(rule.id);
-    LoggerService.trace(`Failed to send to Rule ${rule.id}`);
-    LoggerService.error(`Failed to send to Rule ${rule.id} with Error: ${error}`);
+    loggerService.error(`Failed to send to Rule ${rule.id} with Error: ${JSON.stringify(error)}`);
   }
+  span?.end();
 };

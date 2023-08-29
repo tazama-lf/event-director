@@ -1,6 +1,6 @@
 import path from 'path';
 import * as dotenv from 'dotenv';
-import { IConfig } from './interfaces/iConfig';
+import { type IConfig } from './interfaces/iConfig';
 
 // Load .env file into process.env if it exists. This is convenient for running locally.
 dotenv.config({
@@ -10,25 +10,27 @@ dotenv.config({
 export const config: IConfig = {
   maxCPU: parseInt(process.env.MAX_CPU!, 10) || 1,
   redis: {
-    auth: <string>process.env.REDIS_AUTH,
+    password: process.env.REDIS_AUTH as string,
     db: parseInt(process.env.REDIS_DB ?? ''),
-    host: <string>process.env.REDIS_HOST,
-    port: parseInt(process.env.REDIS_PORT ?? '', 10),
-    timeout: parseInt(process.env.REDIS_TIMEOUT ?? '', 10),
+    servers: JSON.parse((process.env.REDIS_SERVERS as string) || '[{"hostname": "127.0.0.1", "port":6379}]'),
+    isCluster: process.env.REDIS_IS_CLUSTER === 'true',
   },
-  dbURL: <string>process.env.DB_URL,
-  dbName: <string>process.env.DB_NAME,
-  dbUser: <string>process.env.DB_USER,
-  dbPassword: <string>process.env.DB_PASSWORD,
-  dbCertPath: <string>process.env.DATABASE_CERT_PATH,
-  restPort: parseInt(process.env.REST_PORT ?? '3000', 10),
-  logstashHost: <string>process.env.LOGSTASH_HOST,
-  logstashPort: parseInt(process.env.LOGSTASH_PORT ?? '8080', 10),
-  arangoHost: <string>process.env.ARANGO_HOST,
+  dbURL: process.env.DATABASE_URL as string,
+  dbName: process.env.DATABASE_NAME as string,
+  dbUser: process.env.DATABASE_USER as string,
+  dbPassword: process.env.DATABASE_PASSWORD as string,
+  dbCertPath: process.env.DATABASE_CERT_PATH as string,
+  logger: {
+    logstashHost: process.env.LOGSTASH_HOST as string,
+    logstashPort: parseInt(process.env.LOGSTASH_PORT ?? '0', 10),
+    logstashLevel: (process.env.LOGSTASH_LEVEL as string) || 'info',
+  },
+  arangoHost: process.env.ARANGO_HOST as string,
   arangoPort: parseInt(process.env.arangoPort ?? '', 10),
-  functionName: <string>process.env.FUNCTION_NAME,
-  apmLogging: <boolean>(process.env.APM_LOGGING === 'true'),
-  apmSecretToken: <string>process.env.APM_SECRET_TOKEN,
-  apmURL: <string>process.env.APM_URL,
-  nodeEnv: <string>process.env.NODE_ENV,
+  functionName: process.env.FUNCTION_NAME as string,
+  apmLogging: process.env.APM_LOGGING === 'true',
+  apmSecretToken: process.env.APM_SECRET_TOKEN as string,
+  apmURL: process.env.APM_URL as string,
+  nodeEnv: process.env.NODE_ENV as string,
+  cacheTTL: parseInt(process.env.CACHETTL ?? '300', 10),
 };
