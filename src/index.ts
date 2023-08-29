@@ -84,7 +84,7 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
   console.log(`Primary ${process.pid} is running`);
 
   // Fork workers.
-  for (let i = 1; i < 2; i++) {
+  for (let i = 1; i < numCPUs; i++) {
     cluster.fork();
   }
 
