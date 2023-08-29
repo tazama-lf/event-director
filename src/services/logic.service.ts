@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import apm from '../apm';
 import { NetworkMap, type DataCache, type Message, type Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
-import apm from 'elastic-apm-node';
 import { databaseManager, nodeCache, server, loggerService } from '..';
+import { unwrap } from '@frmscoe/frms-coe-lib/lib/helpers/unwrap';
 import { config } from '../config';
 
 const calculateDuration = (startTime: bigint): number => {
@@ -65,9 +66,11 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     // Fetch the network map from db
     const spanNetworkMap = apm.startSpan('db.get.NetworkMap');
     const networkConfigurationList = await databaseManager.getNetworkMap();
+    const unwrappedNetworkMap = unwrap<NetworkMap>(networkConfigurationList as NetworkMap[][]);
     spanNetworkMap?.end();
-    if (networkConfigurationList && networkConfigurationList[0]) {
-      networkMap = networkConfigurationList[0][0];
+
+    if (unwrappedNetworkMap) {
+      networkMap = unwrappedNetworkMap;
       // save networkmap in memory cache
       nodeCache.set(cacheKey, networkMap, config.cacheTTL);
       prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
@@ -136,7 +139,7 @@ const sendRuleToRuleProcessor = async (
       transaction: req,
       networkMap,
       DataCache: dataCache,
-      metaData: { ...metaData, traceParent: `${apm.currentTraceparent ?? ''}` },
+      metaData: { ...metaData, traceParent: apm.getCurrentTraceparent() },
     };
     await server.handleResponse(toSend, [rule.host]);
     loggerService.log(`Successfully sent to ${rule.id}`);
