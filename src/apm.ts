@@ -1,13 +1,13 @@
-import apm from 'elastic-apm-node';
+import { Apm } from '@frmscoe/frms-coe-lib/lib/services/apm';
 import { config } from './config';
 
-if (config.apmLogging) {
-  apm.start({
-    serviceName: config.functionName,
-    secretToken: config.apmSecretToken,
-    serverUrl: config.apmURL,
-    usePathAsTransactionName: true,
-    active: config.apmLogging,
-    transactionIgnoreUrls: ['/health'],
-  });
-}
+const apm = new Apm({
+  serviceName: config.functionName,
+  secretToken: config.apmSecretToken,
+  serverUrl: config.apmURL,
+  usePathAsTransactionName: true,
+  active: config.apmLogging,
+  transactionIgnoreUrls: ['/health'],
+});
+
+export default apm;
