@@ -4,7 +4,8 @@ build
 node_modules
 docs
 build
-__tests__
+**/__tests__/**/*
 cluster-setup.ts
 jest.config.ts
+jest.testEnv.ts
 .eslintrc.js
