@@ -8,7 +8,7 @@ dotenv.config({
 });
 
 export const config: IConfig = {
-  maxCPU: parseInt(process.env.MAX_CPU ?? `${Number.MAX_SAFE_INTEGER}`, 10) || Number.MAX_SAFE_INTEGER,
+  maxCPU: parseInt(process.env.MAX_CPU ?? `${Number.MAX_SAFE_INTEGER}`, 10) || 1,
   redis: {
     password: process.env.REDIS_AUTH as string,
     db: parseInt(process.env.REDIS_DB ?? ''),
