@@ -44,7 +44,7 @@ ENV FUNCTION_NAME=channel-router-setup-processor
 ENV NODE_ENV=production
 
 #Apm
-ENV APM_LOGGING=true
+ENV APM_ACTIVE=true
 ENV APM_URL=http://apm-server.development.svc.cluster.local:8200/
 ENV APM_SECRET_TOKEN=
 

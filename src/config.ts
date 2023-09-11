@@ -28,7 +28,7 @@ export const config: IConfig = {
   arangoHost: process.env.ARANGO_HOST as string,
   arangoPort: parseInt(process.env.arangoPort ?? '', 10),
   functionName: process.env.FUNCTION_NAME as string,
-  apmLogging: process.env.APM_LOGGING === 'true',
+  apmLogging: process.env.APM_ACTIVE === 'true',
   apmSecretToken: process.env.APM_SECRET_TOKEN as string,
   apmURL: process.env.APM_URL as string,
   nodeEnv: process.env.NODE_ENV as string,
