@@ -33,16 +33,22 @@ export let server: IStartupService;
 
 export const runServer = async (): Promise<void> => {
   server = new StartupFactory();
-  if (config.nodeEnv !== 'test')
+  if (config.nodeEnv !== 'test') {
+    let isConnected = false;
     for (let retryCount = 0; retryCount < 10; retryCount++) {
       loggerService.log('Connecting to nats server...');
       if (!(await server.init(handleTransaction))) {
         await new Promise((resolve) => setTimeout(resolve, 5000));
       } else {
         loggerService.log('Connected to nats');
+        isConnected = true;
         break;
       }
     }
+    if (!isConnected) {
+      throw new Error('Unable to connect to nats after 10 retries');
+    }
+  }
 };
 
 process.on('uncaughtException', (err) => {
@@ -67,14 +73,15 @@ export const dbInit = async (): Promise<void> => {
       await dbInit();
     }
   } catch (err) {
-    loggerService.error('Error while starting HTTP server', err as Error);
+    loggerService.error('Error while starting Database Manager', err as Error);
+    process.exit(1);
   }
 })();
 
 if (cluster.isPrimary && config.maxCPU !== 1) {
   loggerService.log(`Primary ${process.pid} is running`);
 
-  // Fork workers.
+  // Fork workers
   for (let i = 1; i < numCPUs; i++) {
     cluster.fork();
   }
@@ -92,7 +99,8 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
         await runServer();
       }
     } catch (err) {
-      loggerService.error(`Error while starting HTTP server on Worker ${process.pid}`, err);
+      loggerService.error(`Error while starting NATS server on Worker ${process.pid}`, err);
+      process.exit(1);
     }
   })();
   loggerService.log(`Worker ${process.pid} started`);
