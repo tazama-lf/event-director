@@ -3,7 +3,7 @@
 import './apm';
 import os from 'os';
 import { config } from './config';
-import { CreateDatabaseManager, LoggerService, type DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
+import { LoggerService, type DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
 import { handleTransaction } from './services/logic.service';
 import cluster from 'cluster';
 import { StartupFactory, type IStartupService } from '@frmscoe/frms-coe-startup-lib';
