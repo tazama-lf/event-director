@@ -68,7 +68,7 @@ export const dbInit = async (): Promise<void> => {
 
 (async () => {
   try {
-    if (process.env.NODE_ENV !== 'test') {
+    if (process.env.NODE_ENV !== 'test' && cluster.isPrimary) {
       // setup lib - create database instance
       await dbInit();
     }
