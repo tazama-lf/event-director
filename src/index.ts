@@ -3,11 +3,12 @@
 import './apm';
 import os from 'os';
 import { config } from './config';
-import { CreateDatabaseManager, LoggerService, type DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
+import { LoggerService, type DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
 import { handleTransaction } from './services/logic.service';
 import cluster from 'cluster';
 import { StartupFactory, type IStartupService } from '@frmscoe/frms-coe-startup-lib';
 import NodeCache from 'node-cache';
+import { Singleton } from './services/services';
 
 // Set config for lib (network map db config you want to use)
 const databaseManagerConfig = {
@@ -61,22 +62,10 @@ process.on('unhandledRejection', (err) => {
 
 const numCPUs = os.cpus().length > config.maxCPU ? config.maxCPU + 1 : os.cpus().length + 1;
 export const dbInit = async (): Promise<void> => {
-  const manager = await CreateDatabaseManager(databaseManagerConfig);
+  const manager = await Singleton.getDatabaseManager(databaseManagerConfig);
   console.log(manager.isReadyCheck());
   databaseManager = manager;
 };
-
-(async () => {
-  try {
-    if (process.env.NODE_ENV !== 'test' && cluster.isPrimary) {
-      // setup lib - create database instance
-      await dbInit();
-    }
-  } catch (err) {
-    loggerService.error('Error while starting Database Manager', err as Error);
-    process.exit(1);
-  }
-})();
 
 if (cluster.isPrimary && config.maxCPU !== 1) {
   loggerService.log(`Primary ${process.pid} is running`);
@@ -97,6 +86,7 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
     try {
       if (config.nodeEnv !== 'test') {
         await runServer();
+        await dbInit();
       }
     } catch (err) {
       loggerService.error(`Error while starting NATS server on Worker ${process.pid}`, err);
