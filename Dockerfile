@@ -21,8 +21,9 @@ ENV FUNCTION_NAME=channel-router-setup-processor
 ENV PORT=3000
 ENV MAX_CPU=1
 
-# APM
+#APM
 ENV APM_ACTIVE=true
+ENV APM_URL=http://apm-server.development.svc.cluster.local:8200/
 ENV APM_SECRET_TOKEN=
 
 # REDIS
@@ -42,11 +43,17 @@ ENV PRODUCER_RETENTION_POLICY=Workqueue
 
 # ARANGO
 ENV DATABASE_URL=
+ENV DATABASE_NAME=networkmap
 ENV DATABASE_USER=root
 ENV DATABASE_PASSWORD=
-ENV DATABASE_NAME=Configuration
-ENV COLLECTION_NAME=typologyExpression
+ENV DATABASE_CERT_PATH=
+ENV CONFIG_DATABASE=Configuration
 ENV CACHE_TTL=300
+
+# LOGSTASH
+ENV LOGSTASH_HOST=logstash.development.svc.cluster.local
+ENV LOGSTASH_PORT=8080
+ENV LOGSTASH_LEVEL='info'
 
 
 # Set healthcheck command
