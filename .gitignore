@@ -60,6 +60,7 @@ typings/
 
 # dotenv environment variables file
 .env
+.env.development
 
 # next.js build output
 .next
@@ -69,3 +70,5 @@ Katalon Tests/Profiles/
 template
 templates
 dist
+.env.development
+
