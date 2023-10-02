@@ -5,7 +5,6 @@ import os from 'os';
 import { config } from './config';
 import { LoggerService, type DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
 import { handleTransaction } from './services/logic.service';
-import cluster from 'cluster';
 import { StartupFactory, type IStartupService } from '@frmscoe/frms-coe-startup-lib';
 import NodeCache from 'node-cache';
 import { Singleton } from './services/services';
@@ -67,19 +66,7 @@ export const dbInit = async (): Promise<void> => {
   databaseManager = manager;
 };
 
-if (cluster.isPrimary && config.maxCPU !== 1) {
-  loggerService.log(`Primary ${process.pid} is running`);
 
-  // Fork workers
-  for (let i = 1; i < numCPUs; i++) {
-    cluster.fork();
-  }
-
-  cluster.on('exit', (worker, code, signal) => {
-    loggerService.log(`worker ${Number(worker.process.pid)} died, starting another worker`);
-    cluster.fork();
-  });
-} else {
   // Workers can share any TCP connection
   // In this case it is an HTTP server
   (async () => {
@@ -94,6 +81,6 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
     }
   })();
   loggerService.log(`Worker ${process.pid} started`);
-}
+
 
 export { databaseManager };
