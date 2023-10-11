@@ -24,6 +24,12 @@ jobs:
           version: 7
       - name: Install bun
         uses: oven-sh/setup-bun@v1
+      - name: Setup Bun Runtime
+        uses: antongolub/action-setup-bun@v1 # or @v1.x.x
+        with:
+          bun-repo: 'Jarred-Sumner/bun-releases-for-updater'
+          bun-config: '[install.scopes]
+"@frmscoe" = {url="https://npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}"}'
       - name: Setup Node.js (.npmrc)
         uses: actions/setup-node@v3
         with:
