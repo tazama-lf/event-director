@@ -15,7 +15,7 @@
     "lint": "npm run lint:eslint && npm run lint:prettier",
     "lint:eslint": "eslint \"**/*.ts\"",
     "lint:prettier": "prettier --check \"**/*.ts\"",
-    "test:jest": "jest --config=jest.config.ts --passWithNoTests",
+    "test:jest": "jest --config=jest.config.ts --passWithNoTests --detectOpenHandles",
     "test:watch": "jest --config=jest.config.ts --watch"
   },
   "keywords": [],
