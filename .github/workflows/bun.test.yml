@@ -1,7 +1,7 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
-name: Bun,Node.js CI
+name: Bun,Node,Arango,Redis CI
 on:
   push:
     branches: [ "main" ]
@@ -10,13 +10,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: install, build, test
+    name: install, build, test, start
     permissions:
       packages: write
       contents: read
     strategy:
       matrix:
         node-version: [20]
+        redis-version: [6]
     steps:
       - uses: actions/checkout@v3
       - uses: pnpm/action-setup@v2
@@ -24,19 +25,56 @@ jobs:
           version: 7
       - name: Install bun
         uses: oven-sh/setup-bun@v1
-      - name: Setup Node.js (.npmrc)
+      - name: Start Arango
+        uses: xinova/arangodb-action@v1
+        with:
+          arangodb version: 'latest'
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 20.x
+      #     node-version: 20.x
           registry-url: https://npm.pkg.github.com/
-          # Defaults to the user or organization that owns the workflow file
+           # Defaults to the user or organization that owns the workflow file
           scope: '@frmscoe'
+      - name: Replace with token
+        run: sed -i "s/\${GH_TOKEN}/${{ secrets.GITHUB_TOKEN }}/g" ./bunfig.toml
       - name: Install dependencies
         run: bun install
         env:
           GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
       - name: Run unit tests
-        run: bun run test
+        run: npm run test:jest
         env:
             NODE_ENV: 'test'
             STARTUP_TYPE: 'nats'
+      - name: Create Nats Server
+        uses: onichandame/nats-action@master
+        with:
+            port: "4222"
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.7.0
+        with:
+            redis-version: ${{ matrix.redis-version }}
+      - name: Create database
+        run: curl --header "Content-Type:application/json" --request POST --data '{ "name":"networkmap", "options":{"sharding":"flexible", "replicationFactor":3 } }' http://localhost:8529/_api/database
+      - name: Processor connect to nats
+        run: timeout 2s bun run start || if [ $? -eq 124 ]; then true; fi
+        env:
+          NODE_ENV: 'dev'
+          STARTUP_TYPE: 'nats'
+          SERVER_URL: 'nats://localhost:4222'
+          ACK_POLICY: 'None'
+          PRODUCER_STREAM: 'CRSP'
+          CONSUMER_STREAM: 'TMS'
+          STREAM_SUBJECT:
+          APM_ACTIVE: false
+          APM_LOGGING: false
+          FUNCTION_NAME: 'typology-processor'
+          REDIS_DB: 0
+          REDIS_AUTH:
+          REDIS_SERVERS: '[{"host":"127.0.0.1", "port":6379}]'
+          REDIS_IS_CLUSTER: false
+          DATABASE_URL: 'http://localhost:8529/'
+          DATABASE_USER: 'root'
+          DATABASE_PASSWORD:
+          DATABASE_NAME: 'networkmap'
