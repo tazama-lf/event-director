@@ -34,4 +34,5 @@ export const config: IConfig = {
   apmURL: process.env.APM_URL as string,
   nodeEnv: process.env.NODE_ENV as string,
   cacheTTL: parseInt(process.env.CACHETTL ?? '300', 10),
+  sidecarHost: process.env.SIDECAR_HOST as string,
 };

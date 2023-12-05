@@ -28,7 +28,8 @@ const databaseManagerConfig = {
   },
 };
 
-export const loggerService: LoggerService = new LoggerService();
+export const loggerService: LoggerService = new LoggerService(config.sidecarHost);
+
 let databaseManager: DatabaseManagerInstance<typeof databaseManagerConfig>;
 export const nodeCache = new NodeCache();
 export let server: IStartupService;
