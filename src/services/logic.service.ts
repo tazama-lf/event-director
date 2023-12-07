@@ -141,7 +141,7 @@ const sendRuleToRuleProcessor = async (
       DataCache: dataCache,
       metaData: { ...metaData, traceParent: apm.getCurrentTraceparent() },
     };
-    await server.handleResponse(toSend, [rule.host]);
+    await server.handleResponse(toSend, [`sub-rule-${rule.id}`]);
     loggerService.log(`Successfully sent to ${rule.id}`);
   } catch (error) {
     loggerService.error(`Failed to send to Rule ${rule.id} with Error: ${JSON.stringify(error)}`);
