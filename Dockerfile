@@ -42,6 +42,7 @@ ENV upstream_url="http://127.0.0.1:3000"
 ENV prefix_logs="false"
 ENV FUNCTION_NAME=channel-router-setup-processor
 ENV NODE_ENV=production
+ENV MAX_CPU=
 
 #Apm
 ENV APM_ACTIVE=true
