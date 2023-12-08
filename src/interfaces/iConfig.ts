@@ -21,4 +21,5 @@ export interface IConfig {
   apmURL: string;
   nodeEnv: string;
   cacheTTL: number;
+  sidecarHost: string;
 }

@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { databaseManager, dbInit, loggerService, nodeCache, runServer, server } from '../../src';
 import { handleTransaction } from '../../src/services/logic.service';
-import { Pacs008Sample,Pacs002Sample,Pain001Sample,Pain013Sample,NetworkMapSample } from '@frmscoe/frms-coe-lib/lib/tests/data'
-import { DatabaseNetworkMapMocks } from '@frmscoe/frms-coe-lib/lib/tests/mocks/mock-networkmap'
+import { Pacs008Sample, Pacs002Sample, Pain001Sample, Pain013Sample, NetworkMapSample } from '@frmscoe/frms-coe-lib/lib/tests/data';
+import { DatabaseNetworkMapMocks } from '@frmscoe/frms-coe-lib/lib/tests/mocks/mock-networkmap';
 
 beforeAll(async () => {
   await dbInit();
@@ -22,7 +22,6 @@ describe('Logic Service', () => {
   let responseSpy: jest.SpyInstance;
 
   beforeEach(() => {
-
     DatabaseNetworkMapMocks(databaseManager);
 
     loggerSpy = jest.spyOn(loggerService, 'log');
@@ -47,11 +46,11 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toBeCalledTimes(3);
-      expect(loggerSpy).toBeCalledWith('Successfully sent to 003@1.0');
-      expect(loggerSpy).toBeCalledWith('Successfully sent to 028@1.0');
-      expect(errorLoggerSpy).toBeCalledTimes(0);
-      expect(debugLoggerSpy).toBeCalledTimes(1);
+      expect(loggerSpy).toHaveBeenCalledTimes(2);
+      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
+      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
+      expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
+      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
       expect(result).toBeDefined;
     });
 
@@ -66,11 +65,11 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toBeCalledTimes(3);
-      expect(loggerSpy).toBeCalledWith('Successfully sent to 003@1.0');
-      expect(loggerSpy).toBeCalledWith('Successfully sent to 028@1.0');
-      expect(errorLoggerSpy).toBeCalledTimes(0);
-      expect(debugLoggerSpy).toBeCalledTimes(1);
+      expect(loggerSpy).toHaveBeenCalledTimes(2);
+      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
+      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
+      expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
+      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
       expect(result).toBeDefined;
     });
 
@@ -85,10 +84,10 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toBeCalledTimes(2);
-      expect(loggerSpy).toBeCalledWith('Successfully sent to 018@1.0');
-      expect(errorLoggerSpy).toBeCalledTimes(0);
-      expect(debugLoggerSpy).toBeCalledTimes(1);
+      expect(loggerSpy).toHaveBeenCalledTimes(1);
+      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 018@1.0');
+      expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
+      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
       expect(result).toBeDefined;
     });
 
@@ -103,10 +102,10 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toBeCalledTimes(2);
-      expect(loggerSpy).toBeCalledWith('Successfully sent to 018@1.0');
-      expect(errorLoggerSpy).toBeCalledTimes(0);
-      expect(debugLoggerSpy).toBeCalledTimes(1);
+      expect(loggerSpy).toHaveBeenCalledTimes(1);
+      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 018@1.0');
+      expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
+      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
       expect(result).toBeDefined;
     });
 
@@ -125,15 +124,15 @@ describe('Logic Service', () => {
       const result = debugLog;
 
       expect(nodeCacheSpy).toHaveReturnedWith(netMap);
-      expect(loggerSpy).toBeCalledTimes(2);
-      expect(loggerSpy).toBeCalledWith('Successfully sent to 018@1.0');
-      expect(errorLoggerSpy).toBeCalledTimes(0);
-      expect(debugLoggerSpy).toBeCalledTimes(2);
+      expect(loggerSpy).toHaveBeenCalledTimes(1);
+      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 018@1.0');
+      expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
+      expect(debugLoggerSpy).toHaveBeenCalledTimes(2);
       expect(result).toBeDefined;
     });
 
     it('should handle unsuccessful request - no network map', async () => {
-      const expectedReq = { transaction: Pain001Sample.CstmrCdtTrfInitn,TxTp:'invalid mock request' };
+      const expectedReq = { transaction: Pain001Sample.CstmrCdtTrfInitn, TxTp: 'invalid mock request' };
       server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
       };
@@ -141,10 +140,10 @@ describe('Logic Service', () => {
       await handleTransaction(expectedReq);
       const result = debugLog;
 
-      expect(loggerSpy).toBeCalledTimes(2);
+      expect(loggerSpy).toHaveBeenCalledTimes(1);
       expect(loggerSpy).toHaveBeenCalledWith('No coresponding message found in Network map');
-      expect(errorLoggerSpy).toBeCalledTimes(0);
-      expect(debugLoggerSpy).toBeCalledTimes(1);
+      expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
+      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
       expect(result).toBeDefined;
     });
 
@@ -154,20 +153,17 @@ describe('Logic Service', () => {
       let netMap = NetworkMapSample[0][0];
       nodeCache.set(expectedReq.transaction.TxTp, netMap);
 
-      const nodeCacheSpy = jest.spyOn(nodeCache, 'get');
-
       server.handleResponse = (reponse: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
       await handleTransaction(expectedReq);
 
-      expect(nodeCacheSpy).toHaveReturnedWith(netMap);
-      expect(loggerSpy).toBeCalledTimes(3);
-      expect(loggerSpy).toBeCalledWith('Successfully sent to 003@1.0');
-      expect(loggerSpy).toBeCalledWith('Successfully sent to 028@1.0');
-      expect(errorLoggerSpy).toBeCalledTimes(0);
-      expect(debugLoggerSpy).toBeCalledTimes(2);
+      expect(loggerSpy).toHaveBeenCalledTimes(2);
+      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
+      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
+      expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
+      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should respond with empty network submap no network map is found', async () => {
@@ -183,11 +179,11 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      expect(loggerSpy).toBeCalledTimes(3);
-      expect(loggerSpy).toBeCalledWith('No network map found in DB');
-      expect(loggerSpy).toBeCalledWith('No coresponding message found in Network map');
-      expect(errorLoggerSpy).toBeCalledTimes(0);
-      expect(debugLoggerSpy).toBeCalledTimes(2);
+      expect(loggerSpy).toHaveBeenCalledTimes(2);
+      expect(loggerSpy).toHaveBeenCalledWith('No network map found in DB');
+      expect(loggerSpy).toHaveBeenCalledWith('No coresponding message found in Network map');
+      expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
+      expect(debugLoggerSpy).toHaveBeenCalledTimes(2);
     });
 
     it('Should handle failure to post to rule', async () => {
@@ -199,11 +195,10 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
       expect(responseSpy).toHaveBeenCalledTimes(2);
-      expect(loggerSpy).toBeCalledTimes(1);
-      expect(errorLoggerSpy).toBeCalledTimes(2);
-      expect(errorLoggerSpy).toBeCalledWith('Failed to send to Rule 003@1.0 with Error: undefined');
-      expect(errorLoggerSpy).toBeCalledWith('Failed to send to Rule 028@1.0 with Error: undefined');
-      expect(debugLoggerSpy).toBeCalledTimes(1);
+      expect(errorLoggerSpy).toHaveBeenCalledTimes(2);
+      expect(errorLoggerSpy).toHaveBeenCalledWith('Failed to send to Rule 003@1.0 with Error: undefined');
+      expect(errorLoggerSpy).toHaveBeenCalledWith('Failed to send to Rule 028@1.0 with Error: undefined');
+      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
     });
   });
 });

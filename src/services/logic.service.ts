@@ -50,7 +50,6 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
   let prunedMap: Message[] = [];
 
   const parsedRequest = req as any;
-  loggerService.log(JSON.stringify(parsedRequest.metaData?.traceParent));
   const traceParent = parsedRequest.metaData?.traceParent;
   const apmTransaction = apm.startTransaction('crsp.handleTransaction', { childOf: traceParent });
 
