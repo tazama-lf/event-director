@@ -78,20 +78,4 @@ jobs:
           DATABASE_USER: 'root'
           DATABASE_PASSWORD:
           DATABASE_NAME: 'networkmap'
-      - name: Debug
-        run: |
-            echo "GitHub Repository: $GITHUB_REPOSITORY"
-            echo "GitHub Token: ${{ secrets.GITHUB_TOKEN }}"
-            PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN {FS="/"} {print $3}')
-            echo "PR Number: $PR_NUMBER"
 
-      - name: Comment on PR
-        run: |
-            PR_NUMBER=$(echo $GITHUB_REF | awk 'BEGIN {FS="/"} {print $3}')
-            COMMENT_BODY="Hello! This is a comment on PR #$PR_NUMBER. Thank you for your contribution!"
-
-            curl -X POST \
-              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
-              -d "{\"body\":\"$COMMENT_BODY\"}"
