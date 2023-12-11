@@ -42,6 +42,10 @@ jobs:
           registry-url: https://npm.pkg.github.com/
           # Defaults to the user or organization that owns the workflow file
           scope: '@frmscoe'
+      - name: Install Newman
+        run: npm install -g newman
+      - name: Setup Database
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json
       - name: Install dependencies
         run: npm ci
         env:
@@ -51,8 +55,6 @@ jobs:
         env:
             NODE_ENV: 'test'
             STARTUP_TYPE: 'nats'
-      - name: Create database
-        run: curl --header "Content-Type:application/json" --request POST --data '{ "name":"networkmap", "options":{"sharding":"flexible", "replicationFactor":3 } }' http://localhost:8529/_api/database
       - name: Processor Build
         run: npm run build
       - name: Processor Start
