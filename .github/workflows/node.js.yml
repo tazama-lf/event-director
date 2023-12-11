@@ -54,7 +54,7 @@ jobs:
       - name: Create database
         run: curl --header "Content-Type:application/json" --request POST --data '{ "name":"networkmap", "options":{"sharding":"flexible", "replicationFactor":3 } }' http://localhost:8529/_api/database
       - name: Processor Start
-        run: timeout 2s bun run start || if [ $? -eq 124 ]; then true; fi
+        run: timeout 2s npm run start || if [ $? -eq 124 ]; then true; fi
         env:
           NODE_ENV: 'dev'
           STARTUP_TYPE: 'nats'
