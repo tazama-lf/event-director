@@ -4,9 +4,9 @@
 name: Node.js CI
 on:
   push:
-    branches: [ "ext-gh-ci" ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ "ext-gh-ci" ]
+    branches: [ "main" ]
 jobs:
   build:
     runs-on: ubuntu-latest
