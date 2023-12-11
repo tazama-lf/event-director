@@ -4,9 +4,9 @@
 name: Node.js CI
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "ext-gh-ci" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "ext-gh-ci" ]
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,16 +16,29 @@ jobs:
       contents: read
     strategy:
       matrix:
-        node-version: [16]
+        node-version: [20]
+        redis-version: [6]
     steps:
       - uses: actions/checkout@v3
       - uses: pnpm/action-setup@v2
         with:
           version: 7
+      - name: Start Arango
+        uses: xinova/arangodb-action@v1
+        with:
+          arangodb version: 'latest'
+      - name: Create Nats Server
+        uses: onichandame/nats-action@master
+        with:
+              port: "4222"
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.7.0
+        with:
+          redis-version: ${{ matrix.redis-version }}
       - name: Setup Node.js (.npmrc)
         uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: 20.x
           registry-url: https://npm.pkg.github.com/
           # Defaults to the user or organization that owns the workflow file
           scope: '@frmscoe'
@@ -38,3 +51,26 @@ jobs:
         env:
             NODE_ENV: 'test'
             STARTUP_TYPE: 'nats'
+      - name: Create database
+        run: curl --header "Content-Type:application/json" --request POST --data '{ "name":"networkmap", "options":{"sharding":"flexible", "replicationFactor":3 } }' http://localhost:8529/_api/database
+      - name: Processor Start
+        run: timeout 2s bun run start || if [ $? -eq 124 ]; then true; fi
+        env:
+          NODE_ENV: 'dev'
+          STARTUP_TYPE: 'nats'
+          SERVER_URL: 'nats://localhost:4222'
+          ACK_POLICY: 'None'
+          PRODUCER_STREAM: 'CRSP'
+          CONSUMER_STREAM: 'TMS'
+          STREAM_SUBJECT:
+          APM_ACTIVE: false
+          APM_LOGGING: false
+          FUNCTION_NAME: 'typology-processor'
+          REDIS_DB: 0
+          REDIS_AUTH:
+          REDIS_SERVERS: '[{"host":"127.0.0.1", "port":6379}]'
+          REDIS_IS_CLUSTER: false
+          DATABASE_URL: 'http://localhost:8529/'
+          DATABASE_USER: 'root'
+          DATABASE_PASSWORD:
+          DATABASE_NAME: 'networkmap'
