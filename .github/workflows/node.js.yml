@@ -37,8 +37,7 @@ jobs:
         with:
           redis-version: ${{ matrix.redis-version }}
       - name: Setup Nats-Rest Proxy
-        run: docker pull ghcr.io/cshezi/nats-utilities:latest && docker run -p 3000:3000 -e NODE_ENV='dev' -e SERVER_URL=host.docker.internal:4222 ghcr.io/cshezi/nats-utilities:latest
-        background: true
+        run: docker pull ghcr.io/cshezi/nats-utilities:latest && docker run -p 3000:3000 -e NODE_ENV='dev' -e SERVER_URL=host.docker.internal:4222 ghcr.io/cshezi/nats-utilities:latest &
 
       - name: Setup Node.js (.npmrc)
         uses: actions/setup-node@v3
@@ -63,8 +62,7 @@ jobs:
       - name: Processor Build
         run: npm run build
       - name: Processor Start
-        run: npm run start
-        background: true
+        run: npm run start &
         env:
           NODE_ENV: 'dev'
           STARTUP_TYPE: 'nats'
