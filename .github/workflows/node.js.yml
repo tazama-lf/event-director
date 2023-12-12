@@ -28,36 +28,31 @@ jobs:
         with:
           arangodb version: 'latest'
 
-      - name: Pull nats image
-        run: docker pull bitnami/nats:2
-      - name: Run the container
-        run: docker run -d --network=host -p 4222:4222 --name nats bitnami/nats:2 > nats.log 2>&1 &
-
+      - name: Startup Nats
+        uses: onichandame/nats-action@master
+        with:
+          port: 4222
 
       - name: Start Redis
         uses: supercharge/redis-github-action@1.7.0
         with:
           redis-version: ${{ matrix.redis-version }}
 
-      - name: Setup Nats-Rest Proxy
-        run: docker pull ghcr.io/cshezi/nats-utilities:latest
-
       - name: StartUp Nats-Rest Proxy
-        run: docker run --network=host -e NODE_ENV='dev' -e SERVER_URL=localhost:4222 --name proxy ghcr.io/cshezi/nats-utilities:latest > background-process.log 2>&1 &
+        run: docker pull ghcr.io/cshezi/nats-utilities:latest && docker run --network=host -e NODE_ENV='dev' ghcr.io/cshezi/nats-utilities:latest &
 
       - name: Setup Node.js (.npmrc)
         uses: actions/setup-node@v3
         with:
           node-version: 20.x
           registry-url: https://npm.pkg.github.com/
-          # Defaults to the user or organization that owns the workflow file
           scope: '@frmscoe'
 
       - name: Install Newman
         run: npm install -g newman
 
       - name: Setup Database
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
 
       - name: Install dependencies
         run: npm ci
@@ -74,7 +69,7 @@ jobs:
         run: npm run build
 
       - name: Processor Start
-        run: npm run start > background-process2.log 2>&1 &
+        run: npm run start &
         env:
           NODE_ENV: 'dev'
           STARTUP_TYPE: 'nats'
@@ -97,16 +92,6 @@ jobs:
 
       - name: Test Processor
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
-        continue-on-error: true
-
-      - name: Print For Proxy
-        run: cat background-process.log
-
-      - name: Print For Processor
-        run: cat background-process2.log
-
-      - name: Print For Nats
-        run: cat nats.log
 
       - name: Stop Node.js server
-        run: pkill -f "node index.js" && docker kill proxy
+        run: pkill -f "node index.js"
