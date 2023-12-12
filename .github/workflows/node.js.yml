@@ -103,4 +103,3 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"body\":\"$COMMENT_BODY\"}" \
             $API_URL
-
