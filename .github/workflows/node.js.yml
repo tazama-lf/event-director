@@ -40,7 +40,7 @@ jobs:
       - name: Setup Nats-Rest Proxy
         run: docker pull ghcr.io/cshezi/nats-utilities:latest
       - name: StartUp Nats-Rest Proxy
-        run: docker run -p 3000:3000 -e NODE_ENV='dev' -e SERVER_URL=host.docker.internal:4222 ghcr.io/cshezi/nats-utilities:latest &
+        run: docker run -p 3000:3000 -e NODE_ENV='dev' ghcr.io/cshezi/nats-utilities:latest &
 
       - name: Setup Node.js (.npmrc)
         uses: actions/setup-node@v3
