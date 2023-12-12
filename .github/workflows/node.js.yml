@@ -54,6 +54,14 @@ jobs:
       - name: Setup Database
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
 
+      - name: Set up Git
+        run: |
+              git config user.name "${{ github.actor }}"
+              git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Check out the branch
+        run: git checkout ext-gh-ci
+
       - name: Install dependencies
         run: npm ci
         env:
@@ -102,11 +110,6 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"body\":\"$COMMENT_BODY\"}" \
             $API_URL
-
-      - name: Set up Git
-        run: |
-              git config user.name "${{ github.actor }}"
-              git config user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Stage changes
         run: git add .
