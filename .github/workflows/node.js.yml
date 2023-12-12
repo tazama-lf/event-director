@@ -89,7 +89,7 @@ jobs:
           DATABASE_USER: 'root'
           DATABASE_PASSWORD:
           DATABASE_NAME: 'networkmap'
-
+          
       - name: Test Processor
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
 
@@ -105,4 +105,3 @@ jobs:
             $API_URL
       - name: Show URL
         run: echo "https://api.github.com/repos/${{github.repository}}/pull/${{github.event.number}}/comments"
-
