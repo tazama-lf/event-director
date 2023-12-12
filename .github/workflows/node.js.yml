@@ -52,7 +52,7 @@ jobs:
         run: npm install -g newman
 
       - name: Setup Database
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 > testresult.log 2>&1
 
       - name: Install dependencies
         run: npm ci
@@ -102,3 +102,8 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"body\":\"$COMMENT_BODY\"}" \
             $API_URL
+
+      - name: Read Test Content from File
+        run: |
+          TEST_CONTENT=$(cat testresult.log)
+          export COMMENT_BODY="Test content from file: $TEST_CONTENT"
