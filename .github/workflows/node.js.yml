@@ -49,7 +49,7 @@ jobs:
           scope: '@frmscoe'
 
       - name: Install Newman
-        run: npm install -g newman
+        run: npm install -g newman && npm install -g newman-reporter-html
 
       - name: Setup Database
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
@@ -91,14 +91,30 @@ jobs:
           DATABASE_NAME: 'networkmap'
 
       - name: Test Processor
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 > testresult.log 2>&1
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r html
 
       - name: Comment on PR
         run: |
-          COMMENT_BODY=$(<testresult.log)
+          COMMENT_BODY="King"
           API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{\"body\":\"$COMMENT_BODY\"}" \
             $API_URL
+
+      - name: Set up Git
+        run: |
+              git config user.name "${{ github.actor }}"
+              git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: Stage changes
+        run: git add .
+
+      - name: Commit changes
+        run: git commit -m "Auto-commit by GitHub Actions" || echo "No changes to commit"
+
+      - name: Push changes
+        run: git push
+        env:
+            GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
