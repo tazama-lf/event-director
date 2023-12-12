@@ -60,7 +60,7 @@ jobs:
               git config user.email "${{ github.actor }}@users.noreply.github.com"
 
       - name: Check out the branch
-        run: git checkout ext-gh-ci
+        run: git checkout main
 
       - name: Install dependencies
         run: npm ci
