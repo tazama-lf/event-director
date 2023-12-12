@@ -36,8 +36,11 @@ jobs:
         uses: supercharge/redis-github-action@1.7.0
         with:
           redis-version: ${{ matrix.redis-version }}
+
       - name: Setup Nats-Rest Proxy
-        run: docker pull ghcr.io/cshezi/nats-utilities:latest && docker run -p 3000:3000 -e NODE_ENV='dev' -e SERVER_URL=host.docker.internal:4222 ghcr.io/cshezi/nats-utilities:latest &
+        run: docker pull ghcr.io/cshezi/nats-utilities:latest
+      - name: StartUp Nats-Rest Proxy
+        run: docker run -p 3000:3000 -e NODE_ENV='dev' -e SERVER_URL=host.docker.internal:4222 ghcr.io/cshezi/nats-utilities:latest &
 
       - name: Setup Node.js (.npmrc)
         uses: actions/setup-node@v3
