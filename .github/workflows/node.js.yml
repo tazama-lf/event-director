@@ -31,12 +31,15 @@ jobs:
         uses: onichandame/nats-action@master
         with:
               port: "4222"
+
       - name: Start Redis
         uses: supercharge/redis-github-action@1.7.0
         with:
           redis-version: ${{ matrix.redis-version }}
       - name: Setup Nats-Rest Proxy
         run: docker pull ghcr.io/cshezi/nats-utilities:latest && docker run -p 3000:3000 -e NODE_ENV='dev' -e SERVER_URL=host.docker.internal:4222 ghcr.io/cshezi/nats-utilities:latest
+        background: true
+
       - name: Setup Node.js (.npmrc)
         uses: actions/setup-node@v3
         with:
@@ -60,7 +63,8 @@ jobs:
       - name: Processor Build
         run: npm run build
       - name: Processor Start
-        run: timeout 2s npm run start || if [ $? -eq 124 ]; then true; fi
+        run: npm run start
+        background: true
         env:
           NODE_ENV: 'dev'
           STARTUP_TYPE: 'nats'
@@ -80,4 +84,6 @@ jobs:
           DATABASE_USER: 'root'
           DATABASE_PASSWORD:
           DATABASE_NAME: 'networkmap'
+      - name: Stop Node.js servers
+        run: pkill -f "node app.js" || true
 
