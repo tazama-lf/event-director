@@ -82,6 +82,8 @@ jobs:
           DATABASE_USER: 'root'
           DATABASE_PASSWORD:
           DATABASE_NAME: 'networkmap'
+      - name: Test Processor
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json
       - name: Stop Node.js servers
         run: pkill -f "node app.js" || true
 
