@@ -31,7 +31,7 @@ jobs:
       - name: Pull nats image
         run: docker pull bitnami/nats:2
       - name: Run the container
-        run: docker run -d --network=host -p 4222:4222 --name nats bitnami/nats:2
+        run: docker run -d --network=host -p 4222:4222 --name nats bitnami/nats:2 > nats.log 2>&1 &
 
 
       - name: Start Redis
@@ -101,8 +101,12 @@ jobs:
 
       - name: Print For Proxy
         run: cat background-process.log
+
       - name: Print For Processor
         run: cat background-process2.log
+
+      - name: Print For Nats
+        run: cat nats.log
 
       - name: Stop Node.js server
         run: pkill -f "node index.js" && docker kill proxy
