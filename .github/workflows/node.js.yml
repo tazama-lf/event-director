@@ -42,7 +42,7 @@ jobs:
         run: docker pull ghcr.io/cshezi/nats-utilities:latest
 
       - name: StartUp Nats-Rest Proxy
-        run: docker run -p 3000:3000 -e NODE_ENV='dev' -e SERVER_URL=${{ github.server_url }}:4222 --name proxy ghcr.io/cshezi/nats-utilities:latest &
+        run: docker run -p 3000:3000 -e NODE_ENV='dev' -e SERVER_URL=host.docker.internal:4222 --name proxy ghcr.io/cshezi/nats-utilities:latest &
 
       - name: Setup Node.js (.npmrc)
         uses: actions/setup-node@v3
@@ -70,7 +70,8 @@ jobs:
             STARTUP_TYPE: 'nats'
 
       - name: Print GitHub Server URL
-        run: echo 'GitHub Server URL ${{ github.server_url }}'
+        run: echo 'Runner name ${{ runner.name }}' && echo echo 'Runner arch ${{ runner.arch }}'
+
 
       - name: Processor Build
         run: npm run build
