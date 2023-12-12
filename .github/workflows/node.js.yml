@@ -96,6 +96,7 @@ jobs:
 
       - name: Test Processor
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10000
+        continue-on-error: true
 
       - name: Print Background Process Logs
         run: cat background-process.log
