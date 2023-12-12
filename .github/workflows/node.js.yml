@@ -93,3 +93,16 @@ jobs:
       - name: Test Processor
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
 
+      - name: Comment on PR
+        run: |
+          COMMENT_BODY="Hello, this is a comment from a GitHub Actions workflow!"
+          API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
+
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"body\":\"$COMMENT_BODY\"}" \
+            $API_URL
+      - name: Show URL
+        run: echo "https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
+
