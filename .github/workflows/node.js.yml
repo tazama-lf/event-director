@@ -28,10 +28,11 @@ jobs:
         with:
           arangodb version: 'latest'
 
-      - name: Create Nats Server
-        uses: onichandame/nats-action@master
-        with:
-              port: "4222"
+      - name: Pull nats image
+        run: docker pull bitnami/nats:2
+      - name: Run the container
+        run: docker run -d --network=host -p 4222:4222 --name nats bitnami/nats:2
+
 
       - name: Start Redis
         uses: supercharge/redis-github-action@1.7.0
