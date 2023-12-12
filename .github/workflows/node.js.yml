@@ -42,7 +42,7 @@ jobs:
         run: docker pull ghcr.io/cshezi/nats-utilities:latest
 
       - name: StartUp Nats-Rest Proxy
-        run: docker run --network=host -e NODE_ENV='dev' -e SERVER_URL=localhost:4222 --name proxy ghcr.io/cshezi/nats-utilities:latest &
+        run: docker run --network=host -e NODE_ENV='dev' -e SERVER_URL=host.docker.internal:4222 --name proxy ghcr.io/cshezi/nats-utilities:latest > background-process.log 2>&1 &
 
       - name: Setup Node.js (.npmrc)
         uses: actions/setup-node@v3
@@ -69,15 +69,11 @@ jobs:
             NODE_ENV: 'test'
             STARTUP_TYPE: 'nats'
 
-      - name: Runner
-        run: echo 'Runner ${{ toJson(runner) }}'
-
-
       - name: Processor Build
         run: npm run build
 
       - name: Processor Start
-        run: npm run start &
+        run: npm run start > background-process2.log 2>&1 &
         env:
           NODE_ENV: 'dev'
           STARTUP_TYPE: 'nats'
@@ -101,5 +97,8 @@ jobs:
       - name: Test Processor
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json
 
+      - name: Print Background Process Logs
+        run: cat background-process.log
+
       - name: Stop Node.js server
-        run: pkill -f "node index.js" && docker kill proxy && docker rm -f proxy
+        run: pkill -f "node index.js" && docker kill proxy
