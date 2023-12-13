@@ -92,28 +92,21 @@ jobs:
           DATABASE_NAME: 'networkmap'
 
       - name: Test Processor
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r htmlextra --reporter-htmlextra-export report_${{ github.run_id }}_${{ github.actor }}.html
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r htmlextra --reporter-htmlextra-export report_${{ github.repository }}.html
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/download-artifact@v3
+        id: download
         with:
-          path: report_${{ github.run_id }}_${{ github.actor }}.html
+          name: report_${{ github.repository }}.html
+          path: path/to/artifact
 
-      - name: Set up Git
-        run: |
-            git config --global user.email "cshezi@sybrin.co.za"
-            git config --global user.name "cshezi"
+      - name: 'Echo download path'
+        run: echo ${{steps.download.outputs.download-path}}
 
-      - name: Add and Commit Changes
-        run: |
-              git add .
-              git commit -m "html added"
-
-      - run: git switch -c ext-gh-ci
-      - name: Push Changes
-        uses: ad-m/github-push-action@master
+      - name: Upload Results
+        uses: actions/upload-artifact@v3
         with:
-            github_token: ${{ secrets.GITHUB_TOKEN }}
-
+          path: report_${{ github.repository }}.html
 
       - name: Comment on PR
         run: |
