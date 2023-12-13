@@ -94,19 +94,19 @@ jobs:
       - name: Test Processor
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r htmlextra --reporter-htmlextra-export up/report_${{ github.repository }}.html
 
-      - uses: actions/download-artifact@v3
-        id: download
-        with:
-          name: report_${{ github.repository }}.html
-          path: path/to/artifact
+      # - uses: actions/download-artifact@v3
+      #   id: download
+      #   with:
+      #     name: up/report_${{ github.repository }}.html
+      #     path: path/to/artifact
 
-      - name: 'Echo download path'
-        run: echo ${{steps.download.outputs.download-path}}
+      # - name: 'Echo download path'
+      #   run: echo ${{steps.download.outputs.download-path}}
 
       - name: Upload Results
         uses: actions/upload-artifact@v3
         with:
-          name: report_${{ github.repository }}.html
+          name: up/report_${{ github.repository }}.html
           path: up/report_${{ github.repository }}.html
 
       - name: Comment on PR
