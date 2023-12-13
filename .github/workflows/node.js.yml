@@ -93,6 +93,11 @@ jobs:
       - name: Test Processor
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r htmlextra --reporter-htmlextra-export /home/runner/work/report_${{ github.run_id }}_${{ github.actor }}.html
 
+      - uses: actions/upload-artifact@v3
+        with:
+          name: report_${{ github.run_id }}_${{ github.actor }}
+          path: /home/runner/work/report_${{ github.run_id }}_${{ github.actor }}.html
+
       - name: Comment on PR
         run: |
           cd ~ && ls -al
