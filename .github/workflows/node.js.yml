@@ -20,6 +20,8 @@ jobs:
         redis-version: [6]
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref_name }}
       - uses: pnpm/action-setup@v2
         with:
           version: 7
@@ -91,16 +93,29 @@ jobs:
           DATABASE_NAME: 'networkmap'
 
       - name: Test Processor
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r htmlextra --reporter-htmlextra-export /home/runner/work/report_${{ github.run_id }}_${{ github.actor }}.html
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r htmlextra --reporter-htmlextra-export report_${{ github.run_id }}_${{ github.actor }}.html
 
       - uses: actions/upload-artifact@v3
         with:
-          name: report_${{ github.run_id }}_${{ github.actor }}
-          path: /home/runner/work/report_${{ github.run_id }}_${{ github.actor }}.html
+          path: report_${{ github.run_id }}_${{ github.actor }}.html
+
+      - name: Set up Git
+        run: |
+            git config --global user.email "cshezi@sybrin.co.za"
+            git config --global user.name "cshezi"
+
+      - name: Add and Commit Changes
+        run: |
+              git add .
+              git commit -m "html added"
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+            github_token: ${{ secrets.GH_TOKEN }}
 
       - name: Comment on PR
         run: |
-          cd ~ && cd runners && ls -al
           COMMENT_BODY="King OverLoad"
           API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
           curl -X POST \
