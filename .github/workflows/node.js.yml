@@ -88,7 +88,7 @@ jobs:
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
 
       - name: Test Processor
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r htmlextra --reporter-htmlextra-export up/report_${{ github.head_ref }}.html
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
 
       - name: Upload Results
         uses: actions/upload-artifact@v3
