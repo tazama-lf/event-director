@@ -32,9 +32,7 @@ jobs:
           arangodb version: 'latest'
 
       - name: Setup Arango
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json \
-              -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json \
-              --timeout-request 10200
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
 
       - name: Startup Nats
         uses: onichandame/nats-action@master
@@ -93,9 +91,7 @@ jobs:
           DATABASE_NAME: 'networkmap'
 
       - name: Test Processor
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json \
-              -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json \
-              --timeout-request 10200 -r json --reporter-json-export results.json
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r json --reporter-json-export results.json
       - name: Format Results
         run: |
                 # Use a script or tool to parse and format results.json
@@ -126,15 +122,15 @@ jobs:
       #     name: report_${{ github.head_ref }}.html
       #     path: report_${{ github.head_ref }}.html
 
-      - name: Commit and Push Changes
-        run: |
-            git config --local user.email "cshezi@sybrin.co.za"
-            git config --local user.name "cshezi"
-            git add .
-            git commit -m "bot: added test report"
-            git push origin HEAD:${{ github.ref }}
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Commit and Push Changes
+      #   run: |
+      #       git config --local user.email "cshezi@sybrin.co.za"
+      #       git config --local user.name "cshezi"
+      #       git add .
+      #       git commit -m "bot: added test report"
+      #       git push origin HEAD:${{ github.ref }}
+      #   env:
+      #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Comment on PR
         run: |
