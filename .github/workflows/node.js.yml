@@ -97,12 +97,12 @@ jobs:
         run: |
           # Use jq to extract a specific field from the summary.json
           SPECIFIC_FIELD=$(jq -r '.run.transfers.responseTotal' summary.json)
-          echo $(jq -r '.run.transfers.responseTotal' summary.json)
+          echo $SPECIFIC_FIELD
           echo "::set-output name=specific_field::$SPECIFIC_FIELD"
 
       - name: Comment on PR
         run: |
-          COMMENT_BODY=${{ needs.newman_test.outputs.specific_field }}
+          COMMENT_BODY=$SPECIFIC_FIELD
           PR_NUMBER=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
                        "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }}" \
                        | jq -r .number)
