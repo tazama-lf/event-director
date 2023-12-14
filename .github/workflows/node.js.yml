@@ -55,7 +55,7 @@ jobs:
           scope: '@frmscoe'
 
       - name: Install dependencies
-        run: npm install -g newman && npm install -g newman-reporter-htmlextra && npm ci
+        run: npm install -g newman && npm npm install -g newman-reporter-json-summary && npm ci
         env:
           GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
@@ -91,14 +91,15 @@ jobs:
           DATABASE_NAME: 'networkmap'
 
       - name: Test Processor
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r json --reporter-json-export results.json
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r json-summary --reporter-json-summary-export summary.json
+
       - name: Format Results
         run: |
                 # Use a script or tool to parse and format results.json
                 # For example, you can use jq or a custom script
 
                 # Placeholder script using jq (install jq first if not available)
-                jq '.' results.json > formatted_results.json
+                jq '{Run}' results.json > formatted_results.json
 
       - name: Comment on PR
         run: |
