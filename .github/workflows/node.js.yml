@@ -20,7 +20,6 @@ jobs:
         redis-version: [6]
     steps:
       - uses: actions/checkout@v3
-      - run: echo ${{ github.ref_name }}
       - uses: pnpm/action-setup@v2
         with:
           version: 7
@@ -49,14 +48,8 @@ jobs:
           registry-url: https://npm.pkg.github.com/
           scope: '@frmscoe'
 
-      - name: Install Newman
-        run: npm install -g newman && npm install -g newman-reporter-htmlextra
-
-      - name: Setup Database
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
-
       - name: Install dependencies
-        run: npm ci
+        run: npm install -g newman && npm install -g newman-reporter-htmlextra && npm ci
         env:
           GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
@@ -91,17 +84,11 @@ jobs:
           DATABASE_PASSWORD:
           DATABASE_NAME: 'networkmap'
 
+      - name: Setup Database
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
+
       - name: Test Processor
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r htmlextra --reporter-htmlextra-export up/report_${{ github.head_ref }}.html
-
-      - uses: actions/download-artifact@v3
-        id: download
-        with:
-          name: report_${{ github.head_ref }}.html
-          path: path/to/artifact
-
-      - name: 'Echo download path'
-        run: echo ${{steps.download.outputs.download-path}}
 
       - name: Upload Results
         uses: actions/upload-artifact@v3
