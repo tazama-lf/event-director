@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      specific_field: ${{ steps.newman_test.outputs.specific_field }}
     name: install, build, test
     permissions:
       packages: write
@@ -94,6 +96,7 @@ jobs:
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r json --reporter-json-export summary.json
 
       - name: Extract Specific Field
+        id: newman_test
         run: |
           # Use jq to extract a specific field from the summary.json
           SPECIFIC_FIELD=$(jq -r '.run.transfers.responseTotal' summary.json)
@@ -133,10 +136,14 @@ jobs:
       #       git push origin HEAD:${{ github.ref }}
       #   env:
       #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+  output:
+      needs: build
+      runs-on: ubuntu-latest
+      steps:
       - name: Comment on PR
+
         run: |
-          COMMENT_BODY=${{ needs.newman_test.outputs.specific_field }}
+          COMMENT_BODY=${{ needs.build.outputs.specific_field }}
           API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
