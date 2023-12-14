@@ -95,7 +95,15 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: report_${{ github.head_ref }}.html
-          path: up/report_${{ github.head_ref }}.html
+          path: report_${{ github.head_ref }}.html
+
+      - name: Commit and Push Changes
+        run: |
+            git config --local user.email "cshezi@sybrin.co.za"
+            git config --local user.name "cshezi"
+            git add .
+            git commit -m "bot: added test report"
+            git push
 
       - name: Comment on PR
         run: |
