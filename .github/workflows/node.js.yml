@@ -101,20 +101,16 @@ jobs:
                 jq '.' results.json > formatted_results.json
 
       - name: Comment on PR
-        uses: actions/github-script@v5
+        uses: actions/github-rest-api@v1
         with:
-            script: |
-                  const fs = require('fs');
-                  const results = fs.readFileSync('formatted_results.json', 'utf8');
-
-                  github.issues.createComment({
-                    issue_number: context.issue.number,
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                      body: `Test Results:\n\`\`\`\n${results}\n\`\`\``,
-                    });
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+         method: POST
+         headers: |
+                  Authorization: Bearer ${{ secrets.GH_TOKEN }}
+                  endpoint: /repos/${{ github.repository }}/issues/${{ github.event.number }}/comments
+                  body: |
+                    {
+                      "body": "Test Results:\n\`\`\`\n$(cat formatted_results.json)\n\`\`\`"
+                    }
 
       # - name: Upload Results
       #   uses: actions/upload-artifact@v3
