@@ -23,17 +23,21 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           version: 7
+
       - name: Start Arango
         uses: xinova/arangodb-action@v1
         with:
           arangodb version: 'latest'
+
+      - name: Setup Arango
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
 
       - name: Startup Nats
         uses: onichandame/nats-action@master
         with:
           port: 4222
 
-      - name: Start Redis
+      - name: Startup Redis
         uses: supercharge/redis-github-action@1.7.0
         with:
           redis-version: ${{ matrix.redis-version }}
@@ -84,11 +88,8 @@ jobs:
           DATABASE_PASSWORD:
           DATABASE_NAME: 'networkmap'
 
-      - name: Setup Database
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/ArangoDB%20Setup.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
-
       - name: Test Processor
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r htmlextra --reporter-htmlextra-export report_${{ github.head_ref }}.html
 
       - name: Upload Results
         uses: actions/upload-artifact@v3
