@@ -107,7 +107,7 @@ jobs:
                        | jq -r .number)
 
           curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{\"body\":\"Test Specific Field:
             \`\`\`
