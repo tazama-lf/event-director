@@ -105,7 +105,9 @@ jobs:
             git config --local user.name "cshezi"
             git add .
             git commit -m "bot: added test report"
-            git push
+            git push origin HEAD:${{ github.ref }}
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Comment on PR
         run: |
