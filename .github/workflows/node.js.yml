@@ -55,7 +55,7 @@ jobs:
           scope: '@frmscoe'
 
       - name: Install dependencies
-        run: npm install -g newman && npm npm install -g newman-reporter-json-summary && npm ci
+        run: npm install -g newman && npm install -g newman-reporter-htmlextra && npm ci
         env:
           GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
 
@@ -91,27 +91,29 @@ jobs:
           DATABASE_NAME: 'networkmap'
 
       - name: Test Processor
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r json-summary --reporter-json-summary-export summary.json
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/indexes/NATS_RES_CRSP_TEST.postman_collection.json -e https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json --timeout-request 10200 -r json --reporter-json-export results.json
 
-      - name: Format Results
+      - name: Extract Specific Field
         run: |
-                # Use a script or tool to parse and format results.json
-                # For example, you can use jq or a custom script
-
-                # Placeholder script using jq (install jq first if not available)
-                jq '{Run}' results.json > formatted_results.json
+          # Use jq to extract a specific field from the summary.json
+          SPECIFIC_FIELD=$(jq -r '.yourField' summary.json)
+          echo "::set-output name=specific_field::$SPECIFIC_FIELD"
 
       - name: Comment on PR
         run: |
-              COMMENT_BODY=$(cat formatted_results.json)
-                  curl -X POST \
-                    -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                    -H "Content-Type: application/json" \
-                    -d "{\"body\":\"Test Results:
-                    \`\`\`
-                    ${COMMENT_BODY}
-                    \`\`\`\"}" \
-                    "https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
+          COMMENT_BODY=${{ needs.newman_test.outputs.specific_field }}
+          PR_NUMBER=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+                       "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }}" \
+                       | jq -r .number)
+
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"body\":\"Test Specific Field:
+            \`\`\`
+            ${COMMENT_BODY}
+            \`\`\`\"}" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/${PR_NUMBER}/comments"
 
 
 
