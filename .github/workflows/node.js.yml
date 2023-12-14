@@ -102,11 +102,17 @@ jobs:
 
       - name: Comment on PR
         run: |
-              gh auth login --with-token "${{ secrets.GITHUB_TOKEN }}"
-              gh api repos/${{ github.repository }}/issues/${{ github.event.number }}/comments -f body="Test Results:
-              \`\`\`
-                $(cat formatted_results.json)
-              \`\`\`"
+              COMMENT_BODY=$(cat formatted_results.json)
+                  curl -X POST \
+                    -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                    -H "Content-Type: application/json" \
+                    -d "{\"body\":\"Test Results:
+                    \`\`\`
+                    ${COMMENT_BODY}
+                    \`\`\`\"}" \
+                    "https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
+
+
 
       # - name: Upload Results
       #   uses: actions/upload-artifact@v3
@@ -124,12 +130,12 @@ jobs:
       #   env:
       #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Comment on PR
-        run: |
-          COMMENT_BODY="King OverLoad"
-          API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"body\":\"$COMMENT_BODY\"}" \
-            $API_URL
+      # - name: Comment on PR
+      #   run: |
+      #     COMMENT_BODY="King OverLoad"
+      #     API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
+      #     curl -X POST \
+      #       -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+      #       -H "Content-Type: application/json" \
+      #       -d "{\"body\":\"$COMMENT_BODY\"}" \
+      #       $API_URL
