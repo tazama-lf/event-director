@@ -147,7 +147,7 @@ jobs:
           Line 2 of the comment.
           Line 3 of the comment.
           EOF
-          ))
+          )
           API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
