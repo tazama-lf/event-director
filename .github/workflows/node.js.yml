@@ -142,15 +142,16 @@ jobs:
       - name: Comment on PR
 
         run: |
-          COMMENT_BODY=$(cat <<EOF
-          Line 1 of the comment.
-          Line 2 of the comment.
-          Line 3 of the comment.
-          EOF
-          )
-          API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "{\"body\":\"$COMMENT_BODY\"}" \
-            $API_URL
+              COMMENT_BODY=$(cat <<EOF
+              Line 1 of the comment.
+              Line 2 of the comment.
+              Line 3 of the comment.
+              EOF
+              )
+              COMMENT_BODY=$(echo "$COMMENT_BODY" | jq -s -R -r @uri)
+              API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
+              curl -X POST \
+                -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+                -H "Content-Type: application/json" \
+                -d "{\"body\":\"$COMMENT_BODY\"}" \
+                $API_URL
