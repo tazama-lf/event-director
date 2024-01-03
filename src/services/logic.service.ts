@@ -95,14 +95,16 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     });
 
     // Deduplicate all rules
-    const rules = getRuleMap(networkMap, parsedRequest.transaction.TxTp);
+    const rules = getRuleMap(networkMap, parsedRequest.transaction.TxTp as string);
 
     // Send transaction to all rules
     const promises: Array<Promise<void>> = [];
     const metaData = { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) };
 
     for (const rule of rules) {
-      promises.push(sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache, metaData));
+      promises.push(
+        sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache as DataCache, metaData),
+      );
     }
     await Promise.all(promises);
 
