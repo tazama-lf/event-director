@@ -101,39 +101,14 @@ jobs:
           # Use jq to extract a specific field from the summary.json
           echo "::set-output name=specific_field::$(jq -r '.run.transfers.responseTotal' summary.json)"
 
-      # - name: Comment on PR
-      #   run: |
-      #     COMMENT_BODY=${{ needs.newman_test.outputs.specific_field }}
-      #     PR_NUMBER=$(curl -s -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-      #                  "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }}" \
-      #                  | jq -r .number)
 
-      #     curl -X POST \
-      #       -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
-      #       -H "Content-Type: application/json" \
-      #       -d "{\"body\":\"Test Specific Field:
-      #       \`\`\`
-      #       ${COMMENT_BODY}
-      #       \`\`\`\"}" \
-      #       "https://api.github.com/repos/${{ github.repository }}/issues/${PR_NUMBER}/comments"
+      - name: Upload Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: summary.json
+          path: summary.json
 
 
-
-      # - name: Upload Results
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: report_${{ github.head_ref }}.html
-      #     path: report_${{ github.head_ref }}.html
-
-      # - name: Commit and Push Changes
-      #   run: |
-      #       git config --local user.email "cshezi@sybrin.co.za"
-      #       git config --local user.name "cshezi"
-      #       git add .
-      #       git commit -m "bot: added test report"
-      #       git push origin HEAD:${{ github.ref }}
-      #   env:
-      #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   output:
       needs: build
       runs-on: ubuntu-latest
