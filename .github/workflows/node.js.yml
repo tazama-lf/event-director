@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      specific_field: ${{ steps.newman_test.outputs.specific_field }}
+      responseAverage: ${{ steps.newman_test.outputs.responseAverage }}
     name: install, build, test
     permissions:
       packages: write
@@ -98,8 +98,10 @@ jobs:
       - name: Extract Specific Field
         id: newman_test
         run: |
-          # Use jq to extract a specific field from the summary.json
-          echo "::set-output name=specific_field::$(jq -r '.run.transfers.responseTotal' summary.json)"
+          echo "::set-output name=responseAverage::$(jq -r '.run.timings.responseAverage' summary.json)"
+          echo "::set-output name=totalRequests::$(jq -r '.run.timings.responseMin' summary.json)"
+          echo "::set-output name=totalRequests::$(jq -r '.run.timings.responseMax' summary.json)"
+          echo "::set-output name=totalRequests::$(jq -r '.run.timings.responseSd' summary.json)"
 
 
       - name: Upload Results
@@ -116,7 +118,7 @@ jobs:
       - name: Comment on PR
 
         run: |
-              COMMENT_BODY="Response total <br /> ${{ needs.build.outputs.specific_field }}"
+              COMMENT_BODY="Response Average ${{ needs.build.outputs.responseAverage }}ms <br />"
 
               API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
               curl -X POST \
