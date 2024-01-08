@@ -121,7 +121,7 @@ jobs:
       - name: Comment on PR
 
         run: |
-              COMMENT_BODY="Response Average ${{ needs.build.outputs.responseAverage }}ms <br />Response Min ${{ needs.build.outputs.responseMin }}ms"
+              COMMENT_BODY="Response Average ${{ needs.build.outputs.responseAverage }}ms <br />Response Min ${{ needs.build.outputs.responseMin }}ms <br />Response max ${{ needs.build.outputs.responseMax }}ms <br />Response Stardard dev ${{ needs.build.outputs.responseSd }}ms"
 
               API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
               curl -X POST \
