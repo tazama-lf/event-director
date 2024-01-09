@@ -116,12 +116,7 @@ jobs:
           name: Full_Report.json
           path: fullReport.json
 
-  output:
-      needs: build
-      runs-on: ubuntu-latest
-      steps:
       - name: Comment on PR
-
         run: |
               COMMENT_BODY="⚠️ Newman Test Results  <br /><br />Number of tests ${{ env.numberOfTest }} <br /><br />Response stats<blockquote> <li> Response Average ${{ needs.build.outputs.responseAverage }}ms <br /><li>Response Min ${{ needs.build.outputs.responseMin }}ms <br /><li>Response max ${{ needs.build.outputs.responseMax }}ms <br /><li>Response standard dev ${{ needs.build.outputs.responseSd }}ms"
 
