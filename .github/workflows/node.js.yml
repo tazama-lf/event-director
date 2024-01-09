@@ -25,8 +25,6 @@ jobs:
         redis-version: [6]
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: ext-gh-ci
       - uses: pnpm/action-setup@v2
         with:
           version: 7
@@ -125,7 +123,7 @@ jobs:
 
               API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
               curl -X POST \
-                -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                 -H "Content-Type: application/json" \
                 --data-raw "{\"body\":\"$COMMENT_BODY\"}" \
                 $API_URL
