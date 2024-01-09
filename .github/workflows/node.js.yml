@@ -104,7 +104,7 @@ jobs:
           echo "responseMin=$(jq -r '.run.timings.responseMin' fullReport.json)" >> $GITHUB_ENV
           echo "responseMax=$(jq -r '.run.timings.responseMax' fullReport.json)" >> $GITHUB_ENV
           echo "responseSd=$(jq -r '.run.timings.responseSd' fullReport.json)" >> $GITHUB_ENV
-          echo "numberOfTest=$(jq -r '.run.stats.tests.total' fullReport.json)" >> $GITHUB_ENV
+          echo "##[set-output name=numberOfTest]$(jq -r '.run.stats.tests.total' fullReport.json)"
 
       - name: Use output variable
         run: |
@@ -123,7 +123,7 @@ jobs:
       - name: Comment on PR
 
         run: |
-              COMMENT_BODY="⚠️ Newman Test Results  <br /><br />Number of tests ${{ env.responseSd }} <br /><br />Response stats<blockquote> <li> Response Average ${{ needs.build.outputs.responseAverage }}ms <br /><li>Response Min ${{ needs.build.outputs.responseMin }}ms <br /><li>Response max ${{ needs.build.outputs.responseMax }}ms <br /><li>Response standard dev ${{ needs.build.outputs.responseSd }}ms"
+              COMMENT_BODY="⚠️ Newman Test Results  <br /><br />Number of tests ${{ needs.build.outputs.numberOfTest }} <br /><br />Response stats<blockquote> <li> Response Average ${{ needs.build.outputs.responseAverage }}ms <br /><li>Response Min ${{ needs.build.outputs.responseMin }}ms <br /><li>Response max ${{ needs.build.outputs.responseMax }}ms <br /><li>Response standard dev ${{ needs.build.outputs.responseSd }}ms"
 
               API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
               curl -X POST \
