@@ -163,7 +163,7 @@ describe('Logic Service', () => {
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
-      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
+      expect(debugLoggerSpy).toHaveBeenCalledTimes(2);
     });
 
     it('should respond with empty network submap no network map is found', async () => {
