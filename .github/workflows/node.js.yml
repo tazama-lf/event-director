@@ -118,8 +118,7 @@ jobs:
 
       - name: Comment on PR
         run: |
-              COMMENT_BODY="⚠️ Newman Test Results  <br /><br />Number of tests ${{ env.numberOfTest }} <br /><br />Response stats<blockquote> <li> Response Average ${{ env.responseAverage }}ms <br /><li>Response Min ${{ env.responseMin }}ms <br /><li>Response max ${{ env.responseMax }}ms <br /><li>Response standard dev ${{ env.responseSd }}ms"
-
+              COMMENT_BODY="⚠️ Newman Test Results"
 
               API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
               curl -X POST \
