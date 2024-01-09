@@ -48,7 +48,7 @@ jobs:
           redis-version: ${{ matrix.redis-version }}
 
       - name: StartUp Nats-Rest Proxy
-        run: docker pull ghcr.io/cshezi/nats-utilities:latest && docker run --network=host -e NODE_ENV='dev' ghcr.io/cshezi/nats-utilities:latest &
+        run: docker pull ghcr.io/frmscoe/nats-utilities:latest && docker run --network=host -e NODE_ENV='dev' ghcr.io/frmscoe/nats-utilities:latest &
 
       - name: Setup Node.js (.npmrc)
         uses: actions/setup-node@v3
@@ -104,13 +104,11 @@ jobs:
           echo "::set-output name=responseMax::$(jq -r '.run.timings.responseMax' summary.json)"
           echo "::set-output name=responseSd::$(jq -r '.run.timings.responseSd' summary.json)"
 
-
       - name: Upload Results
         uses: actions/upload-artifact@v3
         with:
           name: summary.json
           path: summary.json
-
 
   output:
       needs: build
