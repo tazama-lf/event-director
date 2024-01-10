@@ -43,12 +43,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   return rules;
 }
 
-const sleep = async (ms: number): Promise<unknown> => {
-  return await new Promise((resolve) => setTimeout(resolve, ms));
-};
-
 export const handleTransaction = async (req: unknown): Promise<void> => {
-  await sleep(3000);
   const startTime = process.hrtime.bigint();
   let networkMap: NetworkMap = new NetworkMap();
   let cachedActiveNetworkMap: NetworkMap;
