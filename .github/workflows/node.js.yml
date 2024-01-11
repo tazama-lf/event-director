@@ -123,6 +123,65 @@ jobs:
               --data-raw "{\"body\":\"$COMMENT_BODY\"}" \
               $API_URL
 
+  store:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: store data
+        run: |
+              # GitHub repository details
+              repo_owner="${{github.repository_owner }}"
+              repo_name="stats-holder"
+              branch_name="temp-holder"  # Specify the branch where the file is located
+
+              # File details
+              file_path="tms.csv"
+              commit_message="#${{github.event.number}} Update file via API"
+
+              # Personal access token with repo scope
+              access_token="${{ secrets.GITHUB_TOKEN }}"
+
+              # Content to be added/modified in the file
+              new_content="${{ needs.build.outputs.responseMax }};${{ needs.build.outputs.responseAverage }};${{ needs.build.outputs.responseMin }};${{ needs.build.outputs.numberOfTest }};${{ github.actor }};${{ github.event.pull_request.updated_at }};${{ github.event.pull_request._links.self.href }}"
+
+              # Get current file content
+              current_content=$(curl -s -H "Authorization: token $access_token" \
+                "https://api.github.com/repos/$repo_owner/$repo_name/contents/$file_path?ref=$branch_name" \
+                | jq -r '.content')
+
+              # Decode the base64-encoded content
+              current_content_decoded=$(echo "$current_content" | base64 -d)
+
+              # Append new content
+              updated_content="$new_content"
+
+              # Encode the updated content to base64
+              updated_content_base64=$(echo -n "$updated_content" | base64)
+
+              # Get the current commit SHA
+              current_content_sha=$(curl -s -H "Authorization: token $access_token" \
+                "https://api.github.com/repos/$repo_owner/$repo_name/contents/$file_path?ref=$branch_name" \
+                | jq -r '.sha')
+
+              # Prepare the request payload
+              request_payload=$(cat <<EOF
+              {
+                "message": "$commit_message",
+                "content": "$updated_content_base64",
+                "sha": "$current_content_sha",
+                "branch": "$branch_name"
+              }
+              EOF
+              )
+
+              response=$(curl -L -X PUT \
+                  -H "Accept: application/vnd.github+json" \
+                  -H "Authorization: Bearer $access_token" \
+                  -H "X-GitHub-Api-Version: 2022-11-28" \
+                  "https://api.github.com/repos/$repo_owner/$repo_name/contents/$file_path" \
+                  -d "$request_payload")
+
+
   test:
     runs-on: ubuntu-latest
     name: unit tests
