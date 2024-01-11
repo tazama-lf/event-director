@@ -136,13 +136,13 @@ jobs:
 
               # File details
               file_path="tms.csv"
-              commit_message="#${{github.event.number}} Update file via API"
+              commit_message=" Update file via API"
 
               # Personal access token with repo scope
               access_token="${{ secrets.GITHUB_TOKEN }}"
 
               # Content to be added/modified in the file
-              new_content="${{ needs.build.outputs.responseMax }};${{ needs.build.outputs.responseAverage }};${{ needs.build.outputs.responseMin }};${{ needs.build.outputs.numberOfTest }};${{ github.actor }}"
+              new_content="100"
 
               # Get current file content
               current_content=$(curl -s -H "Authorization: token $access_token" \
