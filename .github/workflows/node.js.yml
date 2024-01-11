@@ -139,7 +139,7 @@ jobs:
               commit_message=" Update file via API"
 
               # Personal access token with repo scope
-              access_token="${{ secrets.GITHUB_TOKEN }}"
+              access_token="${{ secrets.GH_TOKEN }}"
 
               # Content to be added/modified in the file
               new_content="100"
