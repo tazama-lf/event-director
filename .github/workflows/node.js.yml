@@ -78,6 +78,7 @@ jobs:
           scope: '@frmscoe'
 
       - name: Install dependencies
+
         run: npm ci
         env:
           GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
@@ -163,4 +164,3 @@ jobs:
         run: npm ci
       - name: Check linting
         run: npm run lint
-
