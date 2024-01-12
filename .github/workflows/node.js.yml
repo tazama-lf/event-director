@@ -138,7 +138,7 @@ jobs:
               # Personal access token with repo scope
               access_token="${{ secrets.GH_TOKEN }}"
 
-              new_content="${{ needs.build.outputs.responseMax }};${{ needs.build.outputs.responseAverage }};${{ needs.build.outputs.responseMin }};${{ needs.build.outputs.numberOfTest }};${{ github.actor }},${{ github.event.pull_request.updated_at }};${{ github.event.number}}"
+              new_content="${{ needs.build.outputs.responseMax }};${{ needs.build.outputs.responseAverage }};${{ needs.build.outputs.responseMin }};${{ needs.build.outputs.numberOfTest }};${{ github.actor }};${{ github.event.pull_request.updated_at }};${{ github.event.number}}"
               updated_content="$new_content"
               updated_content_base64=$(echo -n "$updated_content" | base64)
 
