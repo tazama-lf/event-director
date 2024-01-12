@@ -145,18 +145,18 @@ jobs:
 
               # GitHub actions
 
+      - name: Git auth repo
+        run: |
+              git config --global user.email "cshezi@sybrin.co.za"
+              git config --global user.name "cshezi"
+              git config --global credential.helper "store --file=.git-credentials"
+              echo -e "https://${github_username}:${github_token}@github.com\n" > .git-credentials
+
 
       - name: Git Clone repo
         run: |
               git clone "https://${github_username}:${github_token}@github.com/${repo_owner}/${repo_name}.git"
               cd "${repo_name}"
-
-      - name: Git auth repo
-        run: |
-              git config user.email "cshezi@sybrin.co.za"
-              git config user.name "cshezi"
-              git config credential.helper "store --file=.git-credentials"
-              echo -e "https://${github_username}:${github_token}@github.com\n" > .git-credentials
 
       - name: Git Actions
         run: |
