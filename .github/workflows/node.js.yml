@@ -142,7 +142,7 @@ jobs:
               access_token="${{ secrets.GH_TOKEN }}"
 
               # Content to be added/modified in the file
-              new_content="${{ needs.build.outputs.responseMax }};${{ needs.build.outputs.responseAverage }};${{ needs.build.outputs.responseMin }};${{ needs.build.outputs.numberOfTest }};${{ github.event.pull_request.user.name }};${{ github.event.pull_request.updated_at }};${{ github.event.pull_request.html_url }}"
+              new_content="${{ needs.build.outputs.responseMax }};${{ needs.build.outputs.responseAverage }};${{ needs.build.outputs.responseMin }};${{ needs.build.outputs.numberOfTest }};${{ github.event.pull_request.user.name }};${{ github.event.pull_request.updated_at }};"
 
               # Get current file content
               current_content=$(curl -s -H "Authorization: token $access_token" \
