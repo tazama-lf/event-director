@@ -123,54 +123,45 @@ jobs:
               --data-raw "{\"body\":\"$COMMENT_BODY\"}" \
               $API_URL
 
-  store:
-    needs: build
+              name: Append Data to File
+
+
+
+  append_data:
     runs-on: ubuntu-latest
+
     steps:
-      - name: echo repoOwner
-        run: echo "${{ github.repository_owner_id }}"
-      - name: store data
-        run: |
-              #!/bin/bash
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-              # Declaring variables
-              repo_owner="${{ github.repository_owner }}"
-              repo_name="stats-holder"
-              destination_branch="temp-holder"
-              file_path="tms.csv"
-              commit_message="#${{ github.event.number}} Append data to file"
-              github_username="${{ github.repository_owner }}"
-              github_token="${{ secrets.GH_TOKEN }}"
-              new_data="${{ needs.build.outputs.responseMax }};${{ needs.build.outputs.responseAverage }};${{ needs.build.outputs.responseMin }};${{ needs.build.outputs.numberOfTest }};${{ github.actor }};${{ github.event.pull_request.updated_at }};${{ github.event.number}}"
+    - name: Set up Git
+      run: |
+        git config --global user.email "actions@github.com"
+        git config --global user.name "GitHub Actions"
 
-              # GitHub actions
+    - name: Append data to file
+      run: |
+        # New data to append
+        new_data="Your new data"
 
-      - name: Git auth repo
-        run: |
-              git config --global user.email "cshezi@sybrin.co.za"
-              git config --global user.name "cshezi"
-              git config --global credential.helper "store --file=.git-credentials"
-              echo -e "https://${github_username}:${github_token}@github.com\n" > .git-credentials
+        # Append the new data to the file
+        echo -e "${new_data}" >> "tms.csv"
 
+        # Stage the changes
+        git add "tms.csv"
 
-      - name: Git Clone repo
-        run: |
-              git clone "https://${github_username}:${github_token}@github.com/${repo_owner}/${repo_name}.git"
-              cd "${repo_name}"
+        # Commit the changes
+        git commit -m "Append data to file"
 
-      - name: Git Actions
-        run: |
-              git fetch origin "${destination_branch}"
-              git checkout -B "${destination_branch}" "origin/${destination_branch}"
-              echo -e "${new_data}" > "${file_path}"
-              git add "${file_path}"
-              git commit -m "${commit_message}"
-              git push origin "${destination_branch}"
+        # Push the changes to a different repository using a personal access token
+        git push https://${{ secrets.GH_TOKEN }}@github.com/other_owner/other_repo.git HEAD:${{ github.ref }}
 
-      - name: Delete local files
-        run: |
-              cd ..
-              rm -rf "${repo_name}"
+    - name: Clean up
+      run: |
+        # Clean up: Delete the local repository
+        rm -rf "${{ github.workspace }}"
+        echo "Local repository deleted."
+
 
 
   test:
