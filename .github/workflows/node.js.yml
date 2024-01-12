@@ -153,7 +153,7 @@ jobs:
         git commit -m "Append data to file"
 
         # Push the changes to a different repository using a personal access token
-        git push https://${{ secrets.GH_TOKEN }}@github.com/other_owner/other_repo.git HEAD:${{ github.ref }}
+        git push https://${{ secrets.GH_TOKEN }}@github.com/cshezi/stats-holder.git HEAD:${{ github.ref }}
 
     - name: Clean up
       run: |
