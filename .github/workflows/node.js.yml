@@ -135,8 +135,8 @@ jobs:
 
     - name: Set up Git
       run: |
-        git config --global user.email "actions@github.com"
-        git config --global user.name "GitHub Actions"
+        git config --global user.email "cshezi@sybrin.co.za"
+        git config --global user.name "cshezi"
 
     - name: Append data to file
       run: |
