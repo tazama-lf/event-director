@@ -144,15 +144,22 @@ jobs:
               new_data="${{ needs.build.outputs.responseMax }};${{ needs.build.outputs.responseAverage }};${{ needs.build.outputs.responseMin }};${{ needs.build.outputs.numberOfTest }};${{ github.actor }};${{ github.event.pull_request.updated_at }};${{ github.event.number}}"
 
               # GitHub actions
+
+
+      - name: Git Clone repo
+        run: |
+              git clone "https://${github_username}:${github_token}@github.com/${repo_owner}/${repo_name}.git"
+              cd "${repo_name}"
+
+      - name: Git auth repo
+        run: |
               git config user.email "cshezi@sybrin.co.za"
               git config user.name "cshezi"
               git config credential.helper "store --file=.git-credentials"
-
-      - name: Git repo local
-        run: |
               echo -e "https://${github_username}:${github_token}@github.com\n" > .git-credentials
-              git clone "https://${github_username}:${github_token}@github.com/${repo_owner}/${repo_name}.git"
-              cd "${repo_name}"
+
+      - name: Git Actions
+        run: |
               git fetch origin "${destination_branch}"
               git checkout -B "${destination_branch}" "origin/${destination_branch}"
               echo -e "${new_data}" > "${file_path}"
@@ -160,10 +167,10 @@ jobs:
               git commit -m "${commit_message}"
               git push origin "${destination_branch}"
 
-              # Delete localfiles
+      - name: Delete local files
+        run: |
               cd ..
               rm -rf "${repo_name}"
-              echo "File updated successfully in branch ${destination_branch}"
 
 
   test:
