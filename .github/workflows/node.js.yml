@@ -130,19 +130,19 @@ jobs:
       - name: store data
         run: |
               # GitHub repository details
-              repo_owner="cshezi"
+              repo_owner="${{github.repository_owner }}"
               repo_name="stats-holder"
               branch_name="temp-holder"  # Specify the branch where the file is located
 
               # File details
               file_path="tms.csv"
-              commit_message=" Update file via API"
+              commit_message="#${{github.event.number}} Update file via API"
 
               # Personal access token with repo scope
               access_token="${{ secrets.GH_TOKEN }}"
 
               # Content to be added/modified in the file
-              new_content="100"
+              new_content="${{ needs.build.outputs.responseMax }};${{ needs.build.outputs.responseAverage }};${{ needs.build.outputs.responseMin }};${{ needs.build.outputs.numberOfTest }};${{ github.actor }};${{ github.event.pull_request.updated_at }};${{ github.event.pull_request._links.self.href }}"
 
               # Get current file content
               current_content=$(curl -s -H "Authorization: token $access_token" \
