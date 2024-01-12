@@ -139,12 +139,14 @@ jobs:
               destination_branch="temp-holder"
               file_path="tms.csv"
               commit_message="#${{ github.event.number}} Append data to file"
-              github_username="${{ github.repository_owner_id }}"
+              github_username="${{ github.repository_owner }}"
               github_token="${{ secrets.GH_TOKEN }}"
               new_data="${{ needs.build.outputs.responseMax }};${{ needs.build.outputs.responseAverage }};${{ needs.build.outputs.responseMin }};${{ needs.build.outputs.numberOfTest }};${{ github.actor }};${{ github.event.pull_request.updated_at }};${{ github.event.number}}"
 
               # GitHub actions
-              git config --global credential.helper "store --file=.git-credentials"
+              git config user.email "cshezi@sybrin.co.za"
+              git config user.name "cshezi"
+              git config credential.helper "store --file=.git-credentials"
               echo -e "https://${github_username}:${github_token}@github.com\n" > .git-credentials
               git clone "https://${github_username}:${github_token}@github.com/${repo_owner}/${repo_name}.git"
               cd "${repo_name}"
