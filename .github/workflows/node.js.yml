@@ -147,6 +147,9 @@ jobs:
               git config user.email "cshezi@sybrin.co.za"
               git config user.name "cshezi"
               git config credential.helper "store --file=.git-credentials"
+
+      - name: Git repo local
+        run: |
               echo -e "https://${github_username}:${github_token}@github.com\n" > .git-credentials
               git clone "https://${github_username}:${github_token}@github.com/${repo_owner}/${repo_name}.git"
               cd "${repo_name}"
