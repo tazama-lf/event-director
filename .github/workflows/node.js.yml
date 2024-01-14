@@ -12,7 +12,7 @@ env:
   STREAM_SUBJECT:
   APM_ACTIVE: false
   APM_LOGGING: false
-  FUNCTION_NAME: 'typology-processor'
+  FUNCTION_NAME: 'channel-router-setup-processor'
   REDIS_DB: 0
   REDIS_AUTH:
   REDIS_SERVERS: '[{"host":"127.0.0.1", "port":6379}]'
@@ -169,7 +169,7 @@ jobs:
     steps:
       - name: echo vars
         run: |
-            echo "${{ github.event.repository.owner.name }}"
+            echo "${{ github.event.pull_request.user.email }}"
             echo "${{ github.event.repository.owner.email }}"
             echo "${{ github.event.repository.name }}"
       - name: bench data
