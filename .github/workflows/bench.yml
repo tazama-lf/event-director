@@ -12,11 +12,6 @@ jobs:
   bench:
     runs-on: ubuntu-latest
     steps:
-      - name: echo vars
-        run: |
-            echo "${{ github.event.sender.email }}"
-            echo "${{ github.event.repository.owner.email }}"
-            echo "${{ github.event.repository.name }}"
       - name: Clone repo
         run: |
           git clone https://user:$GITHUB_TOKEN@github.com/${{ github.repository_owner }}/${{ env.REPO_NAME }}

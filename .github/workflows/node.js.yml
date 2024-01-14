@@ -104,12 +104,35 @@ jobs:
           name: Full_Report.json
           path: fullReport.json
 
+  pastbench:
+    env:
+      REPO_NAME: 'stats-holder'
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+    runs-on: ubuntu-latest
+    outputs:
+      responseAverage: ${{ steps.extractpast.outputs.responseAverage }}
+      responseMin: ${{ steps.extractpast.outputs.responseMin }}
+      responseMax: ${{ steps.extractpast.outputs.responseMax }}
+      responseSd: ${{ steps.extractpast.outputs.responseSd }}
+      numberOfTest: ${{ steps.extractpast.outputs.numberOfTest }}
+    steps:
+      - name: Clone repo
+        run: |
+          git clone https://user:$GITHUB_TOKEN@github.com/${{ github.repository_owner }}/${{ env.REPO_NAME }}
+          cd ${{ env.REPO_NAME }}
+      - name: Extract data
+        id: extractpast
+        run: |
+          cd ${{ env.REPO_NAME }}
+          input=tail -n 1 "${{ github.event.repository.name }}".csv
+          field1=$(echo "$input" | awk -F ';' '{print $1}')
+          echo $field
+
   output:
-    needs: build
+    needs: [build, pastbench]
     runs-on: ubuntu-latest
     steps:
       - name: Comment on PR
-
         run: |
               COMMENT_BODY="⚠️ Newman Test Results  <br /><br />Number of tests ${{ needs.build.outputs.numberOfTest }} <br /><br />Response stats<blockquote> <li> Response Average ${{ needs.build.outputs.responseAverage }}ms <br /><li>Response Min ${{ needs.build.outputs.responseMin }}ms <br /><li>Response max ${{ needs.build.outputs.responseMax }}ms <br /><li>Response standard dev ${{ needs.build.outputs.responseSd }}ms"
 
