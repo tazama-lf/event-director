@@ -169,7 +169,7 @@ jobs:
     steps:
       - name: echo vars
         run: |
-            echo "${{ github.event.pull_request.user.email }}"
+            echo "${{ github.event.sender.email }}"
             echo "${{ github.event.repository.owner.email }}"
             echo "${{ github.event.repository.name }}"
       - name: bench data
