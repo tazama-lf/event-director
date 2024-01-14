@@ -174,9 +174,9 @@ jobs:
 
           git clone https://user:$GITHUB_TOKEN@github.com/cshezi/stats-holder  # This works
 
-          cd my-repo
+          cd stats-holder
           git config user.name "cshezi"
-          git config user.email "cshezi5@sybrin.com"
+          git config user.email "cshezi5@sybrin.co.za"
 
           git checkout
       - name: write data
