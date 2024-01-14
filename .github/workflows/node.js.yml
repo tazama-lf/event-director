@@ -34,11 +34,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      responseAverage: ${{ steps.newman_test.outputs.responseAverage }}
-      responseMin: ${{ steps.newman_test.outputs.responseMin }}
-      responseMax: ${{ steps.newman_test.outputs.responseMax }}
-      responseSd: ${{ steps.newman_test.outputs.responseSd }}
-      numberOfTest: ${{ steps.newman_test.outputs.numberOfTest }}
+      responseAverage: ${{ steps.cur_test.outputs.responseAverage }}
+      responseMin: ${{ steps.cur_test.outputs.responseMin }}
+      responseMax: ${{ steps.cur_test.outputs.responseMax }}
+      responseSd: ${{ steps.cur_test.outputs.responseSd }}
+      numberOfTest: ${{ steps.cur_test.outputs.numberOfTest }}
     name: integration test
     permissions:
       packages: write
@@ -90,7 +90,7 @@ jobs:
         run: newman run https://raw.githubusercontent.com/frmscoe/postman/main/micro_processors/ChannelRouterSetupProcessor_Proxy_Test.postman_collection.json -e ${{ env.ENV_NEWMAN }} --timeout-request 10200 -r json --reporter-json-export fullReport.json
 
       - name: Extract Specific Field
-        id: newman_test
+        id: cur_test
         run: |
           echo "##[set-output name=numberOfTest]$(jq -r '.run.stats.tests.total' fullReport.json)"
           echo "##[set-output name=responseSd]$(jq -r '.run.timings.responseSd' fullReport.json)"
@@ -110,20 +110,20 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
     runs-on: ubuntu-latest
     outputs:
-      responseMax: ${{ steps.pretest.outputs.responseMax }}
-      responseAverage: ${{ steps.pretest.outputs.responseAverage }}
-      responseMin: ${{ steps.pretest.outputs.responseMin }}
-      numberOfTest: ${{ steps.pretest.outputs.numberOfTest }}
-      author: ${{ steps.pretest.outputs.author }}
-      updatedAt: ${{ steps.pretest.outputs.updatedAt }}
-      prNumber: ${{ steps.pretest.outputs.prNumber }}
+      responseMax: ${{ steps.pre_test.outputs.responseMax }}
+      responseAverage: ${{ steps.pre_test.outputs.responseAverage }}
+      responseMin: ${{ steps.pre_test.outputs.responseMin }}
+      numberOfTest: ${{ steps.pre_test.outputs.numberOfTest }}
+      author: ${{ steps.pre_test.outputs.author }}
+      updatedAt: ${{ steps.pre_test.outputs.updatedAt }}
+      prNumber: ${{ steps.pre_test.outputs.prNumber }}
     steps:
       - name: Clone repo
         run: |
           git clone https://user:$GITHUB_TOKEN@github.com/${{ github.repository_owner }}/${{ env.REPO_NAME }}
           cd ${{ env.REPO_NAME }}
       - name: Extract data
-        id: pretest
+        id: pre_test
         run: |
           cd ${{ env.REPO_NAME }}
           input=$(tail -n 1 "${{ github.event.repository.name }}".csv)
