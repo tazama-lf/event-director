@@ -12,7 +12,7 @@ env:
   STREAM_SUBJECT:
   APM_ACTIVE: false
   APM_LOGGING: false
-  FUNCTION_NAME: 'channel-router-setup-processor'
+  FUNCTION_NAME: '${{ github.event.repository.name }}'
   REDIS_DB: 0
   REDIS_AUTH:
   REDIS_SERVERS: '[{"host":"127.0.0.1", "port":6379}]'
@@ -165,6 +165,7 @@ jobs:
   bench:
     env:
       GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      REPO_NAME: 'stats-holder'
     runs-on: ubuntu-latest
     steps:
       - name: echo vars
@@ -174,20 +175,20 @@ jobs:
             echo "${{ github.event.repository.name }}"
       - name: bench data
         run: |
-          git clone https://user:$GITHUB_TOKEN@github.com/${{ github.repository_owner }}/stats-holder
-          cd stats-holder
-          git config user.name "${{ github.event.repository.owner.name }}"
-          git config user.email "${{ github.event.repository.owner.email }}"
+          git clone https://user:$GITHUB_TOKEN@github.com/${{ github.repository_owner }}/${{ env.REPO_NAME }}
+          cd ${{ env.REPO_NAME }}
+          git config user.name "cshezi"
+          git config user.email "cshezi@sybrin.co.za"
           git checkout
       - name: write data
         run: |
-          cd stats-holder
+          cd ${{ env.REPO_NAME }}
           echo 'Hell' >> "${{ github.event.repository.name }}".csv
           git add "${{ github.event.repository.name }}".csv
           git commit -m "Update csv"
       - name: push data
         run: |
-          cd stats-holder
+          cd ${{ env.REPO_NAME }}
           git push origin main
 
 
