@@ -36,6 +36,7 @@ jobs:
       - name: Write data
         run: |
           cd ${{ env.REPO_NAME }}
+          echo "" >> "${{ env.PROCCESSOR_REPO_NAME }}".csv
           cat "${{ env.PROCCESSOR_REPO_NAME }}".csv.tmp >> "${{ env.PROCCESSOR_REPO_NAME }}".csv
           git reset "${{ env.PROCCESSOR_REPO_NAME }}".csv.tmp
           git add "${{ env.PROCCESSOR_REPO_NAME }}".csv
