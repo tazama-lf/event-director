@@ -131,7 +131,7 @@ jobs:
               repo_owner="${{ github.repository_owner }}"
               repo_name="stats-holder"
               branch_name="temp-holder"
-              file_path="tms.csv"
+              file_path="${{ env.FUNCTION_NAME }}".csv
 
               # Personal access token with repo scope
               access_token="${{ secrets.GH_TOKEN }}"
