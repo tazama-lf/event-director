@@ -193,9 +193,10 @@ jobs:
       - name: Write data
         run: |
           cd ${{ env.REPO_NAME }}
-          echo "${{ env.PROCCESSOR_REPO_NAME }}".csv.tmp >> "${{ env.PROCCESSOR_REPO_NAME }}".csv
+          cat "${{ env.PROCCESSOR_REPO_NAME }}".csv.tmp >> "${{ env.PROCCESSOR_REPO_NAME }}".csv
+          git reset "${{ env.PROCCESSOR_REPO_NAME }}".csv.tmp
           git add "${{ env.PROCCESSOR_REPO_NAME }}".csv
-          git commit -m "${{ github.event.number}} Pushed update of "
+          git commit -m "${{ github.event.number}} Pushed update of ${{ env.PROCCESSOR_REPO_NAME }}"
       - name: push data
         run: |
           cd ${{ env.REPO_NAME }}
