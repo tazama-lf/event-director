@@ -179,6 +179,8 @@ jobs:
           git config user.email "cshezi5@sybrin.co.za"
 
           git checkout
+      - name: list files
+        run: ls -la
       - name: write data
         run: |
           echo 'Hell' >> tms.csv
