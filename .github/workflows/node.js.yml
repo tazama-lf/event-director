@@ -184,7 +184,8 @@ jobs:
         run: |
           cd ${{ env.REPO_NAME }}
           git checkout temp-holder
-          echo "${{ env.PROCCESSOR_REPO_NAME }}".csv >> "${{ env.PROCCESSOR_REPO_NAME }}".csv.tmp
+          git pull
+          cat "${{ env.PROCCESSOR_REPO_NAME }}".csv >> "${{ env.PROCCESSOR_REPO_NAME }}".csv.tmp
           git stash
           git checkout main
           git stash apply
