@@ -132,9 +132,8 @@ jobs:
           echo "##[set-output name=responseMin]$(echo "$input" | awk -F ';' '{print $3}')"
           echo "##[set-output name=numberOfTest]$(echo "$input" | awk -F ';' '{print $4}')"
           echo "##[set-output name=author]$(echo "$input" | awk -F ';' '{print $5}')"
-          updatedAt=$(echo "$input" | awk -F ';' '{print $6}')
-          prNumber=$(echo "$input" | awk -F ';' '{print $7}')
-          echo $(echo "$input" | awk -F ';' '{print $2}')
+          echo "##[set-output name=updatedAt]$(echo "$input" | awk -F ';' '{print $6}'))"
+          echo "##[set-output name=prNumber]$(echo "$input" | awk -F ';' '{print $7}')"
 
   output:
     needs: [build, pastbench]
@@ -142,7 +141,7 @@ jobs:
     steps:
       - name: Comment on PR
         run: |
-              COMMENT_BODY="⚠️ Newman Test Results  <br /><br />Number of tests ${{ needs.build.outputs.numberOfTest }} <br /><br />Response stats<blockquote> <li> Response Average ${{ needs.build.outputs.responseAverage }}ms <br /><li>Response Min ${{ needs.build.outputs.responseMin }}ms vs ${{ needs.pastbench.outputs.responseMin }} <br /><li>Response max ${{ needs.build.outputs.responseMax }}ms <br /><li>Response standard dev ${{ needs.build.outputs.responseSd }}ms"
+              COMMENT_BODY="⚠️ Newman Test Results  <br /><br />Current number of tests is ${{ needs.build.outputs.numberOfTest }} and previous was ${{ needs.pastbench.outputs.numberOfTest }} <br /><br />Response stats<blockquote> <li>Current response average is ${{ needs.build.outputs.responseAverage }}ms and previous was ${{ needs.pastbench.outputs.responseAverage }}ms <br /><li>Current response min is ${{ needs.build.outputs.responseMin }}ms and previous was ${{ needs.pastbench.outputs.responseMin }}ms <br /><li>Current response max ${{ needs.build.outputs.responseMax }}ms and previous was ${{ needs.pastbench.outputs.responseMax }} <br /><li>Response standard dev ${{ needs.build.outputs.responseSd }}ms <br /><br /> Previous PR was merged by ${{ needs.pastbench.outputs.author }} PR number is #${{ needs.pastbench.outputs.prNumber }} at ${{ needs.pastbench.outputs.updatedAt }}"
 
               API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
               curl -X POST \
