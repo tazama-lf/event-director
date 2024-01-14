@@ -123,26 +123,18 @@ jobs:
           git clone https://user:$GITHUB_TOKEN@github.com/${{ github.repository_owner }}/${{ env.REPO_NAME }}
           cd ${{ env.REPO_NAME }}
       - name: Extract data
+        id: pretest
         run: |
           cd ${{ env.REPO_NAME }}
           input=$(tail -n 1 "${{ github.event.repository.name }}".csv)
-          responseMax=$(echo "$input" | awk -F ';' '{print $1}')
-          responseAverage=$(echo "$input" | awk -F ';' '{print $2}')
-          responseMin=$(echo "$input" | awk -F ';' '{print $3}')
-          numberOfTest=$(echo "$input" | awk -F ';' '{print $4}')
-          author=$(echo "$input" | awk -F ';' '{print $5}')
+          echo "##[set-output name=responseMax]$(echo "$input" | awk -F ';' '{print $1}')"
+          echo "##[set-output name=responseAverage]$(echo "$input" | awk -F ';' '{print $2}')"
+          echo "##[set-output name=responseMin]$(echo "$input" | awk -F ';' '{print $3}')"
+          echo "##[set-output name=numberOfTest]$(echo "$input" | awk -F ';' '{print $4}')"
+          echo "##[set-output name=author]$(echo "$input" | awk -F ';' '{print $5}')"
           updatedAt=$(echo "$input" | awk -F ';' '{print $6}')
           prNumber=$(echo "$input" | awk -F ';' '{print $7}')
-      - name: output
-        id: pretest
-        run: |
-          echo "##[set-output name=responseMax]$responseMax"
-          echo "##[set-output name=responseAverage]$responseAverage"
-          echo "##[set-output name=responseMin]$responseMin"
-          echo "##[set-output name=numberOfTest]$numberOfTest"
-          echo "##[set-output name=author]$author"
-
-
+          echo $(echo "$input" | awk -F ';' '{print $2}')
 
   output:
     needs: [build, pastbench]
