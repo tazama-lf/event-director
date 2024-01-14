@@ -124,7 +124,9 @@ jobs:
         id: extractpast
         run: |
           cd ${{ env.REPO_NAME }}
+          ls -la
           input=$(tail -n 1 "${{ github.event.repository.name }}".csv)
+          echo $input
           field1=$(echo "$input" | awk -F ';' '{print $1}')
           echo $field
 
