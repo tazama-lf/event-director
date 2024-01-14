@@ -185,6 +185,7 @@ jobs:
           ls -la
       - name: write data
         run: |
+          ls -la
           echo 'Hell' >> tms.csv
 
           git add tms.csv
