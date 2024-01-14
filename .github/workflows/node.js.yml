@@ -195,7 +195,7 @@ jobs:
         run: |
           cd stats-holder
           ls -la
-          git push origin master # This does not work
+          git push origin main
           #git push --set-upstream https://user:$GITHUB_TOKEN@github.com/cshezi/stats-holder api-version-$COMMIT # This does not work either
 
 
