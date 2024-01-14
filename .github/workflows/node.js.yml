@@ -164,6 +164,37 @@ jobs:
               "https://api.github.com/repos/$repo_owner/$repo_name/contents/$file_path" \
               -d "$request_payload"
 
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - name: bench data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+
+          git clone https://user:$GITHUB_TOKEN@github.com/cshezi/stats-holder  # This works
+
+          cd my-repo
+          git config user.name "cshezi"
+          git config user.email "cshezi5@sybrin.com"
+
+          git checkout
+      - name: write data
+        run: |
+          echo 'Hell' >> tms.csv
+
+          git add tms.csv
+          git commit -m "Update csv"
+
+          git remote -v # Prints:
+          # origin ***github.com/owner/my-repo.git (fetch)
+          # origin ***github.com/owner/my-repo.git (push)
+      - name: push data
+        run: |
+          git push --set-upstream origin api-version-$COMMIT # This does not work
+          git push --set-upstream https://user:$GITHUB_TOKEN@github.com/cshezi/stats-holder api-version-$COMMIT # This does not work either
+
+
 
   test:
     runs-on: ubuntu-latest
