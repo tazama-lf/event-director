@@ -78,10 +78,8 @@ jobs:
           scope: '@frmscoe'
 
       - name: Install dependencies
-
         run: npm ci
-        env:
-          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
 
       - name: Processor Build
         run: npm run build
@@ -165,38 +163,32 @@ jobs:
               -d "$request_payload"
 
   bench:
+    env:
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
     runs-on: ubuntu-latest
     steps:
-      - name: bench data
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      - name: echo vars
         run: |
-
-          git clone https://user:$GITHUB_TOKEN@github.com/cshezi/stats-holder  # This works
-
+            echo "${{ github.event.pusher.username }}"
+            echo "${{ github.event.pusher.email }}"
+            echo "${{ github.repository }}"
+      - name: bench data
+        run: |
+          git clone https://user:$GITHUB_TOKEN@github.com/${{ github.repository_owner }}/stats-holder
           cd stats-holder
-          git config user.name "cshezi"
-          git config user.email "cshezi5@sybrin.co.za"
-
+          git config user.name "${{ github.event.pusher.username }}"
+          git config user.email "${{ github.event.pusher.email }}"
           git checkout
       - name: write data
         run: |
           cd stats-holder
-          ls -la
-          echo 'Hell' >> tms.csv
-
-          git add tms.csv
+          echo 'Hell' >> "${{ github.event.pusher.email }}".csv
+          git add "${{ github.event.pusher.email }}".csv
           git commit -m "Update csv"
-
-          git remote -v # Prints:
-          # origin ***github.com/owner/my-repo.git (fetch)
-          # origin ***github.com/owner/my-repo.git (push)
       - name: push data
         run: |
           cd stats-holder
-          ls -la
           git push origin main
-          #git push --set-upstream https://user:$GITHUB_TOKEN@github.com/cshezi/stats-holder api-version-$COMMIT # This does not work either
 
 
 
