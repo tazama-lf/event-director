@@ -169,21 +169,21 @@ jobs:
     steps:
       - name: echo vars
         run: |
-            echo "${{ github.event.pusher.username }}"
-            echo "${{ github.event.pusher.email }}"
-            echo "${{ github.repository }}"
+            echo "${{ github.event.repository.owner.name }}"
+            echo "${{ github.event.repository.owner.email }}"
+            echo "${{ github.event.repository.name }}"
       - name: bench data
         run: |
           git clone https://user:$GITHUB_TOKEN@github.com/${{ github.repository_owner }}/stats-holder
           cd stats-holder
-          git config user.name "${{ github.event.pusher.username }}"
-          git config user.email "${{ github.event.pusher.email }}"
+          git config user.name "${{ github.event.repository.owner.name }}"
+          git config user.email "${{ github.event.repository.owner.email }}"
           git checkout
       - name: write data
         run: |
           cd stats-holder
-          echo 'Hell' >> "${{ github.event.pusher.email }}".csv
-          git add "${{ github.event.pusher.email }}".csv
+          echo 'Hell' >> "${{ github.event.repository.name }}".csv
+          git add "${{ github.event.repository.name }}".csv
           git commit -m "Update csv"
       - name: push data
         run: |
