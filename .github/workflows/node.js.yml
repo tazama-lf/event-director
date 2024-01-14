@@ -110,25 +110,39 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
     runs-on: ubuntu-latest
     outputs:
-      responseAverage: ${{ steps.extractpast.outputs.responseAverage }}
-      responseMin: ${{ steps.extractpast.outputs.responseMin }}
-      responseMax: ${{ steps.extractpast.outputs.responseMax }}
-      responseSd: ${{ steps.extractpast.outputs.responseSd }}
-      numberOfTest: ${{ steps.extractpast.outputs.numberOfTest }}
+      responseMax: ${{ steps.pretest.outputs.responseMax }}
+      responseAverage: ${{ steps.pretest.outputs.responseAverage }}
+      responseMin: ${{ steps.pretest.outputs.responseMin }}
+      numberOfTest: ${{ steps.pretest.outputs.numberOfTest }}
+      author: ${{ steps.pretest.outputs.author }}
+      updatedAt: ${{ steps.pretest.outputs.updatedAt }}
+      prNumber: ${{ steps.pretest.outputs.prNumber }}
     steps:
       - name: Clone repo
         run: |
           git clone https://user:$GITHUB_TOKEN@github.com/${{ github.repository_owner }}/${{ env.REPO_NAME }}
           cd ${{ env.REPO_NAME }}
       - name: Extract data
-        id: extractpast
         run: |
           cd ${{ env.REPO_NAME }}
-          ls -la
           input=$(tail -n 1 "${{ github.event.repository.name }}".csv)
-          echo $input
-          field1=$(echo "$input" | awk -F ';' '{print $1}')
-          echo $field1
+          responseMax=$(echo "$input" | awk -F ';' '{print $1}')
+          responseAverage=$(echo "$input" | awk -F ';' '{print $2}')
+          responseMin=$(echo "$input" | awk -F ';' '{print $3}')
+          numberOfTest=$(echo "$input" | awk -F ';' '{print $4}')
+          author=$(echo "$input" | awk -F ';' '{print $5}')
+          updatedAt=$(echo "$input" | awk -F ';' '{print $6}')
+          prNumber=$(echo "$input" | awk -F ';' '{print $7}')
+      - name: output
+        id: pretest
+        run: |
+          echo "##[set-output name=responseMax]$responseMax"
+          echo "##[set-output name=responseAverage]$responseAverage"
+          echo "##[set-output name=responseMin]$responseMin"
+          echo "##[set-output name=numberOfTest]$numberOfTest"
+          echo "##[set-output name=author]$author"
+
+
 
   output:
     needs: [build, pastbench]
@@ -136,7 +150,7 @@ jobs:
     steps:
       - name: Comment on PR
         run: |
-              COMMENT_BODY="⚠️ Newman Test Results  <br /><br />Number of tests ${{ needs.build.outputs.numberOfTest }} <br /><br />Response stats<blockquote> <li> Response Average ${{ needs.build.outputs.responseAverage }}ms <br /><li>Response Min ${{ needs.build.outputs.responseMin }}ms <br /><li>Response max ${{ needs.build.outputs.responseMax }}ms <br /><li>Response standard dev ${{ needs.build.outputs.responseSd }}ms"
+              COMMENT_BODY="⚠️ Newman Test Results  <br /><br />Number of tests ${{ needs.build.outputs.numberOfTest }} <br /><br />Response stats<blockquote> <li> Response Average ${{ needs.build.outputs.responseAverage }}ms <br /><li>Response Min ${{ needs.build.outputs.responseMin }}ms vs ${{ needs.pastbench.outputs.responseMin }} <br /><li>Response max ${{ needs.build.outputs.responseMax }}ms <br /><li>Response standard dev ${{ needs.build.outputs.responseSd }}ms"
 
               API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
               curl -X POST \
