@@ -151,7 +151,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: store data
+      - name: Store data
         run: |
               # GitHub repository details
               repo_owner="${{ github.repository_owner }}"
