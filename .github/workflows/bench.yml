@@ -1,7 +1,7 @@
 name: Benchmark CI
 env:
   GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-  REPO_NAME: 'stats-holder'
+  REPO_NAME: 'performance-benchmark'
   PROCCESSOR_REPO_NAME: ${{ github.event.repository.name }}
 on:
   push:
