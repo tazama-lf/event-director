@@ -140,19 +140,18 @@ jobs:
       - name: Comment on PR
         run: |
               difference=$((${{ needs.pastbench.outputs.responseMax }} - ${{ needs.build.outputs.responseMax }}))
-              echo $difference
 
               if [ $difference -gt $THRESHOLD ]; then
-                COMMENT="⚠️ Performance improved"
+                COMMENT="✅ Performance improved"
               elif [ $difference -ge 0 ]; then
-                COMMENT="⚠️ Performance might have improved"
+                COMMENT="✔️ Performance might have improved"
               elif [ $difference -gt -$THRESHOLD ]; then
-                COMMENT="⚠️ Warning: Performance might have declined"
+                COMMENT="⚠️ Performance might have declined"
               else
-                COMMENT="❌ Error: Performance declined"
+                COMMENT="❌ Performance declined"
               fi
 
-              COMMENT_BODY="⚠️ Newman Test Results $COMMENT <br /><br />Current number of tests is ${{ needs.build.outputs.numberOfTest }} and previous was ${{ needs.pastbench.outputs.numberOfTest }} <br /><br />Response stats<blockquote> <li>Current response average is ${{ needs.build.outputs.responseAverage }}ms and previous was ${{ needs.pastbench.outputs.responseAverage }}ms <br /><li>Current response min is ${{ needs.build.outputs.responseMin }}ms and previous was ${{ needs.pastbench.outputs.responseMin }}ms <br /><li>Current response max is ${{ needs.build.outputs.responseMax }}ms and previous was ${{ needs.pastbench.outputs.responseMax }}ms <br /><li>Response standard deviation ${{ needs.build.outputs.responseSd }}ms <br /><br /> Previous PR was merged by ${{ needs.pastbench.outputs.author }} and Pull request number is #${{ needs.pastbench.outputs.prNumber }} at ${{ needs.pastbench.outputs.updatedAt }}"
+              COMMENT_BODY="🧪 Newman Test Results <br /> $COMMENT <br /><br />Current number of tests is ${{ needs.build.outputs.numberOfTest }} and previous was ${{ needs.pastbench.outputs.numberOfTest }} <br /><br />Response stats<blockquote> <li>Current response average is ${{ needs.build.outputs.responseAverage }}ms and previous was ${{ needs.pastbench.outputs.responseAverage }}ms <br /><li>Current response min is ${{ needs.build.outputs.responseMin }}ms and previous was ${{ needs.pastbench.outputs.responseMin }}ms <br /><li>Current response max is ${{ needs.build.outputs.responseMax }}ms and previous was ${{ needs.pastbench.outputs.responseMax }}ms <br /><li>Response standard deviation ${{ needs.build.outputs.responseSd }}ms <br /><br /> Previous PR was merged by ${{ needs.pastbench.outputs.author }} and Pull request number is #${{ needs.pastbench.outputs.prNumber }} at ${{ needs.pastbench.outputs.updatedAt }}"
 
               API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
               curl -X POST \
