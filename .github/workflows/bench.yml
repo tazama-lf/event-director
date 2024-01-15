@@ -15,8 +15,8 @@ jobs:
         run: |
           git clone https://user:$GITHUB_TOKEN@github.com/${{ github.repository_owner }}/${{ env.REPO_NAME }}
           cd ${{ env.REPO_NAME }}
-          git config user.name "cshezi"
-          git config user.email "cshezi@sybrin.co.za"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
       - name: Switch to temp branch
         run: |
           cd ${{ env.REPO_NAME }}
