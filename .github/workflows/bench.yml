@@ -1,6 +1,6 @@
 name: Benchmark CI
 env:
-  GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.GH_WRITE_TOKEN }}
   REPO_NAME: 'performance-benchmark'
   PROCCESSOR_REPO_NAME: ${{ github.event.repository.name }}
 on:
