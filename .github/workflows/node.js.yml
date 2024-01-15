@@ -21,6 +21,7 @@ env:
   DATABASE_USER: 'root'
   DATABASE_PASSWORD:
   DATABASE_NAME: 'networkmap'
+  REPO_NAME: 'performance-benchmark'
   GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
   NPM_SCOPE: "@frmscoe"
   NPM_REGISTRY: "https://npm.pkg.github.com/"
@@ -105,9 +106,6 @@ jobs:
           path: fullReport.json
 
   pastbench:
-    env:
-      REPO_NAME: 'performance-benchmark'
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     runs-on: ubuntu-latest
     outputs:
       responseMax: ${{ steps.pre_test.outputs.responseMax }}
@@ -120,7 +118,7 @@ jobs:
     steps:
       - name: Clone repo
         run: |
-          git clone https://user:$GITHUB_TOKEN@github.com/${{ github.repository_owner }}/${{ env.REPO_NAME }}
+          git clone https://user:$GH_TOKEN@github.com/${{ github.repository_owner }}/${{ env.REPO_NAME }}
           cd ${{ env.REPO_NAME }}
       - name: Extract data
         id: pre_test
