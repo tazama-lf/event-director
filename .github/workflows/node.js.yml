@@ -119,7 +119,6 @@ jobs:
       - name: Clone repo
         run: |
           git clone https://user:$GH_TOKEN@github.com/${{ github.repository_owner }}/${{ env.REPO_NAME }}
-          cd ${{ env.REPO_NAME }}
       - name: Extract data
         id: pre_test
         run: |
@@ -143,7 +142,7 @@ jobs:
 
               API_URL="https://api.github.com/repos/${{github.repository}}/issues/${{github.event.number}}/comments"
               curl -X POST \
-              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
               -H "Content-Type: application/json" \
               --data-raw "{\"body\":\"$COMMENT_BODY\"}" \
               $API_URL
@@ -156,12 +155,12 @@ jobs:
         run: |
               # GitHub repository details
               repo_owner="${{ github.repository_owner }}"
-              repo_name="performance-benchmark"
+              repo_name="${{ env.REPO_NAME }}"
               branch_name="temp-holder"
               file_path="${{ env.FUNCTION_NAME }}".csv
 
               # Personal access token with repo scope
-              access_token="${{ secrets.GH_TOKEN }}"
+              access_token="${{ env.GH_TOKEN }}"
 
               new_content="${{ needs.build.outputs.responseMax }};${{ needs.build.outputs.responseAverage }};${{ needs.build.outputs.responseMin }};${{ needs.build.outputs.numberOfTest }};${{ github.actor }};${{ github.event.pull_request.updated_at }};${{ github.event.number}}"
               updated_content="$new_content"
