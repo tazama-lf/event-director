@@ -138,8 +138,8 @@ jobs:
     steps:
       - name: Comment on PR
         run: |
-              difference=$(( ${{ needs.build.outputs.responseMax }} - ${{ needs.pastbench.outputs.responseMax }} ))
-
+              difference=$((${{ needs.pastbench.outputs.responseMax }} - ${{ needs.build.outputs.responseMax }}))
+              echo $difference
               if [ $difference - < 5 ]; then
                 COMMENT="⚠️ Performance improved"
               elif [ $difference -ge 5 ] && [ $difference -le -5 ]; then
