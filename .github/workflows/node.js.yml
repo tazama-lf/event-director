@@ -140,11 +140,12 @@ jobs:
         run: |
               difference=$((${{ needs.pastbench.outputs.responseMax }} - ${{ needs.build.outputs.responseMax }}))
               echo $difference
-              if [ $difference - < 5 ]; then
+
+              if [ $difference -gt 5 ]; then
                 COMMENT="⚠️ Performance improved"
-              elif [ $difference -ge 5 ] && [ $difference -le -5 ]; then
+              elif [ $difference -ge 0 ]; then
                 COMMENT="⚠️ Performance might have improved"
-              elif [ $difference -gt -5 ] && [ $difference -le 0 ]; then
+              elif [ $difference -gt -5 ]; then
                 COMMENT="⚠️ Warning: Performance might have declined"
               else
                 COMMENT="❌ Error: Performance declined"
