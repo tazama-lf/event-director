@@ -12,6 +12,7 @@ import NodeCache from 'node-cache';
 import { Singleton } from './services/services';
 
 // Set config for lib (network map db config you want to use)
+//
 const databaseManagerConfig = {
   networkMap: {
     certPath: config.dbCertPath,
