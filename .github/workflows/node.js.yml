@@ -157,7 +157,7 @@ jobs:
               curl -X POST \
               -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
               -H "Content-Type: application/json" \
-              --data-raw "{\"body\":\"$COMMENT_BODY\"}" \
+              --data-raw "{\"body\":\"$COMMENT_BODY\",\"assignee\":\"action@github.com\"}" \
               $API_URL
 
   store:
