@@ -13,4 +13,3 @@ If you have the token exported:
 ```sh
 docker compose build
 ```
-CI
