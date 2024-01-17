@@ -205,8 +205,6 @@ jobs:
               "https://api.github.com/repos/$repo_owner/$repo_name/contents/$file_path" \
               -d "$request_payload"
 
-
-
   test:
     runs-on: ubuntu-latest
     name: unit tests
