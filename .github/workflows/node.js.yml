@@ -96,7 +96,7 @@ jobs:
       - name: Extract Specific Field
         id: newman_test
         run: |
-          echo "##[set-output name=numberOfTest]$(jq -r '.run.stats.tests.total' fullReport.json)"
+          echo "##[set-output name=numberOfTest]$(jq -r '.run.stats.iterations.total' fullReport.json)"
           echo "##[set-output name=responseSd]$(jq -r '.run.timings.responseSd' fullReport.json)"
           echo "##[set-output name=responseMax]$(jq -r '.run.timings.responseMax' fullReport.json)"
           echo "##[set-output name=responseMin]$(jq -r '.run.timings.responseMin' fullReport.json)"
