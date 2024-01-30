@@ -28,6 +28,7 @@ env:
   NPM_REGISTRY: "https://npm.pkg.github.com/"
   ENV_NEWMAN: https://raw.githubusercontent.com/frmscoe/postman/indexes/environments/Ekuta-LOCAL.postman_environment.json
   THRESHOLD: 5
+  ITERATION_COUNT: 1000
 on:
   push:
     branches: [ "main" ]
@@ -90,7 +91,7 @@ jobs:
         run: npm run start &
 
       - name: Test Processor
-        run: newman run https://raw.githubusercontent.com/frmscoe/postman/main/micro_processors/ChannelRouterSetupProcessor_Proxy_Test.postman_collection.json -e ${{ env.ENV_NEWMAN }} --timeout-request 10200 -r json --reporter-json-export fullReport.json
+        run: newman run https://raw.githubusercontent.com/frmscoe/postman/main/micro_processors/ChannelRouterSetupProcessor_Proxy_Test.postman_collection.json --iteration-count ${{ env.ITERATION_COUNT }} -e ${{ env.ENV_NEWMAN }} --timeout-request 10200 -r json --reporter-json-export fullReport.json
 
       - name: Extract Specific Field
         id: newman_test
