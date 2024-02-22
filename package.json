@@ -36,8 +36,8 @@
   ],
   "license": "ISC",
   "dependencies": {
-    "@frmscoe/frms-coe-lib": "^2.2.4",
-    "@frmscoe/frms-coe-startup-lib": "^2.1.2",
+    "@frmscoe/frms-coe-lib": "https://github.com/rtkay123/coe-lib-ud.git",
+    "@frmscoe/frms-coe-startup-lib": "https://github.com/rtkay123/startup-lib.git",
     "@log4js-node/logstash-http": "^1.1.0",
     "dotenv": "^16.3.1",
     "log4js": "^6.9.1",
