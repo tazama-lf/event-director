@@ -1,99 +1,1401 @@
-# Channel Router and Setup Processor
+# 2. Channel Routing & Setup Processor (CRSP)
 
-![](/Images/Actio_TMS_CRSP_Context.png)
+- [2. Channel Routing \& Setup Processor (CRSP)](#2-channel-routing--setup-processor-crsp)
+  - [Sequence Diagram](#sequence-diagram)
+  - [Repository](#repository)
+  - [Code Activity Diagram](#code-activity-diagram)
+  - [Usage](#usage)
+  - [Sample JSON Request \& Response](#sample-json-request--response)
+    - [Request for Pain001](#request-for-pain001)
+    - [Response for Pain001](#response-for-pain001)
+    - [Request for Pain013](#request-for-pain013)
+    - [Response for Pain013](#response-for-pain013)
+    - [Request for Pacs002](#request-for-pacs002)
+    - [Response for Pacs002](#response-for-pacs002)
+    - [Request for Pacs008](#request-for-pacs008)
+    - [Response for Pacs008](#response-for-pacs008)
 
-- [Channel Router and Setup Processor](#channel-router-and-setup-processor)
-- [Introduction](#introduction)
-- [Channel Router and Setup Processor Context](#channel-router-and-setup-processor-context)
-  - [2. Evaluate Transaction](#2-evaluate-transaction)
-  - [3.1. Read Network Map](#31-read-network-map)
-  - [3.2. Determine Channels](#32-determine-channels)
-  - [3.3. Determine Typologies](#33-determine-typologies)
-  - [3.4. Determine Rules](#34-determine-rules)
-  - [3.5. Prune the Network Map](#35-prune-the-network-map)
-  - [3.6. Deduplicate Rules](#36-deduplicate-rules)
-  - [3.7. Evaluate Transaction](#37-evaluate-transaction)
-  - [3.8. CRSP Response](#38-crsp-response)
+## Sequence Diagram
 
-# Introduction
+Below is the sequence diagram for CRSP
 
-The foundation of the Tazama Transaction Monitoring system is its ability to evaluate incoming transactions for financial crime risk through the execution of a number of conditional statements (rules) that are then combined into typologies that describe the nature of the financial crime that the system is trying to detect. Typologies are in turn arranged into channels, according to an arrangement required by the operator.
+![image](./Images/image-20210817-043926.png)
 
-![image](../../../../Images/image-20210817-043926.png)
+The Channel Router & Setup Processor (CRSP) is where most of the heavy lifting happens. The CRSP is responsible for branching the transaction to all the different rules in the different channels. It uses the Network Map as configuration source, de-duplicates all the rules, generates a network submap (that is sent to Rule Processors), allowing the Rule Processors to know to which Typologies they need to send their results.
 
-The Channel Router & Setup Processor (CRSP) is responsible for determining which channels and typologies a transaction must be submitted to for the transaction to be evaluated for Financial Crime Risk. As part of this process, the CRSP determines which rules must receive the transaction and then which typologies are to be scored. The CRSP routes the transaction to the individual rule processors.
+## Repository
 
-# Channel Router and Setup Processor Context
+[channel-router-setup-processor](https://github.com/frmscoe/channel-router-setup-processor)
 
-![](../../../../Images/Actio_TMS_CRSP_Context.png)
+## Code Activity Diagram
 
-## 2. Evaluate Transaction
+[CRSP.plantuml](https://github.com/frmscoe/uml-diagrams/blob/main/services/CRSP.plantuml)
 
-Once all the data preparation work in NiFi is complete, NiFi will route the incoming transaction message to the Channel Router & Setup Processor (CRSP) to commence the evaluation of the transaction.
+![](./Images/CRSP-Activity-Diagram.png)
+![](./Images/CRSP.png)
 
-## 3.1. Read Network Map
+## Usage
 
-The network map defines the configuration according to which a transaction will be routed to typologies and their associated rule processors. The network map is a polynomial tree that contains the associations between a message type (at the root) and channels, typologies and rules:
+CRSP can be initialized by sending an HTTP with the below Postman Collection Example for all current Messaging Types.
 
-![](../../../../Images/image-20211018-085245.png)
+[pacs008_postman_request.json](/Images/pacs008_postman_request.json)  
+[pacs002_postman_request.json](/Images/pacs002_postman_request.json)  
+[pain013_postman_request.json](/Images/pain013_postman_request.json)  
+[pain001_postman_request.json](/Images/pain001_postman_request.json)  
 
-The primary purpose of the CRSP is to determine which typologies are appropriate for the incoming transaction and then to route the transaction to the rules associated to those typologies. The network map allows the configuration of the relationships between message types, channels, typologies and rules to be centralised into an external configuration, rather than hard-coded in the CRSP.
+## Sample JSON Request & Response
 
-The network map also contains the detailed identification and version information of each of the evaluation nodes comprising the network map.
+``POST request to `/execute endpoint``
 
-Because the network map is routed to each evaluation node along with the incoming transaction, it would be possible to update the network map, or any of the evaluation nodes, while the system is in operation and without impacting the evaluation of any transactions in progress. It is also equally important that each iteration of the network map is properly versioned and also that the system keeps a record of which version of a network map was used when a transaction was evaluated so that the execution of the evaluation can be audited and even replayed or simulated.
-
-The network map is a JSON object with nested key-value pairs describing the nodes in the map and their relationships.
-
-Sample network map:
+### Request for Pain001
 
 ```json
-[
-    {
+{
+"TxTp": "pain.001.001.11",
+    "CstmrCdtTrfInitn": {
+      "GrpHdr": {
+        "MsgId": "2669e349-500d-44ba-9e27-7767a16608a0",
+        "CreDtTm": "2021-10-07T09:25:31.000Z",
+        "NbOfTxs": 1,
+        "InitgPty": {
+          "Nm": "Ivan Reese Russel-Klein",
+          "Id": {
+            "PrvtId": {
+              "DtAndPlcOfBirth": {
+                "BirthDt": "1967-11-23",
+                "CityOfBirth": "Unknown",
+                "CtryOfBirth": "ZZ"
+              },
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            }
+          },
+          "CtctDtls": {
+            "MobNb": "+27-783078685"
+          }
+        }
+      },
+      "PmtInf": {
+        "PmtInfId": "b51ec534-ee48-4575-b6a9-ead2955b8069",
+        "PmtMtd": "TRA",
+        "ReqdAdvcTp": {
+          "DbtAdvc": {
+            "Cd": "ADWD",
+            "Prtry": "Advice with transaction details"
+          }
+        },
+        "ReqdExctnDt": {
+          "Dt": "2021-10-07",
+          "DtTm": "2021-10-07T09:25:31.000Z"
+        },
+        "Dbtr": {
+          "Nm": "Ivan Reese Russel-Klein",
+          "Id": {
+            "PrvtId": {
+              "DtAndPlcOfBirth": {
+                "BirthDt": "1957-10-05",
+                "CityOfBirth": "Unknown",
+                "CtryOfBirth": "ZZ"
+              },
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            }
+          },
+          "CtctDtls": {
+            "MobNb": "+27-783078685"
+          }
+        },
+        "DbtrAcct": {
+          "Id": {
+            "Othr": {
+              "Id": "+27783078685",
+              "SchmeNm": {
+                "Prtry": "PASSPORT"
+              }
+            }
+          },
+          "Nm": "Ivan Russel-Klein"
+        },
+        "DbtrAgt": {
+          "FinInstnId": {
+            "ClrSysMmbId": {
+              "MmbId": "dfsp001"
+            }
+          }
+        },
+        "CdtTrfTxInf": {
+          "PmtId": {
+            "EndToEndId": "b51ec534-ee48-4575-b6a9-ead2955b8069"
+          },
+          "PmtTpInf": {
+            "CtgyPurp": {
+              "Prtry": "TRANSFER"
+            }
+          },
+          "Amt": {
+            "InstdAmt": {
+              "Amt": {
+                "Amt": "50431891779910900",
+                "Ccy": "USD"
+              }
+            },
+            "EqvtAmt": {
+              "Amt": {
+                "Amt": "50431891779910900",
+                "Ccy": "USD"
+              },
+              "CcyOfTrf": "USD"
+            }
+          },
+          "ChrgBr": "DEBT",
+          "CdtrAgt": {
+            "FinInstnId": {
+              "ClrSysMmbId": {
+                "MmbId": "dfsp002"
+              }
+            }
+          },
+          "Cdtr": {
+            "Nm": "April Sam Adamson",
+            "Id": {
+              "PrvtId": {
+                "DtAndPlcOfBirth": {
+                  "BirthDt": "1923-04-26",
+                  "CityOfBirth": "Unknown",
+                  "CtryOfBirth": "ZZ"
+                },
+                "Othr": {
+                  "Id": "+27782722305",
+                  "SchmeNm": {
+                    "Prtry": "MSISDN"
+                  }
+                }
+              }
+            },
+            "CtctDtls": {
+              "MobNb": "+27-782722305"
+            }
+          },
+          "CdtrAcct": {
+            "Id": {
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            },
+            "Nm": "April Adamson"
+          },
+          "Purp": {
+            "Cd": "MP2P"
+          },
+          "RgltryRptg": {
+            "Dtls": {
+              "Tp": "BALANCE OF PAYMENTS",
+              "Cd": "100"
+            }
+          },
+          "RmtInf": {
+            "Ustrd": "Payment of USD 49932566118723700.89 from Ivan to April"
+          },
+          "SplmtryData": {
+            "Envlp": {
+              "Doc": {
+                "Cdtr": {
+                  "FrstNm": "Ivan",
+                  "MddlNm": "Reese",
+                  "LastNm": "Russel-Klein",
+                  "MrchntClssfctnCd": "BLANK"
+                },
+                "Dbtr": {
+                  "FrstNm": "April",
+                  "MddlNm": "Sam",
+                  "LastNm": "Adamson",
+                  "MrchntClssfctnCd": "BLANK"
+                },
+                "DbtrFinSvcsPrvdrFees": {
+                  "Ccy": "USD",
+                  "Amt": "499325661187237"
+                },
+                "Xprtn": "2021-10-07T09:30:31.000Z"
+              }
+            }
+          }
+        }
+      },
+      "SplmtryData": {
+        "Envlp": {
+          "Doc": {
+            "InitgPty": {
+              "InitrTp": "CONSUMER",
+              "Glctn": {
+                "Lat": "-3.1291",
+                "Long": "39.0006"
+              }
+            }
+          }
+        }
+      }
+    }
+}
+```
+
+### Response for Pain001
+
+```json
+{
+    "rulesSentTo": [
+        "028@1.0",
+        "003@1.0"
+    ],
+    "failedToSend": [
+        "005@1.0",
+        "006@1.0",
+        "007@1.0"
+    ],
+    "transaction": {
+        "TxTp": "pain.001.001.11",
+        "CstmrCdtTrfInitn": {
+            "GrpHdr": {
+                "MsgId": "2669e349-500d-44ba-9e27-7767a16608a0",
+                "CreDtTm": "2021-10-07T09:25:31.000Z",
+                "NbOfTxs": 1,
+                "InitgPty": {
+                    "Nm": "Ivan Reese Russel-Klein",
+                    "Id": {
+                        "PrvtId": {
+                            "DtAndPlcOfBirth": {
+                                "BirthDt": "1967-11-23",
+                                "CityOfBirth": "Unknown",
+                                "CtryOfBirth": "ZZ"
+                            },
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        }
+                    },
+                    "CtctDtls": {
+                        "MobNb": "+27-783078685"
+                    }
+                }
+            },
+            "PmtInf": {
+                "PmtInfId": "b51ec534-ee48-4575-b6a9-ead2955b8069",
+                "PmtMtd": "TRA",
+                "ReqdAdvcTp": {
+                    "DbtAdvc": {
+                        "Cd": "ADWD",
+                        "Prtry": "Advice with transaction details"
+                    }
+                },
+                "ReqdExctnDt": {
+                    "Dt": "2021-10-07",
+                    "DtTm": "2021-10-07T09:25:31.000Z"
+                },
+                "Dbtr": {
+                    "Nm": "Ivan Reese Russel-Klein",
+                    "Id": {
+                        "PrvtId": {
+                            "DtAndPlcOfBirth": {
+                                "BirthDt": "1957-10-05",
+                                "CityOfBirth": "Unknown",
+                                "CtryOfBirth": "ZZ"
+                            },
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        }
+                    },
+                    "CtctDtls": {
+                        "MobNb": "+27-783078685"
+                    }
+                },
+                "DbtrAcct": {
+                    "Id": {
+                        "Othr": {
+                            "Id": "+27783078685",
+                            "SchmeNm": {
+                                "Prtry": "PASSPORT"
+                            }
+                        }
+                    },
+                    "Nm": "Ivan Russel-Klein"
+                },
+                "DbtrAgt": {
+                    "FinInstnId": {
+                        "ClrSysMmbId": {
+                            "MmbId": "dfsp001"
+                        }
+                    }
+                },
+                "CdtTrfTxInf": {
+                    "PmtId": {
+                        "EndToEndId": "b51ec534-ee48-4575-b6a9-ead2955b8069"
+                    },
+                    "PmtTpInf": {
+                        "CtgyPurp": {
+                            "Prtry": "TRANSFER"
+                        }
+                    },
+                    "Amt": {
+                        "InstdAmt": {
+                            "Amt": {
+                                "Amt": "50431891779910900",
+                                "Ccy": "USD"
+                            }
+                        },
+                        "EqvtAmt": {
+                            "Amt": {
+                                "Amt": "50431891779910900",
+                                "Ccy": "USD"
+                            },
+                            "CcyOfTrf": "USD"
+                        }
+                    },
+                    "ChrgBr": "DEBT",
+                    "CdtrAgt": {
+                        "FinInstnId": {
+                            "ClrSysMmbId": {
+                                "MmbId": "dfsp002"
+                            }
+                        }
+                    },
+                    "Cdtr": {
+                        "Nm": "April Sam Adamson",
+                        "Id": {
+                            "PrvtId": {
+                                "DtAndPlcOfBirth": {
+                                    "BirthDt": "1923-04-26",
+                                    "CityOfBirth": "Unknown",
+                                    "CtryOfBirth": "ZZ"
+                                },
+                                "Othr": {
+                                    "Id": "+27782722305",
+                                    "SchmeNm": {
+                                        "Prtry": "MSISDN"
+                                    }
+                                }
+                            }
+                        },
+                        "CtctDtls": {
+                            "MobNb": "+27-782722305"
+                        }
+                    },
+                    "CdtrAcct": {
+                        "Id": {
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        },
+                        "Nm": "April Adamson"
+                    },
+                    "Purp": {
+                        "Cd": "MP2P"
+                    },
+                    "RgltryRptg": {
+                        "Dtls": {
+                            "Tp": "BALANCE OF PAYMENTS",
+                            "Cd": "100"
+                        }
+                    },
+                    "RmtInf": {
+                        "Ustrd": "Payment of USD 49932566118723700.89 from Ivan to April"
+                    },
+                    "SplmtryData": {
+                        "Envlp": {
+                            "Doc": {
+                                "Cdtr": {
+                                    "FrstNm": "Ivan",
+                                    "MddlNm": "Reese",
+                                    "LastNm": "Russel-Klein",
+                                    "MrchntClssfctnCd": "BLANK"
+                                },
+                                "Dbtr": {
+                                    "FrstNm": "April",
+                                    "MddlNm": "Sam",
+                                    "LastNm": "Adamson",
+                                    "MrchntClssfctnCd": "BLANK"
+                                },
+                                "DbtrFinSvcsPrvdrFees": {
+                                    "Ccy": "USD",
+                                    "Amt": "499325661187237"
+                                },
+                                "Xprtn": "2021-10-07T09:30:31.000Z"
+                            }
+                        }
+                    }
+                }
+            },
+            "SplmtryData": {
+                "Envlp": {
+                    "Doc": {
+                        "InitgPty": {
+                            "InitrTp": "CONSUMER",
+                            "Glctn": {
+                                "Lat": "-3.1291",
+                                "Long": "39.0006"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "networkMap": {
         "messages": [
             {
-                "id": "001@1.0.0",
+                "id": "001@1.0",
                 "host": "http://openfaas:8080",
+                "cfg": "1.0",
+                "txTp": "pain.001.001.11",
+                "channels": [
+                    {
+                        "id": "001@1.0",
+                        "host": "http://openfaas:8080",
+                        "cfg": "1.0",
+                        "typologies": [
+                            {
+                                "id": "028@1.0",
+                                "host": "https://frmfaas.sybrin.com/function/off-typology-processor",
+                                "cfg": "028@1.0",
+                                "rules": [
+                                    {
+                                        "id": "003@1.0",
+                                        "host": "https://frmfaas.sybrin.com/function/off-rule-003",
+                                        "cfg": "1.0"
+                                    },
+                                    {
+                                        "id": "028@1.0",
+                                        "host": "https://frmfaas.sybrin.com/function/off-rule-028",
+                                        "cfg": "1.0"
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "029@1.0",
+                                "host": "https://frmfaas.sybrin.com/function/off-typology-processor",
+                                "cfg": "029@1.0",
+                                "rules": [
+                                    {
+                                        "id": "003@1.0",
+                                        "host": "https://frmfaas.sybrin.com/function/off-rule-003",
+                                        "cfg": "1.0"
+                                    },
+                                    {
+                                        "id": "005@1.0",
+                                        "host": "http://openfaas:8080",
+                                        "cfg": "1.0"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "id": "002@1.0",
+                        "host": "http://openfaas:8080",
+                        "cfg": "1.0",
+                        "typologies": [
+                            {
+                                "id": "030@1.0",
+                                "host": "https://frmfaas.sybrin.com/function/off-typology-processor",
+                                "cfg": "030@1.0",
+                                "rules": [
+                                    {
+                                        "id": "003@1.0",
+                                        "host": "https://frmfaas.sybrin.com/function/off-rule-003",
+                                        "cfg": "1.0"
+                                    },
+                                    {
+                                        "id": "006@1.0",
+                                        "host": "http://openfaas:8080",
+                                        "cfg": "1.0"
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "031@1.0",
+                                "host": "https://frmfaas.sybrin.com/function/off-typology-processor",
+                                "cfg": "031@1.0",
+                                "rules": [
+                                    {
+                                        "id": "003@1.0",
+                                        "host": "https://frmfaas.sybrin.com/function/off-rule-003",
+                                        "cfg": "1.0"
+                                    },
+                                    {
+                                        "id": "007@1.0",
+                                        "host": "http://openfaas:8080",
+                                        "cfg": "1.0"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}
+```
+
+### Request for Pain013
+
+```json
+{
+"TxTp": "pain.013.001.09",
+    "CstmrCdtTrfInitn": {
+      "GrpHdr": {
+        "MsgId": "2669e349-500d-44ba-9e27-7767a16608a0",
+        "CreDtTm": "2021-10-07T09:25:31.000Z",
+        "NbOfTxs": 1,
+        "InitgPty": {
+          "Nm": "Ivan Reese Russel-Klein",
+          "Id": {
+            "PrvtId": {
+              "DtAndPlcOfBirth": {
+                "BirthDt": "1967-11-23",
+                "CityOfBirth": "Unknown",
+                "CtryOfBirth": "ZZ"
+              },
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            }
+          },
+          "CtctDtls": {
+            "MobNb": "+27-783078685"
+          }
+        }
+      },
+      "PmtInf": {
+        "PmtInfId": "b51ec534-ee48-4575-b6a9-ead2955b8069",
+        "PmtMtd": "TRA",
+        "ReqdAdvcTp": {
+          "DbtAdvc": {
+            "Cd": "ADWD",
+            "Prtry": "Advice with transaction details"
+          }
+        },
+        "ReqdExctnDt": {
+          "Dt": "2021-10-07",
+          "DtTm": "2021-10-07T09:25:31.000Z"
+        },
+        "Dbtr": {
+          "Nm": "Ivan Reese Russel-Klein",
+          "Id": {
+            "PrvtId": {
+              "DtAndPlcOfBirth": {
+                "BirthDt": "1957-10-05",
+                "CityOfBirth": "Unknown",
+                "CtryOfBirth": "ZZ"
+              },
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            }
+          },
+          "CtctDtls": {
+            "MobNb": "+27-783078685"
+          }
+        },
+        "DbtrAcct": {
+          "Id": {
+            "Othr": {
+              "Id": "+27783078685",
+              "SchmeNm": {
+                "Prtry": "PASSPORT"
+              }
+            }
+          },
+          "Nm": "Ivan Russel-Klein"
+        },
+        "DbtrAgt": {
+          "FinInstnId": {
+            "ClrSysMmbId": {
+              "MmbId": "dfsp001"
+            }
+          }
+        },
+        "CdtTrfTxInf": {
+          "PmtId": {
+            "EndToEndId": "b51ec534-ee48-4575-b6a9-ead2955b8069"
+          },
+          "PmtTpInf": {
+            "CtgyPurp": {
+              "Prtry": "TRANSFER"
+            }
+          },
+          "Amt": {
+            "InstdAmt": {
+              "Amt": {
+                "Amt": "50431891779910900",
+                "Ccy": "USD"
+              }
+            },
+            "EqvtAmt": {
+              "Amt": {
+                "Amt": "50431891779910900",
+                "Ccy": "USD"
+              },
+              "CcyOfTrf": "USD"
+            }
+          },
+          "ChrgBr": "DEBT",
+          "CdtrAgt": {
+            "FinInstnId": {
+              "ClrSysMmbId": {
+                "MmbId": "dfsp002"
+              }
+            }
+          },
+          "Cdtr": {
+            "Nm": "April Sam Adamson",
+            "Id": {
+              "PrvtId": {
+                "DtAndPlcOfBirth": {
+                  "BirthDt": "1923-04-26",
+                  "CityOfBirth": "Unknown",
+                  "CtryOfBirth": "ZZ"
+                },
+                "Othr": {
+                  "Id": "+27782722305",
+                  "SchmeNm": {
+                    "Prtry": "MSISDN"
+                  }
+                }
+              }
+            },
+            "CtctDtls": {
+              "MobNb": "+27-782722305"
+            }
+          },
+          "CdtrAcct": {
+            "Id": {
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            },
+            "Nm": "April Adamson"
+          },
+          "Purp": {
+            "Cd": "MP2P"
+          },
+          "RgltryRptg": {
+            "Dtls": {
+              "Tp": "BALANCE OF PAYMENTS",
+              "Cd": "100"
+            }
+          },
+          "RmtInf": {
+            "Ustrd": "Payment of USD 49932566118723700.89 from Ivan to April"
+          },
+          "SplmtryData": {
+            "Envlp": {
+              "Doc": {
+                "Cdtr": {
+                  "FrstNm": "Ivan",
+                  "MddlNm": "Reese",
+                  "LastNm": "Russel-Klein",
+                  "MrchntClssfctnCd": "BLANK"
+                },
+                "Dbtr": {
+                  "FrstNm": "April",
+                  "MddlNm": "Sam",
+                  "LastNm": "Adamson",
+                  "MrchntClssfctnCd": "BLANK"
+                },
+                "DbtrFinSvcsPrvdrFees": {
+                  "Ccy": "USD",
+                  "Amt": "499325661187237"
+                },
+                "Xprtn": "2021-10-07T09:30:31.000Z"
+              }
+            }
+          }
+        }
+      },
+      "SplmtryData": {
+        "Envlp": {
+          "Doc": {
+            "InitgPty": {
+              "InitrTp": "CONSUMER",
+              "Glctn": {
+                "Lat": "-3.1291",
+                "Long": "39.0006"
+              }
+            }
+          }
+        }
+      }
+    }
+}
+```
+
+### Response for Pain013
+
+```json
+{
+    "rulesSentTo": [
+        "003@1.0",
+        "028@1.0"
+    ],
+    "failedToSend": [],
+    "networkMap": {},
+    "transaction": {
+        "TxTp": "pain.013.001.09",
+        "CstmrCdtTrfInitn": {
+            "GrpHdr": {
+                "MsgId": "2669e349-500d-44ba-9e27-7767a16608a0",
+                "CreDtTm": "2021-10-07T09:25:31.000Z",
+                "NbOfTxs": 1,
+                "InitgPty": {
+                    "Nm": "Ivan Reese Russel-Klein",
+                    "Id": {
+                        "PrvtId": {
+                            "DtAndPlcOfBirth": {
+                                "BirthDt": "1967-11-23",
+                                "CityOfBirth": "Unknown",
+                                "CtryOfBirth": "ZZ"
+                            },
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        }
+                    },
+                    "CtctDtls": {
+                        "MobNb": "+27-783078685"
+                    }
+                }
+            },
+            "PmtInf": {
+                "PmtInfId": "b51ec534-ee48-4575-b6a9-ead2955b8069",
+                "PmtMtd": "TRA",
+                "ReqdAdvcTp": {
+                    "DbtAdvc": {
+                        "Cd": "ADWD",
+                        "Prtry": "Advice with transaction details"
+                    }
+                },
+                "ReqdExctnDt": {
+                    "Dt": "2021-10-07",
+                    "DtTm": "2021-10-07T09:25:31.000Z"
+                },
+                "Dbtr": {
+                    "Nm": "Ivan Reese Russel-Klein",
+                    "Id": {
+                        "PrvtId": {
+                            "DtAndPlcOfBirth": {
+                                "BirthDt": "1957-10-05",
+                                "CityOfBirth": "Unknown",
+                                "CtryOfBirth": "ZZ"
+                            },
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        }
+                    },
+                    "CtctDtls": {
+                        "MobNb": "+27-783078685"
+                    }
+                },
+                "DbtrAcct": {
+                    "Id": {
+                        "Othr": {
+                            "Id": "+27783078685",
+                            "SchmeNm": {
+                                "Prtry": "PASSPORT"
+                            }
+                        }
+                    },
+                    "Nm": "Ivan Russel-Klein"
+                },
+                "DbtrAgt": {
+                    "FinInstnId": {
+                        "ClrSysMmbId": {
+                            "MmbId": "dfsp001"
+                        }
+                    }
+                },
+                "CdtTrfTxInf": {
+                    "PmtId": {
+                        "EndToEndId": "b51ec534-ee48-4575-b6a9-ead2955b8069"
+                    },
+                    "PmtTpInf": {
+                        "CtgyPurp": {
+                            "Prtry": "TRANSFER"
+                        }
+                    },
+                    "Amt": {
+                        "InstdAmt": {
+                            "Amt": {
+                                "Amt": "50431891779910900",
+                                "Ccy": "USD"
+                            }
+                        },
+                        "EqvtAmt": {
+                            "Amt": {
+                                "Amt": "50431891779910900",
+                                "Ccy": "USD"
+                            },
+                            "CcyOfTrf": "USD"
+                        }
+                    },
+                    "ChrgBr": "DEBT",
+                    "CdtrAgt": {
+                        "FinInstnId": {
+                            "ClrSysMmbId": {
+                                "MmbId": "dfsp002"
+                            }
+                        }
+                    },
+                    "Cdtr": {
+                        "Nm": "April Sam Adamson",
+                        "Id": {
+                            "PrvtId": {
+                                "DtAndPlcOfBirth": {
+                                    "BirthDt": "1923-04-26",
+                                    "CityOfBirth": "Unknown",
+                                    "CtryOfBirth": "ZZ"
+                                },
+                                "Othr": {
+                                    "Id": "+27782722305",
+                                    "SchmeNm": {
+                                        "Prtry": "MSISDN"
+                                    }
+                                }
+                            }
+                        },
+                        "CtctDtls": {
+                            "MobNb": "+27-782722305"
+                        }
+                    },
+                    "CdtrAcct": {
+                        "Id": {
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        },
+                        "Nm": "April Adamson"
+                    },
+                    "Purp": {
+                        "Cd": "MP2P"
+                    },
+                    "RgltryRptg": {
+                        "Dtls": {
+                            "Tp": "BALANCE OF PAYMENTS",
+                            "Cd": "100"
+                        }
+                    },
+                    "RmtInf": {
+                        "Ustrd": "Payment of USD 49932566118723700.89 from Ivan to April"
+                    },
+                    "SplmtryData": {
+                        "Envlp": {
+                            "Doc": {
+                                "Cdtr": {
+                                    "FrstNm": "Ivan",
+                                    "MddlNm": "Reese",
+                                    "LastNm": "Russel-Klein",
+                                    "MrchntClssfctnCd": "BLANK"
+                                },
+                                "Dbtr": {
+                                    "FrstNm": "April",
+                                    "MddlNm": "Sam",
+                                    "LastNm": "Adamson",
+                                    "MrchntClssfctnCd": "BLANK"
+                                },
+                                "DbtrFinSvcsPrvdrFees": {
+                                    "Ccy": "USD",
+                                    "Amt": "499325661187237"
+                                },
+                                "Xprtn": "2021-10-07T09:30:31.000Z"
+                            }
+                        }
+                    }
+                }
+            },
+            "SplmtryData": {
+                "Envlp": {
+                    "Doc": {
+                        "InitgPty": {
+                            "InitrTp": "CONSUMER",
+                            "Glctn": {
+                                "Lat": "-3.1291",
+                                "Long": "39.0006"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+### Request for Pacs002
+
+```json
+{
+"TxTp": "pacs.002.001.12",
+    "CstmrCdtTrfInitn": {
+      "GrpHdr": {
+        "MsgId": "2669e349-500d-44ba-9e27-7767a16608a0",
+        "CreDtTm": "2021-10-07T09:25:31.000Z",
+        "NbOfTxs": 1,
+        "InitgPty": {
+          "Nm": "Ivan Reese Russel-Klein",
+          "Id": {
+            "PrvtId": {
+              "DtAndPlcOfBirth": {
+                "BirthDt": "1967-11-23",
+                "CityOfBirth": "Unknown",
+                "CtryOfBirth": "ZZ"
+              },
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            }
+          },
+          "CtctDtls": {
+            "MobNb": "+27-783078685"
+          }
+        }
+      },
+      "PmtInf": {
+        "PmtInfId": "b51ec534-ee48-4575-b6a9-ead2955b8069",
+        "PmtMtd": "TRA",
+        "ReqdAdvcTp": {
+          "DbtAdvc": {
+            "Cd": "ADWD",
+            "Prtry": "Advice with transaction details"
+          }
+        },
+        "ReqdExctnDt": {
+          "Dt": "2021-10-07",
+          "DtTm": "2021-10-07T09:25:31.000Z"
+        },
+        "Dbtr": {
+          "Nm": "Ivan Reese Russel-Klein",
+          "Id": {
+            "PrvtId": {
+              "DtAndPlcOfBirth": {
+                "BirthDt": "1957-10-05",
+                "CityOfBirth": "Unknown",
+                "CtryOfBirth": "ZZ"
+              },
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            }
+          },
+          "CtctDtls": {
+            "MobNb": "+27-783078685"
+          }
+        },
+        "DbtrAcct": {
+          "Id": {
+            "Othr": {
+              "Id": "+27783078685",
+              "SchmeNm": {
+                "Prtry": "PASSPORT"
+              }
+            }
+          },
+          "Nm": "Ivan Russel-Klein"
+        },
+        "DbtrAgt": {
+          "FinInstnId": {
+            "ClrSysMmbId": {
+              "MmbId": "dfsp001"
+            }
+          }
+        },
+        "CdtTrfTxInf": {
+          "PmtId": {
+            "EndToEndId": "b51ec534-ee48-4575-b6a9-ead2955b8069"
+          },
+          "PmtTpInf": {
+            "CtgyPurp": {
+              "Prtry": "TRANSFER"
+            }
+          },
+          "Amt": {
+            "InstdAmt": {
+              "Amt": {
+                "Amt": "50431891779910900",
+                "Ccy": "USD"
+              }
+            },
+            "EqvtAmt": {
+              "Amt": {
+                "Amt": "50431891779910900",
+                "Ccy": "USD"
+              },
+              "CcyOfTrf": "USD"
+            }
+          },
+          "ChrgBr": "DEBT",
+          "CdtrAgt": {
+            "FinInstnId": {
+              "ClrSysMmbId": {
+                "MmbId": "dfsp002"
+              }
+            }
+          },
+          "Cdtr": {
+            "Nm": "April Sam Adamson",
+            "Id": {
+              "PrvtId": {
+                "DtAndPlcOfBirth": {
+                  "BirthDt": "1923-04-26",
+                  "CityOfBirth": "Unknown",
+                  "CtryOfBirth": "ZZ"
+                },
+                "Othr": {
+                  "Id": "+27782722305",
+                  "SchmeNm": {
+                    "Prtry": "MSISDN"
+                  }
+                }
+              }
+            },
+            "CtctDtls": {
+              "MobNb": "+27-782722305"
+            }
+          },
+          "CdtrAcct": {
+            "Id": {
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            },
+            "Nm": "April Adamson"
+          },
+          "Purp": {
+            "Cd": "MP2P"
+          },
+          "RgltryRptg": {
+            "Dtls": {
+              "Tp": "BALANCE OF PAYMENTS",
+              "Cd": "100"
+            }
+          },
+          "RmtInf": {
+            "Ustrd": "Payment of USD 49932566118723700.89 from Ivan to April"
+          },
+          "SplmtryData": {
+            "Envlp": {
+              "Doc": {
+                "Cdtr": {
+                  "FrstNm": "Ivan",
+                  "MddlNm": "Reese",
+                  "LastNm": "Russel-Klein",
+                  "MrchntClssfctnCd": "BLANK"
+                },
+                "Dbtr": {
+                  "FrstNm": "April",
+                  "MddlNm": "Sam",
+                  "LastNm": "Adamson",
+                  "MrchntClssfctnCd": "BLANK"
+                },
+                "DbtrFinSvcsPrvdrFees": {
+                  "Ccy": "USD",
+                  "Amt": "499325661187237"
+                },
+                "Xprtn": "2021-10-07T09:30:31.000Z"
+              }
+            }
+          }
+        }
+      },
+      "SplmtryData": {
+        "Envlp": {
+          "Doc": {
+            "InitgPty": {
+              "InitrTp": "CONSUMER",
+              "Glctn": {
+                "Lat": "-3.1291",
+                "Long": "39.0006"
+              }
+            }
+          }
+        }
+      }
+    }
+}
+```
+
+### Response for Pacs002
+
+```json
+{
+    "rulesSentTo": [
+       "018@1.0.0"
+    ],
+    "failedToSend": [],
+    "transaction": {
+        "TxTp": "pacs.002.001.12",
+        "CstmrCdtTrfInitn": {
+            "GrpHdr": {
+                "MsgId": "2669e349-500d-44ba-9e27-7767a16608a0",
+                "CreDtTm": "2021-10-07T09:25:31.000Z",
+                "NbOfTxs": 1,
+                "InitgPty": {
+                    "Nm": "Ivan Reese Russel-Klein",
+                    "Id": {
+                        "PrvtId": {
+                            "DtAndPlcOfBirth": {
+                                "BirthDt": "1967-11-23",
+                                "CityOfBirth": "Unknown",
+                                "CtryOfBirth": "ZZ"
+                            },
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        }
+                    },
+                    "CtctDtls": {
+                        "MobNb": "+27-783078685"
+                    }
+                }
+            },
+            "PmtInf": {
+                "PmtInfId": "b51ec534-ee48-4575-b6a9-ead2955b8069",
+                "PmtMtd": "TRA",
+                "ReqdAdvcTp": {
+                    "DbtAdvc": {
+                        "Cd": "ADWD",
+                        "Prtry": "Advice with transaction details"
+                    }
+                },
+                "ReqdExctnDt": {
+                    "Dt": "2021-10-07",
+                    "DtTm": "2021-10-07T09:25:31.000Z"
+                },
+                "Dbtr": {
+                    "Nm": "Ivan Reese Russel-Klein",
+                    "Id": {
+                        "PrvtId": {
+                            "DtAndPlcOfBirth": {
+                                "BirthDt": "1957-10-05",
+                                "CityOfBirth": "Unknown",
+                                "CtryOfBirth": "ZZ"
+                            },
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        }
+                    },
+                    "CtctDtls": {
+                        "MobNb": "+27-783078685"
+                    }
+                },
+                "DbtrAcct": {
+                    "Id": {
+                        "Othr": {
+                            "Id": "+27783078685",
+                            "SchmeNm": {
+                                "Prtry": "PASSPORT"
+                            }
+                        }
+                    },
+                    "Nm": "Ivan Russel-Klein"
+                },
+                "DbtrAgt": {
+                    "FinInstnId": {
+                        "ClrSysMmbId": {
+                            "MmbId": "dfsp001"
+                        }
+                    }
+                },
+                "CdtTrfTxInf": {
+                    "PmtId": {
+                        "EndToEndId": "b51ec534-ee48-4575-b6a9-ead2955b8069"
+                    },
+                    "PmtTpInf": {
+                        "CtgyPurp": {
+                            "Prtry": "TRANSFER"
+                        }
+                    },
+                    "Amt": {
+                        "InstdAmt": {
+                            "Amt": {
+                                "Amt": "50431891779910900",
+                                "Ccy": "USD"
+                            }
+                        },
+                        "EqvtAmt": {
+                            "Amt": {
+                                "Amt": "50431891779910900",
+                                "Ccy": "USD"
+                            },
+                            "CcyOfTrf": "USD"
+                        }
+                    },
+                    "ChrgBr": "DEBT",
+                    "CdtrAgt": {
+                        "FinInstnId": {
+                            "ClrSysMmbId": {
+                                "MmbId": "dfsp002"
+                            }
+                        }
+                    },
+                    "Cdtr": {
+                        "Nm": "April Sam Adamson",
+                        "Id": {
+                            "PrvtId": {
+                                "DtAndPlcOfBirth": {
+                                    "BirthDt": "1923-04-26",
+                                    "CityOfBirth": "Unknown",
+                                    "CtryOfBirth": "ZZ"
+                                },
+                                "Othr": {
+                                    "Id": "+27782722305",
+                                    "SchmeNm": {
+                                        "Prtry": "MSISDN"
+                                    }
+                                }
+                            }
+                        },
+                        "CtctDtls": {
+                            "MobNb": "+27-782722305"
+                        }
+                    },
+                    "CdtrAcct": {
+                        "Id": {
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        },
+                        "Nm": "April Adamson"
+                    },
+                    "Purp": {
+                        "Cd": "MP2P"
+                    },
+                    "RgltryRptg": {
+                        "Dtls": {
+                            "Tp": "BALANCE OF PAYMENTS",
+                            "Cd": "100"
+                        }
+                    },
+                    "RmtInf": {
+                        "Ustrd": "Payment of USD 49932566118723700.89 from Ivan to April"
+                    },
+                    "SplmtryData": {
+                        "Envlp": {
+                            "Doc": {
+                                "Cdtr": {
+                                    "FrstNm": "Ivan",
+                                    "MddlNm": "Reese",
+                                    "LastNm": "Russel-Klein",
+                                    "MrchntClssfctnCd": "BLANK"
+                                },
+                                "Dbtr": {
+                                    "FrstNm": "April",
+                                    "MddlNm": "Sam",
+                                    "LastNm": "Adamson",
+                                    "MrchntClssfctnCd": "BLANK"
+                                },
+                                "DbtrFinSvcsPrvdrFees": {
+                                    "Ccy": "USD",
+                                    "Amt": "499325661187237"
+                                },
+                                "Xprtn": "2021-10-07T09:30:31.000Z"
+                            }
+                        }
+                    }
+                }
+            },
+            "SplmtryData": {
+                "Envlp": {
+                    "Doc": {
+                        "InitgPty": {
+                            "InitrTp": "CONSUMER",
+                            "Glctn": {
+                                "Lat": "-3.1291",
+                                "Long": "39.0006"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "networkMap": {
+        "messages": [
+            {
+                "id": "004@1.0.0",
+                "host": "https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0",
                 "cfg": "1.0.0",
-                "TxTp": "pain.001.001.11",
+                "txTp": "pacs.002.001.12",
                 "channels": [
                     {
                         "id": "001@1.0.0",
-                        "host": "http://openfaas:8080",
+                        "host": "https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0",
                         "cfg": "1.0.0",
                         "typologies": [
                             {
-                                "id": "001@1.0.0",
-                                "host": "http://openfaas:8080",
-                                "cfg": "028@1.0.0",
+                                "id": "028@1.0.0",
+                                "host": "https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0",
+                                "cfg": "1.0.0",
                                 "rules": [
                                     {
-                                        "id": "003@1.0.0",
-                                        "host": "http://openfaas:8080",
-                                        "cfg": "1.0.0"
-                                    }
-                                ]
-                            },
-                            {
-                                "id": "001@1.0.0",
-                                "host": "http://openfaas:8080",
-                                "cfg": "029@1.0.0",
-                                "rules": [
-                                    {
-                                        "id": "003@1.0.0",
-                                        "host": "http://openfaas:8080",
-                                        "cfg": "1.1.0"
-                                    }
-                                ]
-                            },
-                            {
-                                "id": "002@1.0.0",
-                                "host": "http://openfaas2:8080",
-                                "cfg": "030@1.0.0",
-                                "rules": [
-                                    {
-                                        "id": "003@2.0.0",
-                                        "host": "http://openfaas2:8080",
+                                        "id": "018@1.0.0",
+                                        "host": "https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0",
                                         "cfg": "1.0.0"
                                     }
                                 ]
@@ -104,91 +1406,445 @@ Sample network map:
             }
         ]
     }
-]
+}
 ```
 
-Discussion notes for future changes:
+### Request for Pacs008
 
-1. Can we add (optional) channel_description, typology_description and rule_description fields?
-
-    1. No, to keep the file small, user-readable information is omitted.
-
-2. We should separate processor and config versioning
-
-    1. This has been implemented in the current version of the network map structure (id vs cfg for each processor)
-
-3. Why is the typology_id not also a UUIDv4?
-
-    1. This is now redundant with the new structure.
-
-4. We should add attribute tags to the typology and the transaction nodes so that the CRSP can interrogate the transaction for those attributes and their values to determine if the typology is in scope for the evaluation.
-
-    1. Reserved for future enhancement once we require additional logic processing from the CRSP for specific rules and typologies
-
-5. The original Network Map contained a "transactions" array, which contained all the transaction types that we want to evaluate in Actio. The term "transaction" in this context creates some confusion with the transaction as the thing that facilitates the flow of funds and the message format as the thing that contains the information (structure and type) about the transaction.
-
-    1. **2021/10/18**: The term “messages” will replace the term “transactions” in the Network Map.
-
-## 3.2. Determine Channels
-
-With the network map in hand, the CRSP interrogates the incoming transaction and determines which channels from the map are to be utilised for evaluating the transaction, based on the transaction’s message type.
-
-Currently, all transactions are submitted to all channels and the only attribute from the transaction that is used to evaluate the channel is the message type (TxTp) (pain.001, pain.013, pacs.008 and pacs.002).
-
-Increased granularity in the channels will be implemented once more typologies have been completed and we’ve decided how the channels for the MVP will be composed.
-
-## 3.3. Determine Typologies
-
-Once the channels have been determined, and for each channel in the evaluation scope, the CRSP determines which typologies to evaluate. The typologies are determines based on an evaluation of the contents of a transaction against the minimum access criteria of a typology, as defined in the network map. For example, if a typology relies on the presence of foreign currency exchange in the transaction, but there is no currency exchange present in the transaction, then the typology can be omitted from the evaluation scope.
-
-Currently, since each channel will be in scope for the evaluation, it is not necessary for typologies to be present in multiple channels. In general, evaluating the same typology twice for a specific transaction is unnecessary and wasteful.
-
-The set of rules that are executed to evaluate a typology are defined in the network map. The exact method for combining the rule results into a typology score is defined in the typology expression. The typology expression is an external configuration file that defines the rules for a typology, the translation of the rule results to a numerical value and the sum or “expression” that defines how the rule result scores are to be compiled into the typology score.
-
-The typology expression can change over time as needs dictate. Rules may be removed, or new rules added; the rule result scores may be tweaked as part of a calibration process; the typology expression may be changed to redefine the calculation of the typology score. It is essential that the typology expression is properly versioned, and that the appropriate version is referenced in the network map.
-
-The typology processor will likely remain unchanged for longer than the typology configurations that enable its execution, but the typology processor may be updated from time to time. Therefore the typology processor itself will have to be independently versioned from the typology expressions and the version of the typology processor employed for the incoming transaction will have to be referenced in the network map.
-
-*Note for future feature enhancement (MVP scope):* Typologies must be tagged with the attributes that will determine if they are in scope for an evaluation, and the CRSP will have to evaluate these attributes when composing the evaluation scope via the network map.
-
-## 3.4. Determine Rules
-
-Each typology comprises a number of rules that are executed to support the calculation of the typology’s score. The typology score provides an indication of the measure of financial crime risk detected in the transaction.
-
-The rules for a specific typology is generally static and rules are not currently expected to be eliminated for evaluation by the CRSP. In rare circumstances where the same typology would be executed with a different set of rules (e.g. one set of rules including Forex, and another set excluding Forex), the two typologies will be created as a completely separate typologies instead.
-
-A single rule may be executed for multiple typologies (and even across multiple channels). Singular execution will minimise unnecessary system processing.
-
-Each rule is parameterised through an external configuration file that contains information about the thresholds and evaluation bands within a rule. Rule parameters can change over time as rules are calibrated for improved detection capabilities. It is essential that the rule configuration is properly versioned, and that the appropriate version is referenced in the network map.
-
-A rule processor will likely remain unchanged for longer than its config, but may also be updated periodically. Therefore the rule processor itself will have to be independently versioned from its rule config and the version of the rule processor employed for the incoming transaction will have to be referenced in the network map.
-
-## 3.5. Prune the Network Map
-
-Once the CRSP has determined which typologies and rules will be invoked for the incoming transaction, the CRSP will prune (remove) all the unwanted typologies (and their associated rules) from the network map. What will remain will be an abbreviated network map, or a network sub-map, that only contains the channels, typologies and rules that are in scope for the evaluation of the incoming transaction’s message type.
-
-## 3.6. Deduplicate Rules
-
-A single rule could be used to evaluate more than one typology. One of the primary advantages and reasons for the config-driven approach is to be able to minimise the number of times that a specific rule has to be executed. To achieve this objective, the CRSP will draft a list of all of the rules in the network sub-map and then eliminate duplicate rules from the list.
-
-A rule in the network map can be uniquely described by the combination of the following attributes:
-
+```json
+{
+"TxTp": "pacs.008.001.10",
+    "CstmrCdtTrfInitn": {
+      "GrpHdr": {
+        "MsgId": "2669e349-500d-44ba-9e27-7767a16608a0",
+        "CreDtTm": "2021-10-07T09:25:31.000Z",
+        "NbOfTxs": 1,
+        "InitgPty": {
+          "Nm": "Ivan Reese Russel-Klein",
+          "Id": {
+            "PrvtId": {
+              "DtAndPlcOfBirth": {
+                "BirthDt": "1967-11-23",
+                "CityOfBirth": "Unknown",
+                "CtryOfBirth": "ZZ"
+              },
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            }
+          },
+          "CtctDtls": {
+            "MobNb": "+27-783078685"
+          }
+        }
+      },
+      "PmtInf": {
+        "PmtInfId": "b51ec534-ee48-4575-b6a9-ead2955b8069",
+        "PmtMtd": "TRA",
+        "ReqdAdvcTp": {
+          "DbtAdvc": {
+            "Cd": "ADWD",
+            "Prtry": "Advice with transaction details"
+          }
+        },
+        "ReqdExctnDt": {
+          "Dt": "2021-10-07",
+          "DtTm": "2021-10-07T09:25:31.000Z"
+        },
+        "Dbtr": {
+          "Nm": "Ivan Reese Russel-Klein",
+          "Id": {
+            "PrvtId": {
+              "DtAndPlcOfBirth": {
+                "BirthDt": "1957-10-05",
+                "CityOfBirth": "Unknown",
+                "CtryOfBirth": "ZZ"
+              },
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            }
+          },
+          "CtctDtls": {
+            "MobNb": "+27-783078685"
+          }
+        },
+        "DbtrAcct": {
+          "Id": {
+            "Othr": {
+              "Id": "+27783078685",
+              "SchmeNm": {
+                "Prtry": "PASSPORT"
+              }
+            }
+          },
+          "Nm": "Ivan Russel-Klein"
+        },
+        "DbtrAgt": {
+          "FinInstnId": {
+            "ClrSysMmbId": {
+              "MmbId": "dfsp001"
+            }
+          }
+        },
+        "CdtTrfTxInf": {
+          "PmtId": {
+            "EndToEndId": "b51ec534-ee48-4575-b6a9-ead2955b8069"
+          },
+          "PmtTpInf": {
+            "CtgyPurp": {
+              "Prtry": "TRANSFER"
+            }
+          },
+          "Amt": {
+            "InstdAmt": {
+              "Amt": {
+                "Amt": "50431891779910900",
+                "Ccy": "USD"
+              }
+            },
+            "EqvtAmt": {
+              "Amt": {
+                "Amt": "50431891779910900",
+                "Ccy": "USD"
+              },
+              "CcyOfTrf": "USD"
+            }
+          },
+          "ChrgBr": "DEBT",
+          "CdtrAgt": {
+            "FinInstnId": {
+              "ClrSysMmbId": {
+                "MmbId": "dfsp002"
+              }
+            }
+          },
+          "Cdtr": {
+            "Nm": "April Sam Adamson",
+            "Id": {
+              "PrvtId": {
+                "DtAndPlcOfBirth": {
+                  "BirthDt": "1923-04-26",
+                  "CityOfBirth": "Unknown",
+                  "CtryOfBirth": "ZZ"
+                },
+                "Othr": {
+                  "Id": "+27782722305",
+                  "SchmeNm": {
+                    "Prtry": "MSISDN"
+                  }
+                }
+              }
+            },
+            "CtctDtls": {
+              "MobNb": "+27-782722305"
+            }
+          },
+          "CdtrAcct": {
+            "Id": {
+              "Othr": {
+                "Id": "+27783078685",
+                "SchmeNm": {
+                  "Prtry": "MSISDN"
+                }
+              }
+            },
+            "Nm": "April Adamson"
+          },
+          "Purp": {
+            "Cd": "MP2P"
+          },
+          "RgltryRptg": {
+            "Dtls": {
+              "Tp": "BALANCE OF PAYMENTS",
+              "Cd": "100"
+            }
+          },
+          "RmtInf": {
+            "Ustrd": "Payment of USD 49932566118723700.89 from Ivan to April"
+          },
+          "SplmtryData": {
+            "Envlp": {
+              "Doc": {
+                "Cdtr": {
+                  "FrstNm": "Ivan",
+                  "MddlNm": "Reese",
+                  "LastNm": "Russel-Klein",
+                  "MrchntClssfctnCd": "BLANK"
+                },
+                "Dbtr": {
+                  "FrstNm": "April",
+                  "MddlNm": "Sam",
+                  "LastNm": "Adamson",
+                  "MrchntClssfctnCd": "BLANK"
+                },
+                "DbtrFinSvcsPrvdrFees": {
+                  "Ccy": "USD",
+                  "Amt": "499325661187237"
+                },
+                "Xprtn": "2021-10-07T09:30:31.000Z"
+              }
+            }
+          }
+        }
+      },
+      "SplmtryData": {
+        "Envlp": {
+          "Doc": {
+            "InitgPty": {
+              "InitrTp": "CONSUMER",
+              "Glctn": {
+                "Lat": "-3.1291",
+                "Long": "39.0006"
+              }
+            }
+          }
+        }
+      }
+    }
+}
 ```
-                                        "id": "003@1.0.0",
-                                        "host": "http://openfaas:8080",
+
+### Response for Pacs008
+
+```json
+{
+    "rulesSentTo": [
+       "018@1.0.0"
+    ],
+    "failedToSend": [],
+    "transaction": {
+        "TxTp": "pacs.008.001.10",
+        "CstmrCdtTrfInitn": {
+            "GrpHdr": {
+                "MsgId": "2669e349-500d-44ba-9e27-7767a16608a0",
+                "CreDtTm": "2021-10-07T09:25:31.000Z",
+                "NbOfTxs": 1,
+                "InitgPty": {
+                    "Nm": "Ivan Reese Russel-Klein",
+                    "Id": {
+                        "PrvtId": {
+                            "DtAndPlcOfBirth": {
+                                "BirthDt": "1967-11-23",
+                                "CityOfBirth": "Unknown",
+                                "CtryOfBirth": "ZZ"
+                            },
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        }
+                    },
+                    "CtctDtls": {
+                        "MobNb": "+27-783078685"
+                    }
+                }
+            },
+            "PmtInf": {
+                "PmtInfId": "b51ec534-ee48-4575-b6a9-ead2955b8069",
+                "PmtMtd": "TRA",
+                "ReqdAdvcTp": {
+                    "DbtAdvc": {
+                        "Cd": "ADWD",
+                        "Prtry": "Advice with transaction details"
+                    }
+                },
+                "ReqdExctnDt": {
+                    "Dt": "2021-10-07",
+                    "DtTm": "2021-10-07T09:25:31.000Z"
+                },
+                "Dbtr": {
+                    "Nm": "Ivan Reese Russel-Klein",
+                    "Id": {
+                        "PrvtId": {
+                            "DtAndPlcOfBirth": {
+                                "BirthDt": "1957-10-05",
+                                "CityOfBirth": "Unknown",
+                                "CtryOfBirth": "ZZ"
+                            },
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        }
+                    },
+                    "CtctDtls": {
+                        "MobNb": "+27-783078685"
+                    }
+                },
+                "DbtrAcct": {
+                    "Id": {
+                        "Othr": {
+                            "Id": "+27783078685",
+                            "SchmeNm": {
+                                "Prtry": "PASSPORT"
+                            }
+                        }
+                    },
+                    "Nm": "Ivan Russel-Klein"
+                },
+                "DbtrAgt": {
+                    "FinInstnId": {
+                        "ClrSysMmbId": {
+                            "MmbId": "dfsp001"
+                        }
+                    }
+                },
+                "CdtTrfTxInf": {
+                    "PmtId": {
+                        "EndToEndId": "b51ec534-ee48-4575-b6a9-ead2955b8069"
+                    },
+                    "PmtTpInf": {
+                        "CtgyPurp": {
+                            "Prtry": "TRANSFER"
+                        }
+                    },
+                    "Amt": {
+                        "InstdAmt": {
+                            "Amt": {
+                                "Amt": "50431891779910900",
+                                "Ccy": "USD"
+                            }
+                        },
+                        "EqvtAmt": {
+                            "Amt": {
+                                "Amt": "50431891779910900",
+                                "Ccy": "USD"
+                            },
+                            "CcyOfTrf": "USD"
+                        }
+                    },
+                    "ChrgBr": "DEBT",
+                    "CdtrAgt": {
+                        "FinInstnId": {
+                            "ClrSysMmbId": {
+                                "MmbId": "dfsp002"
+                            }
+                        }
+                    },
+                    "Cdtr": {
+                        "Nm": "April Sam Adamson",
+                        "Id": {
+                            "PrvtId": {
+                                "DtAndPlcOfBirth": {
+                                    "BirthDt": "1923-04-26",
+                                    "CityOfBirth": "Unknown",
+                                    "CtryOfBirth": "ZZ"
+                                },
+                                "Othr": {
+                                    "Id": "+27782722305",
+                                    "SchmeNm": {
+                                        "Prtry": "MSISDN"
+                                    }
+                                }
+                            }
+                        },
+                        "CtctDtls": {
+                            "MobNb": "+27-782722305"
+                        }
+                    },
+                    "CdtrAcct": {
+                        "Id": {
+                            "Othr": {
+                                "Id": "+27783078685",
+                                "SchmeNm": {
+                                    "Prtry": "MSISDN"
+                                }
+                            }
+                        },
+                        "Nm": "April Adamson"
+                    },
+                    "Purp": {
+                        "Cd": "MP2P"
+                    },
+                    "RgltryRptg": {
+                        "Dtls": {
+                            "Tp": "BALANCE OF PAYMENTS",
+                            "Cd": "100"
+                        }
+                    },
+                    "RmtInf": {
+                        "Ustrd": "Payment of USD 49932566118723700.89 from Ivan to April"
+                    },
+                    "SplmtryData": {
+                        "Envlp": {
+                            "Doc": {
+                                "Cdtr": {
+                                    "FrstNm": "Ivan",
+                                    "MddlNm": "Reese",
+                                    "LastNm": "Russel-Klein",
+                                    "MrchntClssfctnCd": "BLANK"
+                                },
+                                "Dbtr": {
+                                    "FrstNm": "April",
+                                    "MddlNm": "Sam",
+                                    "LastNm": "Adamson",
+                                    "MrchntClssfctnCd": "BLANK"
+                                },
+                                "DbtrFinSvcsPrvdrFees": {
+                                    "Ccy": "USD",
+                                    "Amt": "499325661187237"
+                                },
+                                "Xprtn": "2021-10-07T09:30:31.000Z"
+                            }
+                        }
+                    }
+                }
+            },
+            "SplmtryData": {
+                "Envlp": {
+                    "Doc": {
+                        "InitgPty": {
+                            "InitrTp": "CONSUMER",
+                            "Glctn": {
+                                "Lat": "-3.1291",
+                                "Long": "39.0006"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "networkMap": {
+        "messages": [
+            {
+                "id": "005@1.0.0",
+                "host": "https://gateway.openfaas:8080/function/off-transaction-aggregation-decisioning-processor-rel-1-1-0",
+                "cfg": "1.0.0",
+                "txTp": "pacs.008.001.10",
+                "channels": [
+                    {
+                        "id": "001@1.0.0",
+                        "host": "https://gateway.openfaas:8080/function/off-channel-aggregation-decisioning-processor-rel-1-1-0",
+                        "cfg": "1.0.0",
+                        "typologies": [
+                            {
+                                "id": "028@1.0.0",
+                                "host": "https://gateway.openfaas:8080/function/off-typology-processor-rel-1-0-0",
+                                "cfg": "1.0.0",
+                                "rules": [
+                                    {
+                                        "id": "018@1.0.0",
+                                        "host": "https://gateway.openfaas:8080/function/off-rule-018-rel-1-0-0",
                                         "cfg": "1.0.0"
-```
-
-The CRSP must remove all duplicate rules for the unique combination of these fields to identify only one unique rules processor (and rule processor version and rule processor configuration version) to execute for the evaluation of the transaction.
-
-![](../../../../Images/image-20210817-123535.png)
-
-What the separated criteria for a rule processor’s uniqueness also means is that we could, in theory, execute the same rule processor with two different rule configurations, or even be able to override a rule’s configuration for a specific typology under specific circumstances. At the moment, this is not intended to be in scope for the MVP and will only be explored once transaction evaluation is calibrated over live data.
-
-## 3.7. Evaluate Transaction
-
-Using the list of unique rules from step 3.6, the CRSP invokes all of the unique rule processors and passes the transaction message and network sub-map to each rule processor for processing.
-
-## 3.8. CRSP Response
-
-The CRSP must send an HTTP response back to the service that invoked it, in this case the data preparation (NiFi) service, to communicate the successful completion of its work. The response message must include the outgoing payload as part of the response so that the automated testing can confirm that the functioning and outgoing message is correct.
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}
