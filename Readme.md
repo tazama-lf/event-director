@@ -57,10 +57,210 @@ npm i
 | `DATABASE_NAME` | [Arango] database name | `networkmap`
 | `CONFIG_DATABASE` | [Arango] Configuration name | `Configuration`
 
-### Inputs
+### Requests
 
-As the processor listens on a NATS subject, the message it receives is deserialised into an object:
+#### Pacs002
 
-```js
+As the processor listens on a NATS subject, the message it receives is deserialised into an object matching the following structure
 
+```json
+{
+  transaction: {
+    TxTp: "pacs.002.001.12",
+    FIToFIPmtSts: {
+      GrpHdr: {
+        MsgId: "43c0e3bd11164fef87a427ec559a9e92",
+        CreDtTm: "2020-05-08T12:38:28.812Z",
+      },
+      TxInfAndSts: {
+        OrgnlInstrId: "5ab4fc7355de4ef8a75b78b00a681ed2",
+        OrgnlEndToEndId: "3bc4ea02daea4b7fb354d44211561150",
+        TxSts: "ACCC",
+        ChrgsInf: [
+          {
+            Amt: {
+              Amt: 0,
+              Ccy: "USD",
+            },
+            Agt: {
+              FinInstnId: {
+                ClrSysMmbId: {
+                  MmbId: "dfsp001",
+                },
+              },
+            },
+          },
+          {
+            Amt: {
+              Amt: 0,
+              Ccy: "USD",
+            },
+            Agt: {
+              FinInstnId: {
+                ClrSysMmbId: {
+                  MmbId: "dfsp001",
+                },
+              },
+            },
+          },
+          {
+            Amt: {
+              Amt: 0,
+              Ccy: "USD",
+            },
+            Agt: {
+              FinInstnId: {
+                ClrSysMmbId: {
+                  MmbId: "dfsp002",
+                },
+              },
+            },
+          },
+        ],
+        AccptncDtTm: "2023-06-02T07:52:31.000Z",
+        InstgAgt: {
+          FinInstnId: {
+            ClrSysMmbId: {
+              MmbId: "dfsp001",
+            },
+          },
+        },
+        InstdAgt: {
+          FinInstnId: {
+            ClrSysMmbId: {
+              MmbId: "dfsp002",
+            },
+          },
+        },
+      },
+    },
+  },
+  DataCache: {
+    dbtrId: "dbtrId",
+    cdtrId: "cdtrId",
+    cdtrAcctId: "cdtrAcct_abc",
+    dbtrAcctId: "dbtrAcct_def",
+    amt: {
+      amt: 422.25,
+      ccy: "XTS",
+    },
+    creDtTm: "2020-05-08T12:33:28.812Z",
+  },
+}
+```
+
+### Response
+#### Pacs002
+
+```json
+{
+  transaction: {
+    TxTp: "pacs.002.001.12",
+    FIToFIPmtSts: {
+      GrpHdr: {
+        MsgId: "5a22641e90ca47fab8a3f23663a64e56",
+        CreDtTm: "2024-05-08T12:34:17.889Z",
+      },
+      TxInfAndSts: {
+        OrgnlInstrId: "5ab4fc7355de4ef8a75b78b00a681ed2",
+        OrgnlEndToEndId: "d8e1734cee4f4ccaabf0d22d0d91dbda",
+        TxSts: "ACCC",
+        ChrgsInf: [
+          {
+            Amt: {
+              Amt: 0,
+              Ccy: "USD",
+            },
+            Agt: {
+              FinInstnId: {
+                ClrSysMmbId: {
+                  MmbId: "dfsp001",
+                },
+              },
+            },
+          },
+          {
+            Amt: {
+              Amt: 0,
+              Ccy: "USD",
+            },
+            Agt: {
+              FinInstnId: {
+                ClrSysMmbId: {
+                  MmbId: "dfsp001",
+                },
+              },
+            },
+          },
+          {
+            Amt: {
+              Amt: 0,
+              Ccy: "USD",
+            },
+            Agt: {
+              FinInstnId: {
+                ClrSysMmbId: {
+                  MmbId: "dfsp002",
+                },
+              },
+            },
+          },
+        ],
+        AccptncDtTm: "2023-06-02T07:52:31.000Z",
+        InstgAgt: {
+          FinInstnId: {
+            ClrSysMmbId: {
+              MmbId: "dfsp001",
+            },
+          },
+        },
+        InstdAgt: {
+          FinInstnId: {
+            ClrSysMmbId: {
+              MmbId: "dfsp002",
+            },
+          },
+        },
+      },
+    },
+  },
+  networkMap: {
+    active: true,
+    cfg: "1.0.0",
+    messages: [
+      {
+        id: "004@1.0.0",
+        cfg: "1.0.0",
+        txTp: "pacs.002.001.12",
+        typologies: [
+          {
+            id: "typology-processor@1.0.0",
+            cfg: "999@1.0.0",
+            rules: [
+              {
+                id: "901@1.0.0",
+                cfg: "1.0.0",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  DataCache: {
+    dbtrId: "dbtrId",
+    cdtrId: "cdtrId",
+    cdtrAcctId: "cdtrAcct_abc",
+    dbtrAcctId: "dbtrAcct_def",
+    amt: {
+      amt: 615.44,
+      ccy: "XTS",
+    },
+    creDtTm: "2020-05-08T12:29:17.889Z",
+  },
+  metaData: {
+    prcgTmCRSP: 1,
+    traceParent: null,
+  },
+}
 ```
