@@ -19,7 +19,7 @@
 
 Below is the sequence diagram for CRSP
 
-![image](CRSP-Sequence-Diagram.png)
+![crsp-sequence-diagram](images/CRSP-Sequence-Diagram.png)
 
 The Channel Router & Setup Processor (CRSP) is where most of the heavy lifting happens. The CRSP is responsible for branching the transaction to all the different rules in the different channels. It uses the Network Map as configuration source, de-duplicates all the rules, generates a network submap (that is sent to Rule Processors), allowing the Rule Processors to know to which Typologies they need to send their results.
 
@@ -29,19 +29,34 @@ The Channel Router & Setup Processor (CRSP) is where most of the heavy lifting h
 
 ## Code Activity Diagram
 
-[CRSP.plantuml](https://github.com/frmscoe/uml-diagrams/blob/main/services/CRSP.plantuml)
+```mermaid
+flowchart TD
+    start([Start]) --> postRequest[Accept http POST request from Data Preparation]
+    postRequest --> note1["Data expected: transaction"]
+    note1 --> readCache[Read active network map from Redis Cache]
+    readCache --> note2["Required Parameter: Cache key"]
+    note2 --> checkMemory{Active Network map is found in memory}
+    checkMemory -->|Yes| pruneMap[prune network map]
+    checkMemory -->|No| readDB[Read active network map from Database]
+    readDB --> checkDB{Network map is found}
+    checkDB -->|Yes| saveCache[Save Active network map to cache]
+    saveCache --> note3["Required Parameter: Cache key, Active Network Map in JSON format, Expiry time based on environment"]
+    note3 --> pruneMap
+    checkDB -->|No| logResult[Return No network map found in DB and Log the result]
+    logResult --> note4["Results: rulesSentTo empty, failedToSend empty, networkMap empty, transaction req"]
+    note4 --> stop1([Stop])
+    pruneMap --> deduplicate[deduplicate all rules]
+    deduplicate --> ruleLoop{foreach rule in the network sub-map}
+    ruleLoop -->|More rules| sendData[Send Data]
+    sendData --> note5["Data sent: transaction, network sub-map"]
+    sendData --> ruleLoop
+    ruleLoop -->|No more rules| sendResponse[send response back to Data Preparation]
+    sendResponse --> note6["Response includes: Rules sent to, Rules not sent to, Transaction, Network sub-map"]
+    note6 --> stop2([Stop])
+```
 
-![](CRSP-Activity-Diagram.png)
-![](CRSP.png)
-
-## Usage
-
-CRSP can be initialized by sending an HTTP with the below Postman Collection Example for all current Messaging Types.
-
-[pacs008_postman_request.json](/Images/pacs008_postman_request.json)  
-[pacs002_postman_request.json](/Images/pacs002_postman_request.json)  
-[pain013_postman_request.json](/Images/pain013_postman_request.json)  
-[pain001_postman_request.json](/Images/pain001_postman_request.json)  
+![crsp-activity-diagram](images/CRSP-Activity-Diagram.png)
+![crsp-diagram](images/CRSP.png)
 
 ## Sample JSON Request & Response
 
