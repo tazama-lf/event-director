@@ -19,7 +19,7 @@
 
 Below is the sequence diagram for CRSP
 
-![image](image-20210817-043926.png)
+![image](CRSP-Sequence-Diagram.png)
 
 The Channel Router & Setup Processor (CRSP) is where most of the heavy lifting happens. The CRSP is responsible for branching the transaction to all the different rules in the different channels. It uses the Network Map as configuration source, de-duplicates all the rules, generates a network submap (that is sent to Rule Processors), allowing the Rule Processors to know to which Typologies they need to send their results.
 
