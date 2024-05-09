@@ -1681,6 +1681,7 @@ As the processor listens on a NATS subject, the message it receives is deseriali
         ]
     }
 }
+```
 
 ## Troubleshooting
 #### npm install
