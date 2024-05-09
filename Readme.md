@@ -36,14 +36,13 @@ npm i
 | ------ | ------ | ------ |
 | `FUNCTION_NAME` | Denotes the type of application that is running. This is also used in logs to show the source of logs | `CRSP`
 | `NODE_ENV` | Represents the environment the application is currently running in | `dev`
-| `REST_PORT` | Port the application is served on [**Deprecated**] |`3000`
 | `CACHETTL` | Duration in milliseconds until a cache key is expired |`5000`
 | `MAX_CPU` | Max number of CPUs to use | `1`
 | `APM_ACTIVE` | Enable Application Performance Monitoring through Elastic | `false`
 | `REDIS_DB` | Redis database | `0`
-| `REDIS_AUTH` | Redis password | `01ARZ3Example`
-| `REDIS_SERVERS` | Redis Host in `json` format | `[{"host":"redis", "port":6379}]`
-| `REDIS_IS_CLUSTER` | A flag to indicate if Redis is served in cluster mode | `false`
+| `REDIS_AUTH` | [Redis] password | `01ARZ3Example`
+| `REDIS_SERVERS` | [Redis] Host in `json` format | `[{"host":"redis", "port":6379}]`
+| `REDIS_IS_CLUSTER` | A flag to indicate if [Redis] is served in cluster mode | `false`
 | `SERVER_URL` | A URL where [NATS] is served | `nats:4222`
 | `STARTUP_TYPE` | Configure [NATS] NATS features | `nats`
 | `CONSUMER_STREAM` | The [NATS] subject that this application listens on | `CRSP`
