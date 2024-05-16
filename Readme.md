@@ -31,11 +31,11 @@ A [registry](https://github.com/frmscoe/docs) of environment variables is provid
 
 | Variable | Purpose | Example
 | ------ | ------ | ------ |
-| `DATABASE_URL` | URL where [Arango] is served | `tcp://arango:8529`
-| `DATABASE_USER` | [Arango] database username | `root`
-| `DATABASE_PASSWORD` | [Arango] database password | `password`
-| `DATABASE_NAME` | [Arango] database name | `networkmap`
-| `CONFIG_DATABASE` | [Arango] Configuration name | `Configuration`
+| `DATABASE_URL` | URL where Arango is served | `tcp://arango:8529`
+| `DATABASE_USER` | Arango database username | `root`
+| `DATABASE_PASSWORD` | Arango database password | `password`
+| `DATABASE_NAME` | Arango database name | `networkmap`
+| `CONFIG_DATABASE` | Arango Configuration name | `Configuration`
 
 #### Build and Start
 
