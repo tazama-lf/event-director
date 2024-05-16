@@ -58,6 +58,23 @@ A Pacs002 message is expected as an input as defined [here](https://github.com/f
 
 ## Internal Process Flow
 
+### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant A as TMS API
+    participant B as NATS<br>(event-director)
+    participant C as EVENT<br>DIRECTOR
+    participant D as NATS<br>(sub-rule-*)
+
+    A->>B: Publish message
+    B->>+C: Read message
+    C->>C: handleTransaction()
+    C->>-D: Publish message/s
+```
+
+### Activity Diagram
+
 ```mermaid
 flowchart TD
     start([Start]) --> postRequest[Accept NATS message from TMS]
@@ -82,21 +99,6 @@ flowchart TD
     ruleLoop -->|No more rules| sendResponse[send response back to Data Preparation]
     sendResponse --> note6["Response includes: Rules sent to, Rules not sent to, Transaction, Network sub-map"]
     note6 --> stop2([Stop])
-```
-
-### Sequence Diagram
-
-```mermaid
-sequenceDiagram
-    participant A as TMS API
-    participant B as NATS<br>(event-director)
-    participant C as EVENT<br>DIRECTOR
-    participant D as NATS<br>(sub-rule-*)
-
-    A->>B: Publish message
-    B->>+C: Read message
-    C->>C: handleTransaction()
-    C->>-D: Publish message/s
 ```
 
 ## Outputs
