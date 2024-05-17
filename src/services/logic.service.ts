@@ -22,21 +22,17 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   const rules: Rule[] = new Array<Rule>();
 
   // Find the message object in the network map for the transaction type of THIS transaction
-  const MessageChannel = networkMap.messages.find((tran) => tran.txTp === transactionType);
+  const messages = networkMap.messages.find((tran) => tran.txTp === transactionType);
 
   // Populate a list of all the rules that's required for this transaction type
-  if (MessageChannel && MessageChannel.channels && MessageChannel.channels.length > 0) {
-    for (const channel of MessageChannel.channels) {
-      if (channel.typologies && channel.typologies.length > 0)
-        for (const typology of channel.typologies) {
-          if (typology.rules && typology.rules.length > 0)
-            for (const rule of typology.rules) {
-              const ruleIndex = rules.findIndex((r: Rule) => `${r.id}` === `${rule.id}` && `${r.cfg}` === `${rule.cfg}`);
-              if (ruleIndex < 0) {
-                rules.push(rule);
-              }
-            }
+  if (messages) {
+    for (const typology of messages.typologies) {
+      for (const rule of typology.rules) {
+        const ruleIndex = rules.findIndex((r: Rule) => `${r.id}` === `${rule.id}` && `${r.cfg}` === `${rule.cfg}`);
+        if (ruleIndex < 0) {
+          rules.push(rule);
         }
+      }
     }
   }
 
@@ -77,7 +73,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     } else {
       loggerService.log('No network map found in DB');
       const result = {
-        prcgTmCRSP: calculateDuration(startTime),
+        prcgTmED: calculateDuration(startTime),
         rulesSentTo: [],
         failedToSend: [],
         networkMap: {},
@@ -99,7 +95,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
 
     // Send transaction to all rules
     const promises: Array<Promise<void>> = [];
-    const metaData = { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) };
+    const metaData = { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) };
 
     for (const rule of rules) {
       promises.push(
@@ -110,7 +106,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
   } else {
     loggerService.log('No coresponding message found in Network map');
     const result = {
-      metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) },
+      metaData: { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) },
       networkMap: {},
       transaction: parsedRequest.transaction,
       DataCache: parsedRequest.DataCache,
