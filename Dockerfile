@@ -40,7 +40,7 @@ ENV NPM_CONFIG_LOGLEVEL warn
 ENV mode="http"
 ENV upstream_url="http://127.0.0.1:3000"
 ENV prefix_logs="false"
-ENV FUNCTION_NAME=channel-router-setup-processor
+ENV FUNCTION_NAME=event-director
 ENV NODE_ENV=production
 ENV MAX_CPU=
 

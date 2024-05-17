@@ -2,26 +2,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: channel-router-setup-processor-rel-1-0-0
+  name: event-director-rel-1-0-0
   namespace: processor
   labels:
-    app: channel-router-setup-processor
+    app: event-director
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: channel-router-setup-processor
+      app: event-director
   template:
     metadata:
-      name: channel-router-setup-processor-rel-1-0-0
+      name: event-director-rel-1-0-0
       labels:
-        app: channel-router-setup-processor
+        app: event-director
       annotations:
         prometheus.io.scrape: 'false'
     spec:
       containers:
-        - name: channel-router-setup-processor-rel-1-0-0
-          image: example.io/channel-router-setup-processor-rel-1-0-0:1.0.0
+        - name: event-director-rel-1-0-0
+          image: example.io/event-director-rel-1-0-0:1.0.0
           ports:
             - name: http
               containerPort: 8080
