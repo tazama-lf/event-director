@@ -73,7 +73,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     } else {
       loggerService.log('No network map found in DB');
       const result = {
-        prcgTmCRSP: calculateDuration(startTime),
+        prcgTmED: calculateDuration(startTime),
         rulesSentTo: [],
         failedToSend: [],
         networkMap: {},
@@ -95,7 +95,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
 
     // Send transaction to all rules
     const promises: Array<Promise<void>> = [];
-    const metaData = { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) };
+    const metaData = { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) };
 
     for (const rule of rules) {
       promises.push(
@@ -106,7 +106,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
   } else {
     loggerService.log('No coresponding message found in Network map');
     const result = {
-      metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) },
+      metaData: { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) },
       networkMap: {},
       transaction: parsedRequest.transaction,
       DataCache: parsedRequest.DataCache,
