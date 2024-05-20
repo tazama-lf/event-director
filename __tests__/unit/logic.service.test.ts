@@ -50,7 +50,6 @@ describe('Logic Service', () => {
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
-      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
       expect(result).toBeDefined;
     });
 
@@ -69,7 +68,6 @@ describe('Logic Service', () => {
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
-      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
       expect(result).toBeDefined;
     });
 
@@ -87,7 +85,6 @@ describe('Logic Service', () => {
       expect(loggerSpy).toHaveBeenCalledTimes(1);
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 018@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
-      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
       expect(result).toBeDefined;
     });
 
@@ -105,7 +102,6 @@ describe('Logic Service', () => {
       expect(loggerSpy).toHaveBeenCalledTimes(1);
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 018@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
-      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
       expect(result).toBeDefined;
     });
 
@@ -127,7 +123,6 @@ describe('Logic Service', () => {
       expect(loggerSpy).toHaveBeenCalledTimes(1);
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 018@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
-      expect(debugLoggerSpy).toHaveBeenCalledTimes(2);
       expect(result).toBeDefined;
     });
 
@@ -163,7 +158,6 @@ describe('Logic Service', () => {
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
-      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should respond with empty network submap no network map is found', async () => {
@@ -198,7 +192,6 @@ describe('Logic Service', () => {
       expect(errorLoggerSpy).toHaveBeenCalledTimes(2);
       expect(errorLoggerSpy).toHaveBeenCalledWith('Failed to send to Rule 003@1.0 with Error: undefined');
       expect(errorLoggerSpy).toHaveBeenCalledWith('Failed to send to Rule 028@1.0 with Error: undefined');
-      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
     });
   });
 });

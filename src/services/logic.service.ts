@@ -107,14 +107,6 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
       );
     }
     await Promise.all(promises);
-
-    const result = {
-      metaData,
-      transaction: parsedRequest.transaction,
-      DataCache: parsedRequest.DataCache,
-      networkMap,
-    };
-    loggerService.debug(JSON.stringify(result));
   } else {
     loggerService.log('No coresponding message found in Network map');
     const result = {
