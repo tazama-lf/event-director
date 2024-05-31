@@ -2,7 +2,7 @@
 
 services:
   node:
-    container_name: crsp
+    container_name: event-director
     build:
       dockerfile: Dockerfile
       context: .
