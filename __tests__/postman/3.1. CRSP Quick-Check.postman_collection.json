@@ -19,7 +19,7 @@
 							"let networkMap = outgoingEventDirectorResult.networkMap\r",
 							"let dataCache = outgoingEventDirectorResult.DataCache\r",
 							"let metaData = outgoingEventDirectorResult.metaData;\r",
-							"let prcgTm = outgoingEventDirectorResult.metaData.prcgTmEventDirector;\r",
+							"let prcgTm = outgoingEventDirectorResult.metaData.prcgTmED;\r",
 							"let msg = networkMap.messages;\r",
 							"\r",
 							"console.log(`Networkmap message: ${JSON.stringify(msg)}`);\r",
