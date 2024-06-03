@@ -28,7 +28,7 @@ spec:
               protocol: TCP
           resources: {}
           imagePullPolicy: Always
-        - name: crsp-sidecar-rel-1-0-0
+        - name: ed-sidecar-rel-1-0-0
           image: example.io/sidecar-rel-1-0-0:1.0.0
           ports:
             - name: http
