@@ -49,7 +49,6 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
   const traceParent = parsedRequest.metaData?.traceParent;
   const apmTransaction = apm.startTransaction('eventDirector.handleTransaction', { childOf: traceParent });
 
-  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   const cacheKey = `${parsedRequest.transaction.TxTp}`;
   // check if there's an active network map in memory
   const activeNetworkMap = nodeCache.get(cacheKey);
