@@ -40,9 +40,7 @@
   "dependencies": {
     "@frmscoe/frms-coe-lib": "^4.0.0-rc.5",
     "@frmscoe/frms-coe-startup-lib": "^2.2.0-alpha.1",
-    "@log4js-node/logstash-http": "^1.1.0",
     "dotenv": "^16.4.5",
-    "log4js": "^6.9.1",
     "node-cache": "^5.1.2",
     "tslib": "^2.6.0"
   },
