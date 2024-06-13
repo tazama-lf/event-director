@@ -37,9 +37,9 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@frmscoe/frms-coe-lib": "^4.0.0-rc.5",
-    "@frmscoe/frms-coe-startup-lib": "^2.2.0-alpha.1",
     "dotenv": "^16.4.5",
+    "@frmscoe/frms-coe-lib": "^4.0.0-rc.7",
+    "@frmscoe/frms-coe-startup-lib": "^2.2.0-rc.2",
     "node-cache": "^5.1.2",
     "tslib": "^2.6.0"
   },
