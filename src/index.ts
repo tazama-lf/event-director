@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: Apache-2.0
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-console */
 import './apm';
 import os from 'os';
