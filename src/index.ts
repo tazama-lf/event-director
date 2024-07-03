@@ -1,33 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable no-console */
 import './apm';
-import os from 'os';
-import { config } from './config';
 import { LoggerService, type DatabaseManagerInstance } from '@frmscoe/frms-coe-lib';
-import { handleTransaction } from './services/logic.service';
-import cluster from 'cluster';
 import { StartupFactory, type IStartupService } from '@frmscoe/frms-coe-startup-lib';
+import cluster from 'cluster';
 import NodeCache from 'node-cache';
+import os from 'os';
+import { configuration } from './config';
+import { handleTransaction } from './services/logic.service';
 import { Singleton } from './services/services';
 
-// Set config for lib (network map db config you want to use)
-const databaseManagerConfig = {
-  networkMap: {
-    certPath: config.dbCertPath,
-    databaseName: config.dbName,
-    user: config.dbUser,
-    password: config.dbPassword,
-    url: config.dbURL,
-  },
-  redisConfig: {
-    db: config.redis.db,
-    servers: config.redis.servers,
-    password: config.redis.password,
-    isCluster: config.redis.isCluster,
-  },
-};
+const databaseManagerConfig = configuration.db;
 
-export const loggerService: LoggerService = new LoggerService(config.sidecarHost);
+export const loggerService: LoggerService = new LoggerService(configuration.sidecarHost);
 
 let databaseManager: DatabaseManagerInstance<typeof databaseManagerConfig>;
 export const nodeCache = new NodeCache();
@@ -35,7 +20,7 @@ export let server: IStartupService;
 
 export const runServer = async (): Promise<void> => {
   server = new StartupFactory();
-  if (config.nodeEnv !== 'test') {
+  if (configuration.nodeEnv !== 'test') {
     let isConnected = false;
     for (let retryCount = 0; retryCount < 10; retryCount++) {
       loggerService.log('Connecting to nats server...');
@@ -61,14 +46,14 @@ process.on('unhandledRejection', (err) => {
   loggerService.error(`process on unhandledRejection error: ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
 });
 
-const numCPUs = os.cpus().length > config.maxCPU ? config.maxCPU + 1 : os.cpus().length + 1;
+const numCPUs = os.cpus().length > configuration.maxCPU ? configuration.maxCPU + 1 : os.cpus().length + 1;
 export const dbInit = async (): Promise<void> => {
   const manager = await Singleton.getDatabaseManager(databaseManagerConfig);
   console.log(manager.isReadyCheck());
   databaseManager = manager;
 };
 
-if (cluster.isPrimary && config.maxCPU !== 1) {
+if (cluster.isPrimary && configuration.maxCPU !== 1) {
   loggerService.log(`Primary ${process.pid} is running`);
 
   // Fork workers
@@ -85,7 +70,7 @@ if (cluster.isPrimary && config.maxCPU !== 1) {
   // In this case it is an HTTP server
   (async () => {
     try {
-      if (config.nodeEnv !== 'test') {
+      if (configuration.nodeEnv !== 'test') {
         await runServer();
         await dbInit();
       }

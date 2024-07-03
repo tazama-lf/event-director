@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Apm } from '@frmscoe/frms-coe-lib/lib/services/apm';
-import { config } from './config';
+import { configuration } from './config';
 
 const apm = new Apm({
-  serviceName: config.functionName,
-  secretToken: config.apmSecretToken,
-  serverUrl: config.apmURL,
+  serviceName: configuration.functionName,
+  secretToken: configuration.apmSecretToken,
+  serverUrl: configuration.apmURL,
   usePathAsTransactionName: true,
-  active: config.apmLogging,
+  active: configuration.apmLogging,
   transactionIgnoreUrls: ['/health'],
 });
 
