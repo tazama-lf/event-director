@@ -4,7 +4,7 @@ import apm from '../apm';
 import { NetworkMap, type DataCache, type Message, type Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
 import { databaseManager, nodeCache, server, loggerService } from '..';
 import { unwrap } from '@frmscoe/frms-coe-lib/lib/helpers/unwrap';
-import { config } from '../config';
+import { configuration } from '../config';
 
 const calculateDuration = (startTime: bigint): number => {
   const endTime = process.hrtime.bigint();
@@ -67,7 +67,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     if (unwrappedNetworkMap) {
       networkMap = unwrappedNetworkMap;
       // save networkmap in memory cache
-      nodeCache.set(cacheKey, networkMap, config.cacheTTL);
+      nodeCache.set(cacheKey, networkMap, configuration.nodeCacheTTL);
       prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
     } else {
       loggerService.log('No network map found in DB');
