@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-
 # This workflow uses actions that are not certified by GitHub. They are provided
 # by a third-party and are governed by separate terms of service, privacy
 # policy, and support documentation.
@@ -13,9 +12,9 @@ on:
   # To guarantee Maintained check is occasionally updated. See
   # https://github.com/ossf/scorecard/blob/main/docs/checks.md#maintained
   schedule:
-    - cron: '37 6 * * 2'
+    - cron: '35 3 * * 3'
   push:
-    branches: [ "dev" ]
+    branches: [ "dev", "main" ]
 
 # Declare default permissions as read only.
 permissions: read-all
