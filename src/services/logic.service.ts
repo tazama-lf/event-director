@@ -4,7 +4,7 @@ import apm from '../apm';
 import { NetworkMap, type DataCache, type Message, type Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
 import { databaseManager, nodeCache, server, loggerService } from '..';
 import { unwrap } from '@frmscoe/frms-coe-lib/lib/helpers/unwrap';
-import { config } from '../config';
+import { configuration } from '../config';
 
 const calculateDuration = (startTime: bigint): number => {
   const endTime = process.hrtime.bigint();
@@ -22,21 +22,17 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   const rules: Rule[] = new Array<Rule>();
 
   // Find the message object in the network map for the transaction type of THIS transaction
-  const MessageChannel = networkMap.messages.find((tran) => tran.txTp === transactionType);
+  const messages = networkMap.messages.find((tran) => tran.txTp === transactionType);
 
   // Populate a list of all the rules that's required for this transaction type
-  if (MessageChannel && MessageChannel.channels && MessageChannel.channels.length > 0) {
-    for (const channel of MessageChannel.channels) {
-      if (channel.typologies && channel.typologies.length > 0)
-        for (const typology of channel.typologies) {
-          if (typology.rules && typology.rules.length > 0)
-            for (const rule of typology.rules) {
-              const ruleIndex = rules.findIndex((r: Rule) => `${r.id}` === `${rule.id}` && `${r.cfg}` === `${rule.cfg}`);
-              if (ruleIndex < 0) {
-                rules.push(rule);
-              }
-            }
+  if (messages) {
+    for (const typology of messages.typologies) {
+      for (const rule of typology.rules) {
+        const ruleIndex = rules.findIndex((r: Rule) => `${r.id}` === `${rule.id}` && `${r.cfg}` === `${rule.cfg}`);
+        if (ruleIndex < 0) {
+          rules.push(rule);
         }
+      }
     }
   }
 
@@ -51,9 +47,8 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
 
   const parsedRequest = req as any;
   const traceParent = parsedRequest.metaData?.traceParent;
-  const apmTransaction = apm.startTransaction('crsp.handleTransaction', { childOf: traceParent });
+  const apmTransaction = apm.startTransaction('eventDirector.handleTransaction', { childOf: traceParent });
 
-  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   const cacheKey = `${parsedRequest.transaction.TxTp}`;
   // check if there's an active network map in memory
   const activeNetworkMap = nodeCache.get(cacheKey);
@@ -72,12 +67,12 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     if (unwrappedNetworkMap) {
       networkMap = unwrappedNetworkMap;
       // save networkmap in memory cache
-      nodeCache.set(cacheKey, networkMap, config.cacheTTL);
+      nodeCache.set(cacheKey, networkMap, configuration.nodeCacheTTL);
       prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
     } else {
       loggerService.log('No network map found in DB');
       const result = {
-        prcgTmCRSP: calculateDuration(startTime),
+        prcgTmED: calculateDuration(startTime),
         rulesSentTo: [],
         failedToSend: [],
         networkMap: {},
@@ -99,7 +94,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
 
     // Send transaction to all rules
     const promises: Array<Promise<void>> = [];
-    const metaData = { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) };
+    const metaData = { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) };
 
     for (const rule of rules) {
       promises.push(
@@ -110,7 +105,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
   } else {
     loggerService.log('No coresponding message found in Network map');
     const result = {
-      metaData: { ...parsedRequest.metaData, prcgTmCRSP: calculateDuration(startTime) },
+      metaData: { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) },
       networkMap: {},
       transaction: parsedRequest.transaction,
       DataCache: parsedRequest.DataCache,

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 ARG BUILD_IMAGE=node:20-bullseye
 ARG RUN_IMAGE=gcr.io/distroless/nodejs20-debian11:nonroot
 
@@ -40,7 +41,7 @@ ENV NPM_CONFIG_LOGLEVEL warn
 ENV mode="http"
 ENV upstream_url="http://127.0.0.1:3000"
 ENV prefix_logs="false"
-ENV FUNCTION_NAME=channel-router-setup-processor
+ENV FUNCTION_NAME=event-director
 ENV NODE_ENV=production
 ENV MAX_CPU=
 
@@ -56,11 +57,10 @@ ENV LOGSTASH_LEVEL='info'
 
 # Database
 ENV DATABASE_URL=
-ENV DATABASE_NAME=networkmap
+ENV DATABASE_NAME=configuration
 ENV DATABASE_USER=root
 ENV DATABASE_PASSWORD=
 ENV DATABASE_CERT_PATH=
-ENV CONFIG_DATABASE=Configuration
 
 # Redis
 ENV REDIS_DB=0
@@ -72,9 +72,9 @@ ENV CACHETTL=300
 # Nats
 ENV STARTUP_TYPE=nats
 ENV SERVER_URL=0.0.0.0:4222
-ENV PRODUCER_STREAM=
-ENV CONSUMER_STREAM=
-ENV STREAM_SUBJECT=
+ENV PRODUCER_STREAM=RuleRequest
+ENV CONSUMER_STREAM=event-director
+ENV STREAM_SUBJECT=event-director
 ENV ACK_POLICY=Explicit
 ENV PRODUCER_STORAGE=File
 ENV PRODUCER_RETENTION_POLICY=Workqueue

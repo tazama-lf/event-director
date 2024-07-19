@@ -1,6 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
 services:
   node:
-    container_name: crsp
+    container_name: event-director
     build:
       dockerfile: Dockerfile
       context: .
