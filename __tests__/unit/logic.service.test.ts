@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { databaseManager, dbInit, loggerService, nodeCache, runServer, server } from '../../src';
 import { handleTransaction } from '../../src/services/logic.service';
-import { Pacs008Sample, Pacs002Sample, Pain001Sample, Pain013Sample, NetworkMapSample } from '@frmscoe/frms-coe-lib/lib/tests/data';
-import { DatabaseNetworkMapMocks } from '@frmscoe/frms-coe-lib/lib/tests/mocks/mock-networkmap';
+import { Pacs008Sample, Pacs002Sample, Pain001Sample, Pain013Sample, NetworkMapSample } from '@tazama-lf/frms-coe-lib/lib/tests/data';
+import { DatabaseNetworkMapMocks } from '@tazama-lf/frms-coe-lib/lib/tests/mocks/mock-networkmap';
 
 beforeAll(async () => {
   await dbInit();
