@@ -4,6 +4,21 @@ import { databaseManager, dbInit, loggerService, nodeCache, runServer, server } 
 import { handleTransaction } from '../../src/services/logic.service';
 import { Pacs008Sample, Pacs002Sample, Pain001Sample, Pain013Sample, NetworkMapSample } from '@tazama-lf/frms-coe-lib/lib/tests/data';
 import { DatabaseNetworkMapMocks } from '@tazama-lf/frms-coe-lib/lib/tests/mocks/mock-networkmap';
+import { validateAPMConfig } from '@tazama-lf/frms-coe-lib/lib/helpers/env/monitoring.config';
+import { startupConfig } from '@tazama-lf/frms-coe-startup-lib/lib/interfaces/iStartupConfig';
+
+jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env/monitoring.config', () => ({
+  validateAPMConfig: jest.fn().mockReturnValue({
+    apmServiceName: '',
+  }),
+  validateLogConfig: jest.fn().mockReturnValue({}),
+}));
+
+jest.mock('@tazama-lf/frms-coe-startup-lib/lib/interfaces/iStartupConfig', () => ({
+  startupConfig: {
+    startupType: 'nats',
+  },
+}));
 
 beforeAll(async () => {
   await dbInit();
@@ -22,12 +37,17 @@ describe('Logic Service', () => {
   let responseSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    jest.resetModules();
+    jest.mock('@tazama-lf/frms-coe-startup-lib/lib/interfaces/iStartupConfig', () => ({ startupType: 'nats' }));
+
     DatabaseNetworkMapMocks(databaseManager);
 
+    (validateAPMConfig as jest.MockedFunction<typeof validateAPMConfig>).mockImplementation(() => {
+      return { apmServiceName: 'test', apmUrl: '', apmActive: false, apmSecretToken: '' };
+    });
     loggerSpy = jest.spyOn(loggerService, 'log');
     errorLoggerSpy = jest.spyOn(loggerService, 'error');
     debugLoggerSpy = jest.spyOn(loggerService, 'debug');
-    /* eslint-disable */
 
     // Clear NodeCache
     nodeCache.flushAll();
