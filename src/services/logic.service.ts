@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import apm from '../apm';
-import { NetworkMap, type DataCache, type Message, type Rule } from '@frmscoe/frms-coe-lib/lib/interfaces';
+import { NetworkMap, type DataCache, type Message, type Rule } from '@tazama-lf/frms-coe-lib/lib/interfaces';
 import { databaseManager, nodeCache, server, loggerService } from '..';
-import { unwrap } from '@frmscoe/frms-coe-lib/lib/helpers/unwrap';
+import { unwrap } from '@tazama-lf/frms-coe-lib/lib/helpers/unwrap';
 import { configuration } from '../config';
 
 const calculateDuration = (startTime: bigint): number => {

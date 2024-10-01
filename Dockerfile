@@ -38,9 +38,6 @@ COPY service.yaml ./
 # Turn down the verbosity to default level.
 ENV NPM_CONFIG_LOGLEVEL warn
 
-ENV mode="http"
-ENV upstream_url="http://127.0.0.1:3000"
-ENV prefix_logs="false"
 ENV FUNCTION_NAME=event-director
 ENV NODE_ENV=production
 ENV MAX_CPU=
@@ -49,21 +46,20 @@ ENV MAX_CPU=
 ENV APM_ACTIVE=true
 ENV APM_URL=http://apm-server.development.svc.cluster.local:8200/
 ENV APM_SECRET_TOKEN=
+ENV APM_SERVICE_NAME=event-director
 
 # Logstash
-ENV LOGSTASH_HOST=logstash.development.svc.cluster.local
-ENV LOGSTASH_PORT=8080
 ENV LOGSTASH_LEVEL='info'
 
 # Database
-ENV DATABASE_URL=
-ENV DATABASE_NAME=configuration
-ENV DATABASE_USER=root
-ENV DATABASE_PASSWORD=
-ENV DATABASE_CERT_PATH=
+ENV CONFIGURATION_DATABASE_URL=
+ENV CONFIGURATION_DATABASE=configuration
+ENV CONFIGURATION_DATABASE_USER=root
+ENV CONFIGURATION_DATABASE_PASSWORD=
+ENV CONFIGURATION_DATABASE_CERT_PATH=
 
 # Redis
-ENV REDIS_DB=0
+ENV REDIS_DATABASE=0
 ENV REDIS_AUTH=
 ENV REDIS_SERVERS=
 ENV REDIS_IS_CLUSTER=
@@ -79,10 +75,6 @@ ENV ACK_POLICY=Explicit
 ENV PRODUCER_STORAGE=File
 ENV PRODUCER_RETENTION_POLICY=Workqueue
 ENV SIDECAR_HOST=0.0.0.0:5000
-
-# Set healthcheck command
-HEALTHCHECK --interval=60s CMD [ -e /tmp/.lock ] || exit 1
-EXPOSE 4222
 
 # Execute watchdog command
 CMD ["build/index.js"]

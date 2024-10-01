@@ -38,8 +38,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "dotenv": "^16.4.5",
-    "@frmscoe/frms-coe-lib": "4.0.0",
-    "@frmscoe/frms-coe-startup-lib": "2.2.0",
+    "@tazama-lf/frms-coe-lib": "4.2.0-rc.1",
+    "@tazama-lf/frms-coe-startup-lib": "2.3.0-rc.1",
     "node-cache": "^5.1.2",
     "tslib": "^2.6.0"
   },
