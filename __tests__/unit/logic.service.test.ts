@@ -5,7 +5,9 @@ import { handleTransaction } from '../../src/services/logic.service';
 import { Pacs008Sample, Pacs002Sample, Pain001Sample, Pain013Sample, NetworkMapSample } from '@tazama-lf/frms-coe-lib/lib/tests/data';
 import { DatabaseNetworkMapMocks } from '@tazama-lf/frms-coe-lib/lib/tests/mocks/mock-networkmap';
 import { validateAPMConfig } from '@tazama-lf/frms-coe-lib/lib/helpers/env/monitoring.config';
+import { validateProcessorConfig } from '@tazama-lf/frms-coe-lib/lib/helpers/env/processor.config';
 import { startupConfig } from '@tazama-lf/frms-coe-startup-lib/lib/interfaces/iStartupConfig';
+import { validateRedisConfig } from '@tazama-lf/frms-coe-lib/lib/helpers/env/redis.config';
 
 jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env/monitoring.config', () => ({
   validateAPMConfig: jest.fn().mockReturnValue({
@@ -14,9 +16,44 @@ jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env/monitoring.config', () => ({
   validateLogConfig: jest.fn().mockReturnValue({}),
 }));
 
+jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env/processor.config', () => ({
+  validateProcessorConfig: jest.fn().mockReturnValue({
+    functionName: 'test-ed',
+    nodeEnv: 'test',
+  }),
+}));
+jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env', () => ({
+  validateEnvVar: jest.fn().mockReturnValue(''),
+}));
+
+jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env/redis.config', () => ({
+  validateRedisConfig: jest.fn().mockReturnValue({
+    db: 0,
+    servers: [
+      {
+        host: 'redis://localhost',
+        port: 6379,
+      },
+    ],
+    password: '',
+    isCluster: false,
+  }),
+}));
+
+jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env/database.config', () => ({
+  validateDatabaseConfig: jest.fn().mockReturnValue({}),
+  Database: {
+    CONFIGURATION: 'MOCK_DB',
+  },
+}));
+
 jest.mock('@tazama-lf/frms-coe-startup-lib/lib/interfaces/iStartupConfig', () => ({
   startupConfig: {
     startupType: 'nats',
+    consumerStreamName: 'consumer',
+    serverUrl: 'server',
+    producerStreamName: 'producer',
+    functionName: 'producer',
   },
 }));
 
