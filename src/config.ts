@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type ManagerConfig } from '@tazama-lf/frms-coe-lib';
-import { validateProcessorConfig } from '@tazama-lf/frms-coe-lib/lib/helpers/env/processor.config';
-import { validateRedisConfig } from '@tazama-lf/frms-coe-lib/lib/helpers/env/redis.config';
-import { validateLogConfig } from '@tazama-lf/frms-coe-lib/lib/helpers/env/monitoring.config';
-import { Database, validateDatabaseConfig } from '@tazama-lf/frms-coe-lib/lib/helpers/env/database.config';
-import { validateEnvVar } from '@tazama-lf/frms-coe-lib/lib/helpers/env';
+import {
+  validateProcessorConfig,
+  validateEnvVar,
+  validateRedisConfig,
+  validateLogConfig,
+  validateDatabaseConfig,
+} from '@tazama-lf/frms-coe-lib/lib/helpers/env';
+import { Database } from '@tazama-lf/frms-coe-lib/lib/helpers/env/database.config';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
@@ -18,7 +21,7 @@ export interface IConfig {
   db: ManagerConfig;
   functionName: string;
   nodeCacheTTL: number;
-  sidecarHost: string;
+  sidecarHost?: string;
   nodeEnv: string;
 }
 
@@ -33,13 +36,7 @@ export const configuration: IConfig = {
   maxCPU: generalConfig.maxCPU,
   db: {
     redisConfig,
-    configuration: {
-      url: configDBConfig.url,
-      databaseName: configDBConfig.name,
-      user: configDBConfig.user,
-      password: configDBConfig.password ?? '',
-      certPath: configDBConfig.certPath,
-    },
+    configuration: configDBConfig,
   },
   functionName: generalConfig.functionName,
   nodeCacheTTL: validateEnvVar('CACHETTL', 'number'),
