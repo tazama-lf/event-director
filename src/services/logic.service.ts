@@ -67,7 +67,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     if (unwrappedNetworkMap) {
       networkMap = unwrappedNetworkMap;
       // save networkmap in memory cache
-      nodeCache.set(cacheKey, networkMap, configuration.nodeCacheTTL);
+      nodeCache.set(cacheKey, networkMap, configuration.db.localCacheConfig?.localCacheTTL ?? 0);
       prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
     } else {
       loggerService.log('No network map found in DB');
@@ -103,7 +103,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     }
     await Promise.all(promises);
   } else {
-    loggerService.log('No coresponding message found in Network map');
+    loggerService.log('No corresponding message found in Network map');
     const result = {
       metaData: { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) },
       networkMap: {},
