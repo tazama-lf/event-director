@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type ManagerConfig } from '@tazama-lf/frms-coe-lib';
 import {
-  validateProcessorConfig,
-  validateEnvVar,
-  validateRedisConfig,
-  validateLogConfig,
   validateDatabaseConfig,
+  validateLocalCacheConfig,
+  validateLogConfig,
+  validateProcessorConfig,
+  validateRedisConfig,
 } from '@tazama-lf/frms-coe-lib/lib/helpers/env';
 import { Database } from '@tazama-lf/frms-coe-lib/lib/helpers/env/database.config';
 import * as dotenv from 'dotenv';
@@ -20,25 +20,26 @@ export interface IConfig {
   maxCPU: number;
   db: ManagerConfig;
   functionName: string;
-  nodeCacheTTL: number;
   sidecarHost?: string;
   nodeEnv: string;
 }
 
+const logConfig = validateLogConfig();
 const generalConfig = validateProcessorConfig();
+const localCacheConfig = validateLocalCacheConfig();
 const authEnabled = generalConfig.nodeEnv === 'production';
 const redisConfig = validateRedisConfig(authEnabled);
-const logConfig = validateLogConfig();
 const configDBConfig = validateDatabaseConfig(authEnabled, Database.CONFIGURATION);
 
 export const configuration: IConfig = {
   nodeEnv: generalConfig.nodeEnv,
-  maxCPU: generalConfig.maxCPU,
+  functionName: generalConfig.functionName,
+  maxCPU: generalConfig.maxCPU || 1,
   db: {
     redisConfig,
     configuration: configDBConfig,
+    localCacheConfig,
   },
-  functionName: generalConfig.functionName,
-  nodeCacheTTL: validateEnvVar('CACHETTL', 'number'),
+
   sidecarHost: logConfig.sidecarHost,
 };

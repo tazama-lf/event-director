@@ -12,6 +12,7 @@ jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env', () => ({
     apmServiceName: '',
   }),
   validateLogConfig: jest.fn().mockReturnValue({}),
+  validateLocalCacheConfig: jest.fn().mockReturnValue(''),
   validateProcessorConfig: jest.fn().mockReturnValue({
     functionName: 'test-ed',
     nodeEnv: 'test',
@@ -183,7 +184,7 @@ describe('Logic Service', () => {
       const result = debugLog;
 
       expect(loggerSpy).toHaveBeenCalledTimes(1);
-      expect(loggerSpy).toHaveBeenCalledWith('No coresponding message found in Network map');
+      expect(loggerSpy).toHaveBeenCalledWith('No corresponding message found in Network map');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
       expect(result).toBeDefined;
@@ -222,7 +223,7 @@ describe('Logic Service', () => {
 
       expect(loggerSpy).toHaveBeenCalledTimes(2);
       expect(loggerSpy).toHaveBeenCalledWith('No network map found in DB');
-      expect(loggerSpy).toHaveBeenCalledWith('No coresponding message found in Network map');
+      expect(loggerSpy).toHaveBeenCalledWith('No corresponding message found in Network map');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(debugLoggerSpy).toHaveBeenCalledTimes(2);
     });
