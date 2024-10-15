@@ -3,7 +3,7 @@ import { type ManagerConfig } from '@tazama-lf/frms-coe-lib';
 import { type AdditionalConfig, type ProcessorConfig } from '@tazama-lf/frms-coe-lib/lib/config/processor.config';
 
 /**
- * Aadditional environment variables are accompanied by their interface.
+ * Additional environment variables are accompanied by their interface.
  * The interface defines the key as the actual environment variable name,
  * and the corresponding type must match the one specified within the array
  * of additional environment variables.
