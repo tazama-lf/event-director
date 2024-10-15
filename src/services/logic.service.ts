@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import apm from '../apm';
-import { NetworkMap, type DataCache, type Message, type Rule } from '@tazama-lf/frms-coe-lib/lib/interfaces';
-import { databaseManager, nodeCache, server, loggerService } from '..';
 import { unwrap } from '@tazama-lf/frms-coe-lib/lib/helpers/unwrap';
-import { configuration } from '../config';
+import { NetworkMap, type DataCache, type Message, type Rule } from '@tazama-lf/frms-coe-lib/lib/interfaces';
+import { configuration, databaseManager, loggerService, nodeCache, server } from '..';
+import apm from '../apm';
 
 const calculateDuration = (startTime: bigint): number => {
   const endTime = process.hrtime.bigint();
@@ -67,7 +66,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     if (unwrappedNetworkMap) {
       networkMap = unwrappedNetworkMap;
       // save networkmap in memory cache
-      nodeCache.set(cacheKey, networkMap, configuration.db.localCacheConfig?.localCacheTTL ?? 0);
+      nodeCache.set(cacheKey, networkMap, configuration.localCacheConfig?.localCacheTTL ?? 0);
       prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
     } else {
       loggerService.log('No network map found in DB');

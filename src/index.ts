@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable no-console */
-import './apm';
-import { LoggerService, type DatabaseManagerInstance } from '@tazama-lf/frms-coe-lib';
+import { LoggerService, type DatabaseManagerInstance, type ManagerConfig } from '@tazama-lf/frms-coe-lib';
+import { validateProcessorConfig } from '@tazama-lf/frms-coe-lib/lib/config/';
 import { StartupFactory, type IStartupService } from '@tazama-lf/frms-coe-startup-lib';
 import cluster from 'cluster';
 import NodeCache from 'node-cache';
 import os from 'os';
-import { configuration } from './config';
+import './apm';
+import { additionalEnvironmentVariables, type Configuration } from './config';
 import { handleTransaction } from './services/logic.service';
 import { Singleton } from './services/services';
 
-const databaseManagerConfig = configuration.db;
+let configuration = validateProcessorConfig(additionalEnvironmentVariables) as Configuration;
 
-export const loggerService: LoggerService = new LoggerService(configuration.sidecarHost);
+export const loggerService: LoggerService = new LoggerService(configuration);
 
-let databaseManager: DatabaseManagerInstance<typeof databaseManagerConfig>;
 export const nodeCache = new NodeCache();
 export let server: IStartupService;
 
@@ -47,10 +47,14 @@ process.on('unhandledRejection', (err) => {
 });
 
 const numCPUs = os.cpus().length > configuration.maxCPU ? configuration.maxCPU + 1 : os.cpus().length + 1;
+
+let databaseManager: DatabaseManagerInstance<ManagerConfig>;
+
 export const dbInit = async (): Promise<void> => {
-  const manager = await Singleton.getDatabaseManager(databaseManagerConfig);
+  const { config, db: manager } = await Singleton.getDatabaseManager(configuration);
   console.log(manager.isReadyCheck());
   databaseManager = manager;
+  configuration = { ...configuration, ...config };
 };
 
 if (cluster.isPrimary && configuration.maxCPU !== 1) {
@@ -82,4 +86,4 @@ if (cluster.isPrimary && configuration.maxCPU !== 1) {
   loggerService.log(`Worker ${process.pid} started`);
 }
 
-export { databaseManager };
+export { configuration, databaseManager };
