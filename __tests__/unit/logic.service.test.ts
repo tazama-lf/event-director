@@ -4,38 +4,22 @@ import { databaseManager, dbInit, loggerService, nodeCache, runServer, server } 
 import { handleTransaction } from '../../src/services/logic.service';
 import { Pacs008Sample, Pacs002Sample, Pain001Sample, Pain013Sample, NetworkMapSample } from '@tazama-lf/frms-coe-lib/lib/tests/data';
 import { DatabaseNetworkMapMocks } from '@tazama-lf/frms-coe-lib/lib/tests/mocks/mock-networkmap';
-import { validateAPMConfig, validateProcessorConfig, validateRedisConfig } from '@tazama-lf/frms-coe-lib/lib/helpers/env';
-import { startupConfig } from '@tazama-lf/frms-coe-startup-lib/lib/interfaces/iStartupConfig';
 
-jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env', () => ({
-  validateAPMConfig: jest.fn().mockReturnValue({
-    apmServiceName: '',
-  }),
-  validateLogConfig: jest.fn().mockReturnValue({}),
-  validateLocalCacheConfig: jest.fn().mockReturnValue(''),
-  validateProcessorConfig: jest.fn().mockReturnValue({
-    functionName: 'test-ed',
-    nodeEnv: 'test',
-  }),
-  validateEnvVar: jest.fn().mockReturnValue(''),
-  validateRedisConfig: jest.fn().mockReturnValue({
-    db: 0,
-    servers: [
-      {
-        host: 'redis://localhost',
-        port: 6379,
-      },
-    ],
-    password: '',
-    isCluster: false,
-  }),
-  validateDatabaseConfig: jest.fn().mockReturnValue({}),
-}));
+jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env', () => ({}));
 
 jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env/database.config', () => ({
   Database: {
     CONFIGURATION: 'MOCK_DB',
   },
+}));
+
+jest.mock('@tazama-lf/frms-coe-lib/lib/services/dbManager', () => ({
+  CreateStorageManager: jest.fn().mockReturnValue({
+    db: {
+      getNetworkMap: jest.fn(),
+      isReadyCheck: jest.fn().mockReturnValue({ nodeEnv: 'test' }),
+    },
+  }),
 }));
 
 jest.mock('@tazama-lf/frms-coe-startup-lib/lib/interfaces/iStartupConfig', () => ({
@@ -70,9 +54,6 @@ describe('Logic Service', () => {
 
     DatabaseNetworkMapMocks(databaseManager);
 
-    (validateAPMConfig as jest.MockedFunction<typeof validateAPMConfig>).mockImplementation(() => {
-      return { apmServiceName: 'test', apmUrl: '', apmActive: false, apmSecretToken: '' };
-    });
     loggerSpy = jest.spyOn(loggerService, 'log');
     errorLoggerSpy = jest.spyOn(loggerService, 'error');
     debugLoggerSpy = jest.spyOn(loggerService, 'debug');
