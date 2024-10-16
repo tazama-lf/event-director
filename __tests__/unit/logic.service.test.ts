@@ -1,17 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { NetworkMapSample, Pacs002Sample, Pacs008Sample, Pain001Sample, Pain013Sample } from '@tazama-lf/frms-coe-lib/lib/tests/data';
+import { DatabaseNetworkMapMocks } from '@tazama-lf/frms-coe-lib/lib/tests/mocks/mock-networkmap';
 import { databaseManager, dbInit, loggerService, nodeCache, runServer, server } from '../../src';
 import { handleTransaction } from '../../src/services/logic.service';
-import { Pacs008Sample, Pacs002Sample, Pain001Sample, Pain013Sample, NetworkMapSample } from '@tazama-lf/frms-coe-lib/lib/tests/data';
-import { DatabaseNetworkMapMocks } from '@tazama-lf/frms-coe-lib/lib/tests/mocks/mock-networkmap';
-
-jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env', () => ({}));
-
-jest.mock('@tazama-lf/frms-coe-lib/lib/helpers/env/database.config', () => ({
-  Database: {
-    CONFIGURATION: 'MOCK_DB',
-  },
-}));
 
 jest.mock('@tazama-lf/frms-coe-lib/lib/services/dbManager', () => ({
   CreateStorageManager: jest.fn().mockReturnValue({
