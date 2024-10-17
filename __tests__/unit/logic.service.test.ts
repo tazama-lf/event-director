@@ -1,9 +1,28 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { NetworkMapSample, Pacs002Sample, Pacs008Sample, Pain001Sample, Pain013Sample } from '@tazama-lf/frms-coe-lib/lib/tests/data';
+import { DatabaseNetworkMapMocks } from '@tazama-lf/frms-coe-lib/lib/tests/mocks/mock-networkmap';
 import { databaseManager, dbInit, loggerService, nodeCache, runServer, server } from '../../src';
 import { handleTransaction } from '../../src/services/logic.service';
-import { Pacs008Sample, Pacs002Sample, Pain001Sample, Pain013Sample, NetworkMapSample } from '@frmscoe/frms-coe-lib/lib/tests/data';
-import { DatabaseNetworkMapMocks } from '@frmscoe/frms-coe-lib/lib/tests/mocks/mock-networkmap';
+
+jest.mock('@tazama-lf/frms-coe-lib/lib/services/dbManager', () => ({
+  CreateStorageManager: jest.fn().mockReturnValue({
+    db: {
+      getNetworkMap: jest.fn(),
+      isReadyCheck: jest.fn().mockReturnValue({ nodeEnv: 'test' }),
+    },
+  }),
+}));
+
+jest.mock('@tazama-lf/frms-coe-startup-lib/lib/interfaces/iStartupConfig', () => ({
+  startupConfig: {
+    startupType: 'nats',
+    consumerStreamName: 'consumer',
+    serverUrl: 'server',
+    producerStreamName: 'producer',
+    functionName: 'producer',
+  },
+}));
 
 beforeAll(async () => {
   await dbInit();
@@ -22,12 +41,14 @@ describe('Logic Service', () => {
   let responseSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    jest.resetModules();
+    jest.mock('@tazama-lf/frms-coe-startup-lib/lib/interfaces/iStartupConfig', () => ({ startupType: 'nats' }));
+
     DatabaseNetworkMapMocks(databaseManager);
 
     loggerSpy = jest.spyOn(loggerService, 'log');
     errorLoggerSpy = jest.spyOn(loggerService, 'error');
     debugLoggerSpy = jest.spyOn(loggerService, 'debug');
-    /* eslint-disable */
 
     // Clear NodeCache
     nodeCache.flushAll();
@@ -136,7 +157,7 @@ describe('Logic Service', () => {
       const result = debugLog;
 
       expect(loggerSpy).toHaveBeenCalledTimes(1);
-      expect(loggerSpy).toHaveBeenCalledWith('No coresponding message found in Network map');
+      expect(loggerSpy).toHaveBeenCalledWith('No corresponding message found in Network map');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
       expect(result).toBeDefined;
@@ -175,7 +196,7 @@ describe('Logic Service', () => {
 
       expect(loggerSpy).toHaveBeenCalledTimes(2);
       expect(loggerSpy).toHaveBeenCalledWith('No network map found in DB');
-      expect(loggerSpy).toHaveBeenCalledWith('No coresponding message found in Network map');
+      expect(loggerSpy).toHaveBeenCalledWith('No corresponding message found in Network map');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(debugLoggerSpy).toHaveBeenCalledTimes(2);
     });
