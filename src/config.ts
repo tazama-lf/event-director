@@ -1,45 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type ManagerConfig } from '@tazama-lf/frms-coe-lib';
-import {
-  validateDatabaseConfig,
-  validateLocalCacheConfig,
-  validateLogConfig,
-  validateProcessorConfig,
-  validateRedisConfig,
-} from '@tazama-lf/frms-coe-lib/lib/helpers/env';
-import { Database } from '@tazama-lf/frms-coe-lib/lib/helpers/env/database.config';
-import * as dotenv from 'dotenv';
-import path from 'path';
+import { type AdditionalConfig, type ProcessorConfig } from '@tazama-lf/frms-coe-lib/lib/config/processor.config';
 
-// Load .env file into process.env if it exists. This is convenient for running locally.
-dotenv.config({
-  path: path.resolve(__dirname, '../.env'),
-});
-
-export interface IConfig {
-  maxCPU: number;
-  db: ManagerConfig;
-  functionName: string;
-  sidecarHost?: string;
-  nodeEnv: string;
+/**
+ * Additional environment variables are accompanied by their interface.
+ * The interface defines the key as the actual environment variable name,
+ * and the corresponding type must match the one specified within the array
+ * of additional environment variables.
+ * @example { HOST: string, PORT: number }
+ */
+interface AdditionalEnvironmentVariables {
+  ENVIRONMENTVARIABLENAME: string;
 }
 
-const logConfig = validateLogConfig();
-const generalConfig = validateProcessorConfig();
-const localCacheConfig = validateLocalCacheConfig();
-const authEnabled = generalConfig.nodeEnv === 'production';
-const redisConfig = validateRedisConfig(authEnabled);
-const configDBConfig = validateDatabaseConfig(authEnabled, Database.CONFIGURATION);
+export const additionalEnvironmentVariables: AdditionalConfig[] = [];
 
-export const configuration: IConfig = {
-  nodeEnv: generalConfig.nodeEnv,
-  functionName: generalConfig.functionName,
-  maxCPU: generalConfig.maxCPU || 1,
-  db: {
-    redisConfig,
-    configuration: configDBConfig,
-    localCacheConfig,
-  },
-
-  sidecarHost: logConfig.sidecarHost,
-};
+export type Configuration = ProcessorConfig & ManagerConfig & AdditionalEnvironmentVariables;
