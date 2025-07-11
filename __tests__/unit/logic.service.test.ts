@@ -59,7 +59,7 @@ describe('Logic Service', () => {
       const expectedReq = { transaction: Pain013Sample };
       responseSpy = jest.spyOn(server, 'handleResponse').mockImplementation(jest.fn());
 
-      server.handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
@@ -77,7 +77,7 @@ describe('Logic Service', () => {
     it('should handle successful request for Pain001', async () => {
       const expectedReq = { transaction: Pain001Sample };
 
-      server.handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
@@ -95,7 +95,7 @@ describe('Logic Service', () => {
     it('should handle successful request for Pacs002', async () => {
       const expectedReq = { transaction: Pacs002Sample };
 
-      server.handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
@@ -112,7 +112,7 @@ describe('Logic Service', () => {
     it('should handle successful request for Pacs008', async () => {
       const expectedReq = { transaction: Pacs008Sample };
 
-      server.handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
@@ -134,7 +134,7 @@ describe('Logic Service', () => {
 
       const nodeCacheSpy = jest.spyOn(nodeCache, 'get');
 
-      server.handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
       };
       await handleTransaction(expectedReq);
@@ -147,29 +147,13 @@ describe('Logic Service', () => {
       expect(result).toBeDefined;
     });
 
-    it('should handle unsuccessful request - no network map', async () => {
-      const expectedReq = { transaction: Pain001Sample.CstmrCdtTrfInitn, TxTp: 'invalid mock request' };
-      server.handleResponse = (reponse: unknown): Promise<void> => {
-        return Promise.resolve();
-      };
-
-      await handleTransaction(expectedReq);
-      const result = debugLog;
-
-      expect(loggerSpy).toHaveBeenCalledTimes(1);
-      expect(loggerSpy).toHaveBeenCalledWith('No corresponding message found in Network map');
-      expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
-      expect(debugLoggerSpy).toHaveBeenCalledTimes(1);
-      expect(result).toBeDefined;
-    });
-
     it('should respond with active cached network map from memory', async () => {
       const expectedReq = { transaction: Pain001Sample };
 
       let netMap = NetworkMapSample[0][0];
       nodeCache.set(expectedReq.transaction.TxTp, netMap);
 
-      server.handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
@@ -181,14 +165,14 @@ describe('Logic Service', () => {
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
     });
 
-    it('should respond with empty network submap no network map is found', async () => {
+    it('should handle unsuccessful request - no network map', async () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
         return Promise.resolve(JSON.parse('{}'));
       });
 
       const expectedReq = { transaction: Pain001Sample };
 
-      server.handleResponse = (reponse: unknown): Promise<void> => {
+      server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
       };
 
@@ -211,8 +195,8 @@ describe('Logic Service', () => {
       await handleTransaction(expectedReq);
       expect(responseSpy).toHaveBeenCalledTimes(2);
       expect(errorLoggerSpy).toHaveBeenCalledTimes(2);
-      expect(errorLoggerSpy).toHaveBeenCalledWith('Failed to send to Rule 003@1.0 with Error: undefined');
-      expect(errorLoggerSpy).toHaveBeenCalledWith('Failed to send to Rule 028@1.0 with Error: undefined');
+      expect(errorLoggerSpy).toHaveBeenCalledWith('Failed to send to Rule 003@1.0 with Error: [Function (anonymous)]');
+      expect(errorLoggerSpy).toHaveBeenCalledWith('Failed to send to Rule 028@1.0 with Error: [Function (anonymous)]');
     });
   });
 });

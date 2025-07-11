@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-/* eslint-disable no-console */
-import { LoggerService, type DatabaseManagerInstance, type ManagerConfig } from '@tazama-lf/frms-coe-lib';
+import './apm';
+import { LoggerService, type DatabaseManagerInstance } from '@tazama-lf/frms-coe-lib';
 import { validateProcessorConfig } from '@tazama-lf/frms-coe-lib/lib/config/';
 import { StartupFactory, type IStartupService } from '@tazama-lf/frms-coe-startup-lib';
-import cluster from 'cluster';
 import NodeCache from 'node-cache';
-import os from 'os';
-import './apm';
+import cluster from 'node:cluster';
+import os from 'node:os';
+import * as util from 'node:util';
+import { setTimeout } from 'node:timers/promises';
 import { additionalEnvironmentVariables, type Configuration } from './config';
 import { handleTransaction } from './services/logic.service';
 import { Singleton } from './services/services';
@@ -25,7 +26,7 @@ export const runServer = async (): Promise<void> => {
     for (let retryCount = 0; retryCount < 10; retryCount++) {
       loggerService.log('Connecting to nats server...');
       if (!(await server.init(handleTransaction))) {
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await setTimeout(5000);
       } else {
         loggerService.log('Connected to nats');
         isConnected = true;
@@ -39,20 +40,20 @@ export const runServer = async (): Promise<void> => {
 };
 
 process.on('uncaughtException', (err) => {
-  loggerService.error(`process on uncaughtException error: ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
+  loggerService.error(`process on uncaughtException error: ${util.inspect(err)}`);
 });
 
 process.on('unhandledRejection', (err) => {
-  loggerService.error(`process on unhandledRejection error: ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`);
+  loggerService.error(`process on unhandledRejection error: ${util.inspect(err)}}`);
 });
 
 const numCPUs = os.cpus().length > configuration.maxCPU ? configuration.maxCPU + 1 : os.cpus().length + 1;
 
-let databaseManager: DatabaseManagerInstance<ManagerConfig>;
+let databaseManager: DatabaseManagerInstance<Configuration>;
 
 export const dbInit = async (): Promise<void> => {
   const { config, db: manager } = await Singleton.getDatabaseManager(configuration);
-  console.log(manager.isReadyCheck());
+  loggerService.log(manager.isReadyCheck() as string);
   databaseManager = manager;
   configuration = { ...configuration, ...config };
 };
@@ -79,7 +80,7 @@ if (cluster.isPrimary && configuration.maxCPU !== 1) {
         await dbInit();
       }
     } catch (err) {
-      loggerService.error(`Error while starting NATS server on Worker ${process.pid}`, err);
+      loggerService.error(`Error while starting NATS server on Worker ${process.pid}`, util.inspect(err));
       process.exit(1);
     }
   })();

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { type ManagerConfig } from '@tazama-lf/frms-coe-lib';
-import { type AdditionalConfig, type ProcessorConfig } from '@tazama-lf/frms-coe-lib/lib/config/processor.config';
+import type { ManagerConfig } from '@tazama-lf/frms-coe-lib';
+import type { AdditionalConfig, ProcessorConfig } from '@tazama-lf/frms-coe-lib/lib/config/processor.config';
 
 /**
  * Additional environment variables are accompanied by their interface.
@@ -9,10 +9,12 @@ import { type AdditionalConfig, type ProcessorConfig } from '@tazama-lf/frms-coe
  * of additional environment variables.
  * @example { HOST: string, PORT: number }
  */
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Placeholder for additional env
 interface AdditionalEnvironmentVariables {
-  ENVIRONMENTVARIABLENAME: string;
+  // ENVIRONMENTVARIABLENAME: string;
 }
 
 export const additionalEnvironmentVariables: AdditionalConfig[] = [];
-
-export type Configuration = ProcessorConfig & ManagerConfig & AdditionalEnvironmentVariables;
+export type Databases = Required<Pick<ManagerConfig, 'configuration' | 'redisConfig'>> & Pick<ManagerConfig, 'localCacheConfig'>;
+export type Configuration = ProcessorConfig & Databases & AdditionalEnvironmentVariables;

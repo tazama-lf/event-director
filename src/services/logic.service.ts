@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import apm from '../apm';
 import { unwrap } from '@tazama-lf/frms-coe-lib/lib/helpers/unwrap';
 import { NetworkMap, type DataCache, type Message, type Rule } from '@tazama-lf/frms-coe-lib/lib/interfaces';
+import type { MetaData } from '@tazama-lf/frms-coe-lib/lib/interfaces/metaData';
 import { configuration, databaseManager, loggerService, nodeCache, server } from '..';
-import apm from '../apm';
+import * as util from 'node:util';
+
+interface UnknownTransaction {
+  TxTp: string;
+  [key: string]: unknown;
+}
 
 const calculateDuration = (startTime: bigint): number => {
   const endTime = process.hrtime.bigint();
@@ -27,7 +33,7 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   if (messages) {
     for (const typology of messages.typologies) {
       for (const rule of typology.rules) {
-        const ruleIndex = rules.findIndex((r: Rule) => `${r.id}` === `${rule.id}` && `${r.cfg}` === `${rule.cfg}`);
+        const ruleIndex = rules.findIndex((r: Rule) => r.id === rule.id && r.cfg === rule.cfg);
         if (ruleIndex < 0) {
           rules.push(rule);
         }
@@ -44,18 +50,20 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
   let cachedActiveNetworkMap: NetworkMap;
   let prunedMap: Message[] = [];
 
-  const parsedRequest = req as any;
+  const parsedRequest = req as { transaction: UnknownTransaction; DataCache: DataCache; metaData?: MetaData };
   const traceParent = parsedRequest.metaData?.traceParent;
-  const apmTransaction = apm.startTransaction('eventDirector.handleTransaction', { childOf: traceParent });
+  const apmTransaction = apm.startTransaction('eventDirector.handleTransaction', {
+    childOf: typeof traceParent === 'string' ? traceParent : undefined,
+  });
 
-  const cacheKey = `${parsedRequest.transaction.TxTp}`;
+  const cacheKey = parsedRequest.transaction.TxTp;
   // check if there's an active network map in memory
   const activeNetworkMap = nodeCache.get(cacheKey);
   if (activeNetworkMap) {
     cachedActiveNetworkMap = activeNetworkMap as NetworkMap;
     networkMap = cachedActiveNetworkMap;
     prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
-    loggerService.debug(`Using cached networkMap ${prunedMap.toString()}`);
+    loggerService.debug(`Using cached networkMap ${util.inspect(prunedMap)}`);
   } else {
     // Fetch the network map from db
     const spanNetworkMap = apm.startSpan('db.get.NetworkMap');
@@ -66,7 +74,8 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     if (unwrappedNetworkMap) {
       networkMap = unwrappedNetworkMap;
       // save networkmap in memory cache
-      nodeCache.set(cacheKey, networkMap, configuration.localCacheConfig?.localCacheTTL ?? 0);
+      const localCacheTTL: number = configuration.localCacheConfig?.localCacheTTL ?? 0;
+      nodeCache.set(cacheKey, networkMap, localCacheTTL);
       prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
     } else {
       loggerService.log('No network map found in DB');
@@ -78,10 +87,10 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
         transaction: parsedRequest.transaction,
         DataCache: parsedRequest.DataCache,
       };
-      loggerService.debug(JSON.stringify(result));
+      loggerService.debug(util.inspect(result));
     }
   }
-  if (prunedMap && prunedMap[0]) {
+  if (prunedMap.length > 0) {
     const networkSubMap: NetworkMap = Object.assign(new NetworkMap(), {
       active: networkMap.active,
       cfg: networkMap.cfg,
@@ -89,16 +98,14 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     });
 
     // Deduplicate all rules
-    const rules = getRuleMap(networkMap, parsedRequest.transaction.TxTp as string);
+    const rules = getRuleMap(networkMap, parsedRequest.transaction.TxTp);
 
     // Send transaction to all rules
     const promises: Array<Promise<void>> = [];
-    const metaData = { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) };
+    const metaData: MetaData = { prcgTmDp: 0, ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) };
 
     for (const rule of rules) {
-      promises.push(
-        sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache as DataCache, metaData),
-      );
+      promises.push(sendRuleToRuleProcessor(rule, networkSubMap, parsedRequest.transaction, parsedRequest.DataCache, metaData));
     }
     await Promise.all(promises);
   } else {
@@ -109,7 +116,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
       transaction: parsedRequest.transaction,
       DataCache: parsedRequest.DataCache,
     };
-    loggerService.debug(JSON.stringify(result));
+    loggerService.debug(util.inspect(result));
   }
   apmTransaction?.end();
 };
@@ -117,9 +124,9 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
 const sendRuleToRuleProcessor = async (
   rule: Rule,
   networkMap: NetworkMap,
-  req: any,
+  req: UnknownTransaction,
   dataCache: DataCache,
-  metaData: any,
+  metaData: MetaData,
 ): Promise<void> => {
   const span = apm.startSpan(`send.rule${rule.id}.to.proc`);
   try {
@@ -132,7 +139,7 @@ const sendRuleToRuleProcessor = async (
     await server.handleResponse(toSend, [`sub-rule-${rule.id}`]);
     loggerService.log(`Successfully sent to ${rule.id}`);
   } catch (error) {
-    loggerService.error(`Failed to send to Rule ${rule.id} with Error: ${JSON.stringify(error)}`);
+    loggerService.error(`Failed to send to Rule ${rule.id} with Error: ${util.inspect(error)}`);
   }
   span?.end();
 };
