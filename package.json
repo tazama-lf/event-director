@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.5.0",
-    "@stylistic/eslint-plugin": "^5.2.0",
+    "@stylistic/eslint-plugin": "^5.2.2",
     "@types/async": "^3.2.24",
     "@types/jest": "^30.0.0",
     "@types/node-fetch": "^2.6.12",
