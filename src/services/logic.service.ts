@@ -19,7 +19,7 @@ const calculateDuration = (startTime: bigint): number => {
 
 /**
  *Create a list of all the rules for this transaction type from the network map
- *
+ 
  * @param {NetworkMap} networkMap
  * @param {string} transactionType
  * @return {*}  {Rule[]}
