@@ -128,10 +128,12 @@ describe('Logic Service', () => {
     });
 
     it('should handle successful request for Pacs008, has cached map', async () => {
-      const expectedReq = { transaction: Pacs008Sample };
+      // Create transaction with standardized tenantId property 
+      const transactionWithTenant = { ...Pacs008Sample, tenantId: 'tenantId' };
+      const expectedReq = { transaction: transactionWithTenant };
 
       let netMap = NetworkMapSample[0][0];
-      // Set cache with the tenant-specific key since Pacs008Sample has TenantId: 'tenantId'
+      // Set cache with the tenant-specific key since we're setting tenantId: 'tenantId'
       nodeCache.set(`tenant:tenantId:${expectedReq.transaction.TxTp}`, netMap);
 
       const nodeCacheSpy = jest.spyOn(nodeCache, 'get');
@@ -151,10 +153,12 @@ describe('Logic Service', () => {
     });
 
     it('should respond with active cached network map from memory', async () => {
-      const expectedReq = { transaction: Pain001Sample };
+      // Create transaction with standardized tenantId property
+      const transactionWithTenant = { ...Pain001Sample, tenantId: 'tenantId' };
+      const expectedReq = { transaction: transactionWithTenant };
 
       let netMap = NetworkMapSample[0][0];
-      // Set cache with tenant-specific key since Pain001Sample has TenantId: 'tenantId'
+      // Set cache with tenant-specific key since we're setting tenantId: 'tenantId'
       nodeCache.set(`tenant:tenantId:${expectedReq.transaction.TxTp}`, netMap);
 
       server.handleResponse = (response: unknown): Promise<void> => {
@@ -178,7 +182,9 @@ describe('Logic Service', () => {
         return Promise.resolve(JSON.parse('{}'));
       });
 
-      const expectedReq = { transaction: Pain001Sample };
+      // Create transaction with standardized tenantId property
+      const transactionWithTenant = { ...Pain001Sample, tenantId: 'tenantId' };
+      const expectedReq = { transaction: transactionWithTenant };
 
       server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
@@ -210,7 +216,7 @@ describe('Logic Service', () => {
       // Create a network map that doesn't have the requested transaction type
       const networkMapWithoutTxType = {
         ...NetworkMapSample[0][0],
-        TenantId: 'test-tenant-no-txtype',
+        tenantId: 'test-tenant-no-txtype',
         active: true,
         messages: [
           {
@@ -234,7 +240,7 @@ describe('Logic Service', () => {
 
       const transactionWithUnknownType = {
         TxTp: 'unknown.transaction.type',
-        TenantId: 'test-tenant-no-txtype'
+        tenantId: 'test-tenant-no-txtype'
       };
       const expectedReq = { transaction: transactionWithUnknownType };
 
@@ -253,7 +259,7 @@ describe('Logic Service', () => {
     it('should handle transaction with tenantId', async () => {
       const tenantTransaction = {
         ...Pain001Sample,
-        TenantId: 'tenant-123'
+        tenantId: 'tenant-123'
       };
       const expectedReq = { transaction: tenantTransaction };
 
@@ -286,7 +292,7 @@ describe('Logic Service', () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
         return Promise.resolve([[{
           ...NetworkMapSample[0][0],
-          TenantId: 'tenant-456',
+          tenantId: 'tenant-456',
           active: true
         }]]);
       });
@@ -294,7 +300,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded network configuration for tenant: tenant-456');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded network configuration for tenant: tenant-456 (4 transaction types)');
     });
 
     it('should load legacy network configurations without tenantId', async () => {
@@ -309,7 +315,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded default network configuration (no tenantId specified)');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded legacy default network configuration (4 transaction types)');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully loaded 1 network configurations for multi-tenant support');
     });
 
@@ -317,7 +323,7 @@ describe('Logic Service', () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
         return Promise.resolve([[{
           ...NetworkMapSample[0][0],
-          TenantId: 'inactive-tenant',
+          tenantId: 'inactive-tenant',
           active: false // Inactive configuration
         }]]);
       });
@@ -355,14 +361,14 @@ describe('Logic Service', () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
         return Promise.resolve([[{
           ...NetworkMapSample[0][0],
-          TenantId: 'different-tenant',
+          tenantId: 'different-tenant',
           active: true
         }]]);
       });
 
       const transactionWithSpecificTenant = {
         ...Pain001Sample,
-        TenantId: 'requested-tenant'
+        tenantId: 'requested-tenant'
       };
       const expectedReq = { transaction: transactionWithSpecificTenant };
 
@@ -385,7 +391,7 @@ describe('Logic Service', () => {
 
       const transactionWithTenant = {
         ...Pain001Sample,
-        TenantId: 'non-existent-tenant'
+        tenantId: 'non-existent-tenant'
       };
       const expectedReq = { transaction: transactionWithTenant };
 
@@ -402,7 +408,7 @@ describe('Logic Service', () => {
       // Create a network map with duplicate rules to test the deduplication logic
       const networkMapWithDuplicates = {
         ...NetworkMapSample[0][0],
-        TenantId: 'test-tenant-duplicates',
+        tenantId: 'test-tenant-duplicates',
         active: true,
         messages: [
           {
@@ -437,7 +443,7 @@ describe('Logic Service', () => {
 
       const transactionWithDuplicates = {
         TxTp: 'test.transaction.type',
-        TenantId: 'test-tenant-duplicates'
+        tenantId: 'test-tenant-duplicates'
       };
       const expectedReq = { transaction: transactionWithDuplicates };
 
@@ -481,7 +487,7 @@ describe('Logic Service', () => {
 
       // Create transaction without tenantId  
       const transactionWithoutTenant = { ...Pain001Sample };
-      delete (transactionWithoutTenant as any).TenantId;
+      delete (transactionWithoutTenant as any).tenantId;
       const expectedReq = { transaction: transactionWithoutTenant };
 
       const warnSpy = jest.spyOn(loggerService, 'warn');
@@ -500,7 +506,7 @@ describe('Logic Service', () => {
       // Test getRuleMap with a network map that has no messages for the transaction type
       const emptyNetworkMap = {
         ...NetworkMapSample[0][0],
-        TenantId: 'empty-test-tenant',
+        tenantId: 'empty-test-tenant',
         active: true,
         messages: [] // No messages
       };
@@ -511,7 +517,7 @@ describe('Logic Service', () => {
 
       const transactionWithEmptyMap = {
         TxTp: 'test.empty.type',
-        TenantId: 'empty-test-tenant'
+        tenantId: 'empty-test-tenant'
       };
       const expectedReq = { transaction: transactionWithEmptyMap };
 
@@ -535,14 +541,14 @@ describe('Logic Service', () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
         return Promise.resolve([[{
           ...NetworkMapSample[0][0],
-          TenantId: 'ttl-test-tenant',
+          tenantId: 'ttl-test-tenant',
           active: true
         }]]);
       });
 
       const transactionWithTenant = {
         ...Pain001Sample,
-        TenantId: 'ttl-test-tenant'
+        tenantId: 'ttl-test-tenant'
       };
       const expectedReq = { transaction: transactionWithTenant };
 
@@ -565,7 +571,7 @@ describe('Logic Service', () => {
       // Setup tenant A configuration
       const tenantAConfig = {
         ...NetworkMapSample[0][0],
-        TenantId: 'tenant-a',
+        tenantId: 'tenant-a',
         active: true,
         messages: [{
           id: '004@1.0.0',
@@ -581,7 +587,7 @@ describe('Logic Service', () => {
 
       const tenantBConfig = {
         ...NetworkMapSample[0][0],
-        TenantId: 'tenant-b',
+        tenantId: 'tenant-b',
         active: true,
         messages: [{
           id: '005@1.0.0',
@@ -610,14 +616,14 @@ describe('Logic Service', () => {
       // Process transaction for tenant A
       const tenantATransaction = {
         ...Pacs008Sample,
-        TenantId: 'tenant-a'
+        tenantId: 'tenant-a'
       };
       await handleTransaction({ transaction: tenantATransaction });
 
       // Process transaction for tenant B
       const tenantBTransaction = {
         ...Pacs008Sample,
-        TenantId: 'tenant-b'
+        tenantId: 'tenant-b'
       };
       await handleTransaction({ transaction: tenantBTransaction });
 
@@ -630,7 +636,7 @@ describe('Logic Service', () => {
       // Setup multiple tenant configurations
       const tenantConfigs = ['tenant-1', 'tenant-2', 'tenant-3'].map(tenantId => ({
         ...NetworkMapSample[0][0],
-        TenantId: tenantId,
+        tenantId: tenantId,
         active: true
       }));
 
@@ -650,7 +656,7 @@ describe('Logic Service', () => {
       const promises = tenantConfigs.map(config => {
         const transaction = {
           ...Pacs008Sample,
-          TenantId: config.TenantId
+          tenantId: config.tenantId
         };
         return handleTransaction({ transaction });
       });
@@ -671,7 +677,7 @@ describe('Logic Service', () => {
     it('should retrieve tenant-specific network configurations from database', async () => {
       const mockTenantAConfig = {
         ...NetworkMapSample[0][0],
-        TenantId: 'db-tenant-a',
+        tenantId: 'db-tenant-a',
         active: true
       };
 
@@ -683,7 +689,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       expect(databaseManager.getNetworkMap).toHaveBeenCalled();
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded network configuration for tenant: db-tenant-a');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded network configuration for tenant: db-tenant-a (4 transaction types)');
     });
 
     it('should handle database connection errors gracefully', async () => {
@@ -710,13 +716,13 @@ describe('Logic Service', () => {
     it('should cache configurations separately by tenantId', async () => {
       const configA = {
         ...NetworkMapSample[0][0],
-        TenantId: 'cache-tenant-a',
+        tenantId: 'cache-tenant-a',
         active: true
       };
 
       const configB = {
         ...NetworkMapSample[0][0],
-        TenantId: 'cache-tenant-b',
+        tenantId: 'cache-tenant-b',
         active: true
       };
 
@@ -733,11 +739,11 @@ describe('Logic Service', () => {
 
       // Process transactions to trigger caching
       await handleTransaction({ 
-        transaction: { ...Pacs008Sample, TenantId: 'cache-tenant-a' }
+        transaction: { ...Pacs008Sample, tenantId: 'cache-tenant-a' }
       });
       
       await handleTransaction({ 
-        transaction: { ...Pacs008Sample, TenantId: 'cache-tenant-b' }
+        transaction: { ...Pacs008Sample, tenantId: 'cache-tenant-b' }
       });
 
       // Verify tenant-specific logs were generated (indicating successful processing)
@@ -748,14 +754,14 @@ describe('Logic Service', () => {
     it('should handle cache key conflicts gracefully', async () => {
       const config1 = { 
         ...NetworkMapSample[0][0],
-        TenantId: 'test-tenant', 
+        tenantId: 'test-tenant', 
         active: true,
         cfg: '1.0.0'
       };
       
       const config2 = { 
         ...NetworkMapSample[0][0],
-        TenantId: 'test-tenant', 
+        tenantId: 'test-tenant', 
         active: true,
         cfg: '2.0.0'
       };
@@ -772,12 +778,12 @@ describe('Logic Service', () => {
       
       // Process first transaction
       await handleTransaction({ 
-        transaction: { ...Pacs008Sample, TenantId: 'test-tenant' }
+        transaction: { ...Pacs008Sample, tenantId: 'test-tenant' }
       });
       
       // Process second transaction (should overwrite cache)
       await handleTransaction({ 
-        transaction: { ...Pacs008Sample, TenantId: 'test-tenant' }
+        transaction: { ...Pacs008Sample, tenantId: 'test-tenant' }
       });
 
       // Both should process successfully without conflicts
@@ -812,7 +818,7 @@ describe('Logic Service', () => {
       // Setup mock configurations for 5 tenants
       const tenantConfigs = Array.from({ length: 5 }, (_, i) => ({
         ...NetworkMapSample[0][0],
-        TenantId: `perf-tenant-${i}`,
+        tenantId: `perf-tenant-${i}`,
         active: true
       }));
 
@@ -832,7 +838,7 @@ describe('Logic Service', () => {
         promises.push(handleTransaction({
           transaction: {
             ...Pacs008Sample,
-            TenantId: tenantId
+            tenantId: tenantId
           }
         }));
       }
@@ -850,7 +856,7 @@ describe('Logic Service', () => {
     it('should demonstrate cache performance benefits', async () => {
       const tenantConfig = {
         ...NetworkMapSample[0][0],
-        TenantId: 'cache-perf-tenant',
+        tenantId: 'cache-perf-tenant',
         active: true
       };
 
@@ -869,7 +875,7 @@ describe('Logic Service', () => {
         handleTransaction({
           transaction: {
             ...Pacs008Sample,
-            TenantId: 'cache-perf-tenant'
+            tenantId: 'cache-perf-tenant'
           }
         })
       );
@@ -898,7 +904,7 @@ describe('Logic Service', () => {
       const result = await handleTransaction({
         transaction: {
           ...Pacs008Sample,
-          TenantId: 'non-existent-tenant'
+          tenantId: 'non-existent-tenant'
         }
       });
 
@@ -915,7 +921,7 @@ describe('Logic Service', () => {
       // In practice, the application should validate data when retrieving from cache
       const validConfig = {
         ...NetworkMapSample[0][0],
-        TenantId: 'data-validation-tenant',
+        tenantId: 'data-validation-tenant',
         active: true
       };
 
@@ -930,7 +936,7 @@ describe('Logic Service', () => {
       await handleTransaction({
         transaction: {
           ...Pacs008Sample,
-          TenantId: 'data-validation-tenant'
+          tenantId: 'data-validation-tenant'
         }
       });
 
@@ -941,7 +947,7 @@ describe('Logic Service', () => {
     it('should handle transaction processing errors', async () => {
       const validConfig = {
         ...NetworkMapSample[0][0],
-        TenantId: 'error-tenant',
+        tenantId: 'error-tenant',
         active: true
       };
 
@@ -956,7 +962,7 @@ describe('Logic Service', () => {
         await handleTransaction({
           transaction: {
             ...Pacs008Sample,
-            TenantId: 'error-tenant'
+            tenantId: 'error-tenant'
           }
         });
       } catch (error) {
@@ -984,7 +990,7 @@ describe('Logic Service', () => {
         await handleTransaction({
           transaction: {
             ...Pacs008Sample,
-            TenantId: tenantId as string
+            tenantId: tenantId as string
           }
         });
         
@@ -999,7 +1005,7 @@ describe('Logic Service', () => {
       const testTenantId = 'logging-test-tenant';
       const tenantConfig = {
         ...NetworkMapSample[0][0],
-        TenantId: testTenantId,
+        tenantId: testTenantId,
         active: true
       };
 
@@ -1015,7 +1021,7 @@ describe('Logic Service', () => {
       await handleTransaction({
         transaction: {
           ...Pacs008Sample,
-          TenantId: testTenantId
+          tenantId: testTenantId
         }
       });
 
@@ -1028,7 +1034,7 @@ describe('Logic Service', () => {
       const testTenantId = 'cache-hit-logging-tenant';
       const tenantConfig = {
         ...NetworkMapSample[0][0],
-        TenantId: testTenantId,
+        tenantId: testTenantId,
         active: true
       };
 
@@ -1047,7 +1053,7 @@ describe('Logic Service', () => {
       await handleTransaction({
         transaction: {
           ...Pacs008Sample,
-          TenantId: testTenantId
+          tenantId: testTenantId
         }
       });
 
@@ -1072,7 +1078,7 @@ describe('Logic Service', () => {
     it('should log startup configuration loading', async () => {
       const startupTenantConfig = {
         ...NetworkMapSample[0][0],
-        TenantId: 'startup-tenant',
+        tenantId: 'startup-tenant',
         active: true
       };
 
@@ -1082,7 +1088,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded network configuration for tenant: startup-tenant');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded network configuration for tenant: startup-tenant (4 transaction types)');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully loaded 1 network configurations for multi-tenant support');
     });
 
@@ -1123,7 +1129,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       // Verify the structure is loaded correctly
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded network configuration for tenant: tenant-identity-string');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded network configuration for tenant: tenant-identity-string (1 transaction types)');
 
       // Test transaction processing with this structure
       server.handleResponse = (response: unknown): Promise<void> => {
@@ -1131,7 +1137,7 @@ describe('Logic Service', () => {
       };
 
       const testTransaction = {
-        TenantId: 'tenant-identity-string',
+        tenantId: 'tenant-identity-string',
         TxTp: 'pacs.002.001.12',
         transaction: { /* transaction data */ }
       };
@@ -1158,7 +1164,7 @@ describe('Logic Service', () => {
       // Verify the system can handle both lowercase 'tenantId' and uppercase 'TenantId'
       const mixedCaseConfig = {
         ...userStoryNetworkConfig,
-        TenantId: 'mixed-case-tenant' // Uppercase version
+        tenantId: 'mixed-case-tenant' // Uppercase version
       };
       
       jest.spyOn(databaseManager, 'getNetworkMap')
@@ -1167,7 +1173,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       // Should handle both cases
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded network configuration for tenant: mixed-case-tenant');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded network configuration for tenant: mixed-case-tenant (1 transaction types)');
     });
   });
 });  describe('TMS Integration Compatibility', () => {
@@ -1195,7 +1201,7 @@ describe('Logic Service', () => {
 
       const tmsMessage = {
         ...Pain001Sample,
-        TenantId: 'DEFAULT'  // As set by TMS for unauthenticated requests
+        tenantId: 'DEFAULT'  // As set by TMS for unauthenticated requests
       };
 
       const expectedReq = { transaction: tmsMessage };
@@ -1218,14 +1224,14 @@ describe('Logic Service', () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
         return Promise.resolve([[{
           ...NetworkMapSample[0][0],
-          TenantId: tenantId,
+          tenantId: tenantId,
           active: true
         }]]);
       });
 
       const tmsMessage = {
         ...Pain001Sample,
-        TenantId: tenantId
+        tenantId: tenantId
       };
 
       const expectedReq = { transaction: tmsMessage };
@@ -1245,7 +1251,7 @@ describe('Logic Service', () => {
       process.env.AUTHENTICATED = 'true';
 
       const messageWithoutTenant = { ...Pain001Sample };
-      delete (messageWithoutTenant as any).TenantId;
+      delete (messageWithoutTenant as any).tenantId;
 
       const expectedReq = { transaction: messageWithoutTenant };
 
@@ -1259,7 +1265,7 @@ describe('Logic Service', () => {
 
       const messageWithEmptyTenant = {
         ...Pain001Sample,
-        TenantId: ''
+        tenantId: ''
       };
 
       const expectedReq = { transaction: messageWithEmptyTenant };
@@ -1281,7 +1287,7 @@ describe('Logic Service', () => {
       });
 
       const messageWithoutTenant = { ...Pain001Sample };
-      delete (messageWithoutTenant as any).TenantId;
+      delete (messageWithoutTenant as any).tenantId;
 
       const expectedReq = { transaction: messageWithoutTenant };
       const warnSpy = jest.spyOn(loggerService, 'warn');
@@ -1301,7 +1307,7 @@ describe('Logic Service', () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
         return Promise.resolve([[{
           ...NetworkMapSample[0][0],
-          TenantId: 'DEFAULT',
+          tenantId: 'DEFAULT',
           active: true
         }]]);
       });
@@ -1310,7 +1316,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       // Verify the correct log message was generated
-      expect(localLoggerSpy).toHaveBeenCalledWith('Loaded DEFAULT tenant network configuration from TMS');
+      expect(localLoggerSpy).toHaveBeenCalledWith('Loaded DEFAULT tenant network configuration (4 transaction types)');
       expect(localLoggerSpy).toHaveBeenCalledWith('Successfully loaded 1 network configurations for multi-tenant support');
     });
 
@@ -1324,14 +1330,14 @@ describe('Logic Service', () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
         return Promise.resolve([[{
           ...NetworkMapSample[0][0],
-          TenantId: tenantId,
+          tenantId: tenantId,
           active: true
         }]]);
       });
 
       const tmsMessage = {
         ...Pain001Sample,
-        TenantId: tenantId
+        tenantId: tenantId
       };
 
       const expectedReq = { transaction: tmsMessage };
