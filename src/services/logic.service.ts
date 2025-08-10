@@ -8,7 +8,6 @@ import * as util from 'node:util';
 
 interface UnknownTransaction {
   TxTp: string;
-  TenantId?: string;
   tenantId?: string;
   [key: string]: unknown;
 }
@@ -150,13 +149,12 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     }
   }
   if (prunedMap.length > 0) {
-    // Create network sub-map, preserving tenant information if present
-    const networkMapWithTenant = networkMap as NetworkMap & { TenantId?: string };
-    const networkSubMap: NetworkMap & { TenantId?: string } = Object.assign(new NetworkMap(), {
+    // Create network sub-map using NetworkMap interface (supports tenantId natively with frms-coe-lib@6.0.0-rc.1)
+    const networkSubMap: NetworkMap = Object.assign(new NetworkMap(), {
       active: networkMap.active,
       cfg: networkMap.cfg,
       messages: prunedMap,
-      ...(networkMapWithTenant.TenantId && { TenantId: networkMapWithTenant.TenantId }),
+      tenantId: networkMap.tenantId, // Use tenantId directly from NetworkMap interface
     });
 
     // Deduplicate all rules
