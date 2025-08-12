@@ -8,7 +8,7 @@ import * as util from 'node:util';
 
 interface UnknownTransaction {
   TxTp: string;
-  tenantId?: string;
+  TenantId?: string;
   [key: string]: unknown;
 }
 
@@ -56,15 +56,8 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     childOf: typeof traceParent === 'string' ? traceParent : undefined,
   });
 
-  // Extract tenantId from transaction - this should be surfaced independently in Protobuf payload
-  const { tenantId } = parsedRequest.transaction;
-
-  // Validate tenantId based on authentication mode
-  const isAuthenticated = process.env.AUTHENTICATED === 'true';
-
-  if (isAuthenticated && (!tenantId || tenantId === '')) {
-    throw new Error('TenantId is required in authenticated mode but was not provided by TMS');
-  }
+  // Extract tenantId from transaction - use PascalCase TenantId only as per PR comment #7
+  const tenantId = parsedRequest.transaction.TenantId;
 
   if (!tenantId) {
     loggerService.warn('No tenantId found in transaction payload, using default configuration');
@@ -74,12 +67,8 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     loggerService.debug(`Processing transaction for tenant: ${tenantId}`);
   }
 
-  // Normalize tenantId for cache key creation (treat 'DEFAULT' as null for backward compatibility)
-  const normalizedTenantId = tenantId === 'DEFAULT' ? null : tenantId;
-
   // Create transaction-specific cache key for optimal performance
-  // Format: "tenant:${tenantId}:${transactionType}" or just "${transactionType}" for default tenant
-  const cacheKey = normalizedTenantId ? `tenant:${normalizedTenantId}:${parsedRequest.transaction.TxTp}` : parsedRequest.transaction.TxTp;
+  const cacheKey = `${tenantId}:${parsedRequest.transaction.TxTp}`;
 
   // First, check if we have a cached network map for this specific tenant + transaction type combination
   const cachedNetworkMap = nodeCache.get(cacheKey);
@@ -95,44 +84,14 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     spanNetworkMap?.end();
 
     if (unwrappedNetworkMap) {
-      // Validate that this network map matches the requested tenant
-      const networkMapTenantId = unwrappedNetworkMap.tenantId;
+      networkMap = unwrappedNetworkMap;
+      prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
 
-      // Determine if we should use this configuration:
-      // 1. If no specific tenant requested (normalizedTenantId is null), use any config
-      // 2. If config has no tenantId (legacy), it's a default config - use for any tenant
-      // 3. If tenantIds match exactly, use the config
-      const isDefaultConfig = !networkMapTenantId;
-      const isMatchingTenant = networkMapTenantId === tenantId || networkMapTenantId === normalizedTenantId;
-      const shouldUseConfig = !normalizedTenantId || isDefaultConfig || isMatchingTenant;
+      // Cache this network map using the transaction-specific key for future requests
+      const localCacheTTL: number = configuration.localCacheConfig?.localCacheTTL ?? 0;
+      nodeCache.set(cacheKey, networkMap, localCacheTTL);
 
-      if (shouldUseConfig) {
-        networkMap = unwrappedNetworkMap;
-        prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
-
-        // Cache this network map using the transaction-specific key for future requests
-        const localCacheTTL: number = configuration.localCacheConfig?.localCacheTTL ?? 0;
-        nodeCache.set(cacheKey, networkMap, localCacheTTL);
-
-        loggerService.log(
-          `Loaded and cached network map for ${normalizedTenantId ? `tenant: ${normalizedTenantId}` : 'default configuration'}`,
-        );
-      } else {
-        loggerService.log(
-          `No network map found in DB for ${normalizedTenantId ? `tenant: ${normalizedTenantId}` : 'default configuration'}`,
-        );
-        const result = {
-          prcgTmED: calculateDuration(startTime),
-          rulesSentTo: [],
-          failedToSend: [],
-          networkMap: {},
-          transaction: parsedRequest.transaction,
-          DataCache: parsedRequest.DataCache,
-        };
-        loggerService.debug(util.inspect(result));
-        apmTransaction?.end();
-        return;
-      }
+      loggerService.log(`Loaded and cached network map for ${tenantId ? `tenant: ${tenantId}` : 'default configuration'}`);
     } else {
       loggerService.log(`No network map found in DB for ${tenantId ? `tenant: ${tenantId}` : 'default configuration'}`);
       const result = {
@@ -169,9 +128,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     }
     await Promise.all(promises);
   } else {
-    loggerService.log(
-      `No corresponding message found in Network map for ${normalizedTenantId ? `tenant ${normalizedTenantId}` : 'default configuration'}`,
-    );
+    loggerService.log(`No corresponding message found in Network map for ${tenantId ? `tenant ${tenantId}` : 'default configuration'}`);
     const result = {
       metaData: { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) },
       networkMap: {},
@@ -230,27 +187,15 @@ export const loadAllNetworkConfigurations = async (): Promise<void> => {
             if (unwrappedNetworkMap?.active) {
               const tenantIdValue = unwrappedNetworkMap.tenantId;
 
-              if (tenantIdValue && tenantIdValue !== 'DEFAULT') {
-                // Cache network map for each transaction type supported by this tenant
-                const tenantId = tenantIdValue;
-                for (const message of unwrappedNetworkMap.messages) {
-                  const cacheKey = `tenant:${tenantId}:${message.txTp}`;
-                  nodeCache.set(cacheKey, unwrappedNetworkMap, localCacheTTL);
-                }
-                loggerService.log(
-                  `Loaded network configuration for tenant: ${tenantId} (${unwrappedNetworkMap.messages.length} transaction types)`,
-                );
-                loadedCount++;
-              } else {
-                // Handle DEFAULT tenant or legacy configurations without tenantId
-                for (const message of unwrappedNetworkMap.messages) {
-                  const cacheKey = message.txTp; // Legacy cache key format for default tenant
-                  nodeCache.set(cacheKey, unwrappedNetworkMap, localCacheTTL);
-                }
-                const tenantType = tenantIdValue === 'DEFAULT' ? 'DEFAULT tenant' : 'legacy default';
-                loggerService.log(`Loaded ${tenantType} network configuration (${unwrappedNetworkMap.messages.length} transaction types)`);
-                loadedCount++;
+              // Cache network map for each transaction type supported by this tenant
+              const tenantId = tenantIdValue;
+              for (const message of unwrappedNetworkMap.messages) {
+                const cacheKey = `${tenantId}:${message.txTp}`;
+                nodeCache.set(cacheKey, unwrappedNetworkMap, localCacheTTL);
               }
+              const tenantType = tenantIdValue === 'DEFAULT' ? 'DEFAULT tenant' : 'legacy default';
+              loggerService.log(`Loaded ${tenantType} network configuration (${unwrappedNetworkMap.messages.length} transaction types)`);
+              loadedCount++;
             }
           }
         }
