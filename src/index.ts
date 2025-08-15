@@ -9,7 +9,7 @@ import os from 'node:os';
 import * as util from 'node:util';
 import { setTimeout } from 'node:timers/promises';
 import { additionalEnvironmentVariables, type Configuration } from './config';
-import { handleTransaction } from './services/logic.service';
+import { handleTransaction, loadAllNetworkConfigurations } from './services/logic.service';
 import { Singleton } from './services/services';
 
 let configuration = validateProcessorConfig(additionalEnvironmentVariables) as Configuration;
@@ -78,6 +78,8 @@ if (cluster.isPrimary && configuration.maxCPU !== 1) {
       if (configuration.nodeEnv !== 'test') {
         await runServer();
         await dbInit();
+        // Load all tenant network configurations at startup
+        await loadAllNetworkConfigurations();
       }
     } catch (err) {
       loggerService.error(`Error while starting NATS server on Worker ${process.pid}`, util.inspect(err));

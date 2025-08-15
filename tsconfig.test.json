@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["jest", "node"],
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "composite": true,
+    "outDir": "build/tests",
+    "rootDir": "."
+  },
+  "include": [
+    "./src/**/*",
+    "./__tests__/**/*",
+    "./jest.testEnv.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build"
+  ]
+}

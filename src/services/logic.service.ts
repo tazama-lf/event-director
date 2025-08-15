@@ -8,6 +8,7 @@ import * as util from 'node:util';
 
 interface UnknownTransaction {
   TxTp: string;
+  TenantId?: string;
   [key: string]: unknown;
 }
 
@@ -18,7 +19,7 @@ const calculateDuration = (startTime: bigint): number => {
 
 /**
  *Create a list of all the rules for this transaction type from the network map
- *
+ 
  * @param {NetworkMap} networkMap
  * @param {string} transactionType
  * @return {*}  {Rule[]}
@@ -47,7 +48,6 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
 export const handleTransaction = async (req: unknown): Promise<void> => {
   const startTime = process.hrtime.bigint();
   let networkMap: NetworkMap = new NetworkMap();
-  let cachedActiveNetworkMap: NetworkMap;
   let prunedMap: Message[] = [];
 
   const parsedRequest = req as { transaction: UnknownTransaction; DataCache: DataCache; metaData?: MetaData };
@@ -56,16 +56,28 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     childOf: typeof traceParent === 'string' ? traceParent : undefined,
   });
 
-  const cacheKey = parsedRequest.transaction.TxTp;
-  // check if there's an active network map in memory
-  const activeNetworkMap = nodeCache.get(cacheKey);
-  if (activeNetworkMap) {
-    cachedActiveNetworkMap = activeNetworkMap as NetworkMap;
-    networkMap = cachedActiveNetworkMap;
-    prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
-    loggerService.debug(`Using cached networkMap ${util.inspect(prunedMap)}`);
+  // Extract tenantId from transaction - use PascalCase TenantId only as per PR comment #7
+  const tenantId = parsedRequest.transaction.TenantId;
+
+  if (!tenantId) {
+    loggerService.warn('No tenantId found in transaction payload, using default configuration');
+  } else if (tenantId === 'DEFAULT') {
+    loggerService.debug('Using DEFAULT tenant configuration for unauthenticated request from TMS');
   } else {
-    // Fetch the network map from db
+    loggerService.debug(`Processing transaction for tenant: ${tenantId}`);
+  }
+
+  // Create transaction-specific cache key for optimal performance
+  const cacheKey = `${tenantId}:${parsedRequest.transaction.TxTp}`;
+
+  // First, check if we have a cached network map for this specific tenant + transaction type combination
+  const cachedNetworkMap = nodeCache.get(cacheKey);
+  if (cachedNetworkMap) {
+    networkMap = cachedNetworkMap as NetworkMap;
+    prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
+    loggerService.debug(`Using cached networkMap for ${tenantId ? `tenant ${tenantId}` : 'default'}: ${util.inspect(prunedMap)}`);
+  } else {
+    // Cache miss - need to load from database
     const spanNetworkMap = apm.startSpan('db.get.NetworkMap');
     const networkConfigurationList = await databaseManager.getNetworkMap();
     const unwrappedNetworkMap = unwrap<NetworkMap>(networkConfigurationList as NetworkMap[][]);
@@ -73,12 +85,15 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
 
     if (unwrappedNetworkMap) {
       networkMap = unwrappedNetworkMap;
-      // save networkmap in memory cache
+      prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
+
+      // Cache this network map using the transaction-specific key for future requests
       const localCacheTTL: number = configuration.localCacheConfig?.localCacheTTL ?? 0;
       nodeCache.set(cacheKey, networkMap, localCacheTTL);
-      prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
+
+      loggerService.log(`Loaded and cached network map for ${tenantId ? `tenant: ${tenantId}` : 'default configuration'}`);
     } else {
-      loggerService.log('No network map found in DB');
+      loggerService.log(`No network map found in DB for ${tenantId ? `tenant: ${tenantId}` : 'default configuration'}`);
       const result = {
         prcgTmED: calculateDuration(startTime),
         rulesSentTo: [],
@@ -88,13 +103,17 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
         DataCache: parsedRequest.DataCache,
       };
       loggerService.debug(util.inspect(result));
+      apmTransaction?.end();
+      return;
     }
   }
   if (prunedMap.length > 0) {
+    // Create network sub-map using NetworkMap interface (supports tenantId natively with frms-coe-lib@6.0.0-rc.1)
     const networkSubMap: NetworkMap = Object.assign(new NetworkMap(), {
       active: networkMap.active,
       cfg: networkMap.cfg,
       messages: prunedMap,
+      tenantId: networkMap.tenantId, // Use tenantId directly from NetworkMap interface
     });
 
     // Deduplicate all rules
@@ -109,7 +128,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     }
     await Promise.all(promises);
   } else {
-    loggerService.log('No corresponding message found in Network map');
+    loggerService.log(`No corresponding message found in Network map for ${tenantId ? `tenant ${tenantId}` : 'default configuration'}`);
     const result = {
       metaData: { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) },
       networkMap: {},
@@ -142,4 +161,56 @@ const sendRuleToRuleProcessor = async (
     loggerService.error(`Failed to send to Rule ${rule.id} with Error: ${util.inspect(error)}`);
   }
   span?.end();
+};
+
+/**
+ * Load all active network configurations into cache at startup
+ * Each tenant's network configuration is cached separately by tenantId
+ */
+export const loadAllNetworkConfigurations = async (): Promise<void> => {
+  try {
+    loggerService.log('Loading all tenant network configurations at startup...');
+
+    // Fetch all network maps from database
+    const networkConfigurationList = (await databaseManager.getNetworkMap()) as NetworkMap[][];
+
+    if (networkConfigurationList && networkConfigurationList.length > 0) {
+      const localCacheTTL: number = configuration.localCacheConfig?.localCacheTTL ?? 0;
+      let loadedCount = 0;
+
+      // Process each network configuration
+      for (const networkMapArray of networkConfigurationList) {
+        if (networkMapArray && networkMapArray.length > 0) {
+          for (const networkMap of networkMapArray) {
+            const unwrappedNetworkMap = networkMap;
+
+            if (unwrappedNetworkMap?.active) {
+              const tenantIdValue = unwrappedNetworkMap.tenantId;
+
+              // Cache network map for each transaction type supported by this tenant
+              const tenantId = tenantIdValue;
+              for (const message of unwrappedNetworkMap.messages) {
+                const cacheKey = `${tenantId}:${message.txTp}`;
+                nodeCache.set(cacheKey, unwrappedNetworkMap, localCacheTTL);
+              }
+              const tenantType = tenantIdValue === 'DEFAULT' ? 'DEFAULT tenant' : 'legacy default';
+              loggerService.log(`Loaded ${tenantType} network configuration (${unwrappedNetworkMap.messages.length} transaction types)`);
+              loadedCount++;
+            }
+          }
+        }
+      }
+
+      if (loadedCount > 0) {
+        loggerService.log(`Successfully loaded ${loadedCount} network configurations for multi-tenant support`);
+      } else {
+        loggerService.log('No active network configurations found in database');
+      }
+    } else {
+      loggerService.log('No network configurations found in database');
+    }
+  } catch (error) {
+    loggerService.error(`Failed to load network configurations at startup: ${util.inspect(error)}`);
+    throw error;
+  }
 };
