@@ -1361,3 +1361,4 @@ describe('Logic Service', () => {
       expect(localLoggerSpy).toHaveBeenCalledWith(`Loaded and cached network map for tenant: ${tenantId}`);
     });
   });
+});
