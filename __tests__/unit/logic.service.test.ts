@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Apache-2.0
+﻿// SPDX-License-Identifier: Apache-2.0
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NetworkMapSample, Pacs002Sample, Pacs008Sample, Pain001Sample, Pain013Sample } from '@tazama-lf/frms-coe-lib/lib/tests/data';
 import { DatabaseNetworkMapMocks } from '@tazama-lf/frms-coe-lib/lib/tests/mocks/mock-networkmap';
@@ -1361,4 +1361,3 @@ describe('Logic Service', () => {
       expect(localLoggerSpy).toHaveBeenCalledWith(`Loaded and cached network map for tenant: ${tenantId}`);
     });
   });
-});
