@@ -214,4 +214,3 @@ export const loadAllNetworkConfigurations = async (): Promise<void> => {
     throw error;
   }
 };
-};
