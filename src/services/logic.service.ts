@@ -226,8 +226,9 @@ export const loadAllNetworkConfigurations = async (): Promise<void> => {
                 const cacheKey = `${tenantId}:${message.txTp}`;
                 nodeCache.set(cacheKey, unwrappedNetworkMap, localCacheTTL);
               }
-              const tenantType = tenantIdValue === 'DEFAULT' ? 'DEFAULT' : 'legacy default';
-              loggerService.log(`Loaded ${tenantType} network configuration (${unwrappedNetworkMap.messages.length} transaction types)`);
+              loggerService.log(
+                `Loaded network configuration for tenant '${tenantId}' (${unwrappedNetworkMap.messages.length} transaction types)`,
+              );
               loadedCount++;
             }
           }

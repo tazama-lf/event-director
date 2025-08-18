@@ -300,7 +300,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded legacy default network configuration (4 transaction types)');
+      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'tenant-456' (4 transaction types)");
     });
 
     it('should load legacy network configurations without tenantId', async () => {
@@ -315,7 +315,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded legacy default network configuration (4 transaction types)');
+      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'undefined' (4 transaction types)");
       expect(loggerSpy).toHaveBeenCalledWith('Successfully loaded 1 network configurations for multi-tenant support');
     });
 
@@ -687,7 +687,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       expect(databaseManager.getNetworkMap).toHaveBeenCalled();
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded legacy default network configuration (4 transaction types)');
+      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'db-tenant-a' (4 transaction types)");
     });
 
     it('should handle database connection errors gracefully', async () => {
@@ -1086,7 +1086,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded legacy default network configuration (4 transaction types)');
+      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'startup-tenant' (4 transaction types)");
       expect(loggerSpy).toHaveBeenCalledWith('Successfully loaded 1 network configurations for multi-tenant support');
     });
 
@@ -1127,7 +1127,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       // Verify the structure is loaded correctly
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded legacy default network configuration (1 transaction types)');
+      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'tenant-identity-string' (1 transaction types)");
 
       // Test transaction processing with this structure
       server.handleResponse = (response: unknown): Promise<void> => {
@@ -1174,7 +1174,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       // Should handle both cases and use simplified logging
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded legacy default network configuration (1 transaction types)');
+      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'mixed-case-tenant' (1 transaction types)");
     });
   });
 });  describe('TMS Integration Compatibility', () => {
@@ -1324,7 +1324,7 @@ describe('Logic Service', () => {
       await loadAllNetworkConfigurations();
 
       // Expect simplified startup logging after PR changes
-      expect(localLoggerSpy).toHaveBeenCalledWith('Loaded DEFAULT tenant network configuration (4 transaction types)');
+      expect(localLoggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'DEFAULT' (4 transaction types)");
     });
 
     it('should use tenant-specific cache keys for non-DEFAULT tenants', async () => {
