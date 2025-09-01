@@ -9,7 +9,6 @@
  */
 
 import apm from '../apm';
-import { unwrap } from '@tazama-lf/frms-coe-lib/lib/helpers/unwrap';
 import { NetworkMap, type DataCache, type Message, type Rule } from '@tazama-lf/frms-coe-lib/lib/interfaces';
 import type { MetaData } from '@tazama-lf/frms-coe-lib/lib/interfaces/metaData';
 import { configuration, databaseManager, loggerService, nodeCache, server } from '..';
@@ -91,13 +90,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
   const tenantId = parsedRequest.transaction.TenantId;
 
   // Log tenant context for monitoring and debugging
-  if (!tenantId) {
-    loggerService.warn('No tenantId found in transaction payload, using default configuration');
-  } else if (tenantId === 'DEFAULT') {
-    loggerService.debug('Using DEFAULT tenant configuration for unauthenticated request from TMS');
-  } else {
-    loggerService.debug(`Processing transaction for tenant: ${tenantId}`);
-  }
+  loggerService.debug(`Processing transaction for tenant: ${tenantId}`);
 
   // Create tenant-specific cache key for optimal performance and isolation
   const cacheKey = `${tenantId}:${parsedRequest.transaction.TxTp}`;
@@ -107,26 +100,54 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
   if (cachedNetworkMap) {
     networkMap = cachedNetworkMap as NetworkMap;
     prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
-    loggerService.debug(`Using cached networkMap for ${tenantId ? `tenant ${tenantId}` : 'default'}: ${util.inspect(prunedMap)}`);
+    loggerService.debug(`Using cached networkMap for tenant ${tenantId}: ${util.inspect(prunedMap)}`);
   } else {
     // Cache miss - fetch configuration from database
     const spanNetworkMap = apm.startSpan('db.get.NetworkMap');
-    const networkConfigurationList = await databaseManager.getNetworkMap();
-    const unwrappedNetworkMap = unwrap<NetworkMap>(networkConfigurationList as NetworkMap[][]);
+    const networkConfigurationList = (await databaseManager.getNetworkMap()) as NetworkMap[][];
     spanNetworkMap?.end();
 
-    if (unwrappedNetworkMap) {
-      networkMap = unwrappedNetworkMap;
-      prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
-
-      // Cache the network map for future requests with configured TTL
+    if (Array.isArray(networkConfigurationList) && networkConfigurationList.length > 0) {
       const localCacheTTL: number = configuration.localCacheConfig?.localCacheTTL ?? 0;
-      nodeCache.set(cacheKey, networkMap, localCacheTTL);
+      let foundTenantMap: NetworkMap | undefined;
 
-      loggerService.log(`Loaded and cached network map for ${tenantId ? `tenant: ${tenantId}` : 'default configuration'}`);
+      for (const networkMapArray of networkConfigurationList) {
+        if (Array.isArray(networkMapArray) && networkMapArray.length > 0) {
+          for (const networkMap of networkMapArray) {
+            if (networkMap?.active) {
+              const tenantIdValue = networkMap.tenantId;
+              for (const message of networkMap.messages) {
+                const key = `${tenantIdValue}:${message.txTp}`;
+                nodeCache.set(key, networkMap, localCacheTTL);
+                if (tenantIdValue === tenantId && message.txTp === parsedRequest.transaction.TxTp) {
+                  foundTenantMap = networkMap;
+                }
+              }
+              loggerService.log(`Loaded and cached network map for tenant: ${tenantIdValue}`);
+            }
+          }
+        }
+      }
+
+      if (foundTenantMap) {
+        networkMap = foundTenantMap;
+        prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
+      } else {
+        loggerService.log(`No network map found in DB for tenant: ${tenantId}`);
+        const result = {
+          prcgTmED: calculateDuration(startTime),
+          rulesSentTo: [],
+          failedToSend: [],
+          networkMap: {},
+          transaction: parsedRequest.transaction,
+          DataCache: parsedRequest.DataCache,
+        };
+        loggerService.debug(util.inspect(result));
+        apmTransaction?.end();
+        return;
+      }
     } else {
-      // No network configuration found - return early
-      loggerService.log(`No network map found in DB for ${tenantId ? `tenant: ${tenantId}` : 'default configuration'}`);
+      loggerService.log(`No network map found in DB for tenant: ${tenantId}`);
       const result = {
         prcgTmED: calculateDuration(startTime),
         rulesSentTo: [],
@@ -161,7 +182,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     }
     await Promise.all(promises);
   } else {
-    loggerService.log(`No corresponding message found in Network map for ${tenantId ? `tenant ${tenantId}` : 'default configuration'}`);
+    loggerService.log(`No corresponding message found in Network map for tenant ${tenantId}`);
     const result = {
       metaData: { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) },
       networkMap: {},
