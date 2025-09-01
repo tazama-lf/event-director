@@ -129,7 +129,7 @@ describe('Logic Service', () => {
     it('should handle successful request for Pacs008, has cached map', async () => {
       const expectedReq = { transaction: Pacs008Sample };
 
-      let netMap = NetworkMapSample[0][0];
+      const netMap = NetworkMapSample[0];
       nodeCache.set(expectedReq.transaction.TxTp, netMap);
 
       const nodeCacheSpy = jest.spyOn(nodeCache, 'get');
@@ -150,7 +150,7 @@ describe('Logic Service', () => {
     it('should respond with active cached network map from memory', async () => {
       const expectedReq = { transaction: Pain001Sample };
 
-      let netMap = NetworkMapSample[0][0];
+      const netMap = NetworkMapSample[0];
       nodeCache.set(expectedReq.transaction.TxTp, netMap);
 
       server.handleResponse = (response: unknown): Promise<void> => {

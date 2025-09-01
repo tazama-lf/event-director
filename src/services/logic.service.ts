@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import apm from '../apm';
-import { unwrap } from '@tazama-lf/frms-coe-lib/lib/helpers/unwrap';
-import { NetworkMap, type DataCache, type Message, type Rule } from '@tazama-lf/frms-coe-lib/lib/interfaces';
+import type { NetworkMap, DataCache, Message, Rule } from '@tazama-lf/frms-coe-lib/lib/interfaces';
 import type { MetaData } from '@tazama-lf/frms-coe-lib/lib/interfaces/metaData';
 import { configuration, databaseManager, loggerService, nodeCache, server } from '..';
 import * as util from 'node:util';
@@ -46,9 +45,9 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
 
 export const handleTransaction = async (req: unknown): Promise<void> => {
   const startTime = process.hrtime.bigint();
-  let networkMap: NetworkMap = new NetworkMap();
+  let networkMap: NetworkMap | undefined;
   let cachedActiveNetworkMap: NetworkMap;
-  let prunedMap: Message[] = [];
+  let prunedMessage: Message[] = [];
 
   const parsedRequest = req as { transaction: UnknownTransaction; DataCache: DataCache; metaData?: MetaData };
   const traceParent = parsedRequest.metaData?.traceParent;
@@ -58,25 +57,24 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
 
   const cacheKey = parsedRequest.transaction.TxTp;
   // check if there's an active network map in memory
-  const activeNetworkMap = nodeCache.get(cacheKey);
+  const activeNetworkMap = nodeCache.get<NetworkMap>(cacheKey);
   if (activeNetworkMap) {
-    cachedActiveNetworkMap = activeNetworkMap as NetworkMap;
+    cachedActiveNetworkMap = activeNetworkMap;
     networkMap = cachedActiveNetworkMap;
-    prunedMap = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
-    loggerService.debug(`Using cached networkMap ${util.inspect(prunedMap)}`);
+    prunedMessage = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
+    loggerService.debug(`Using cached networkMap ${util.inspect(prunedMessage)}`);
   } else {
     // Fetch the network map from db
     const spanNetworkMap = apm.startSpan('db.get.NetworkMap');
-    const networkConfigurationList = await databaseManager.getNetworkMap();
-    const unwrappedNetworkMap = unwrap<NetworkMap>(networkConfigurationList as NetworkMap[][]);
+    const activeNetworkMapList = await databaseManager.getNetworkMap();
     spanNetworkMap?.end();
 
-    if (unwrappedNetworkMap) {
-      networkMap = unwrappedNetworkMap;
+    if (activeNetworkMapList.length) {
+      [networkMap] = activeNetworkMapList;
       // save networkmap in memory cache
       const localCacheTTL: number = configuration.localCacheConfig?.localCacheTTL ?? 0;
       nodeCache.set(cacheKey, networkMap, localCacheTTL);
-      prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
+      prunedMessage = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
     } else {
       loggerService.log('No network map found in DB');
       const result = {
@@ -90,12 +88,13 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
       loggerService.debug(util.inspect(result));
     }
   }
-  if (prunedMap.length > 0) {
-    const networkSubMap: NetworkMap = Object.assign(new NetworkMap(), {
+
+  if (prunedMessage.length && networkMap) {
+    const networkSubMap: NetworkMap = {
       active: networkMap.active,
       cfg: networkMap.cfg,
-      messages: prunedMap,
-    });
+      messages: prunedMessage,
+    };
 
     // Deduplicate all rules
     const rules = getRuleMap(networkMap, parsedRequest.transaction.TxTp);
