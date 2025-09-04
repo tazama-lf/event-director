@@ -35,10 +35,9 @@ const calculateDuration = (startTime: bigint): number => {
 function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
   const rules: Rule[] = new Array<Rule>();
 
-  // Locate the message configuration for the specific transaction type
   const messages = networkMap.messages.find((tran) => tran.txTp === transactionType);
 
-  // Extract all rules from typologies, ensuring no duplicates
+  // Extract all rules from typologies
   if (messages) {
     for (const typology of messages.typologies) {
       for (const rule of typology.rules) {
