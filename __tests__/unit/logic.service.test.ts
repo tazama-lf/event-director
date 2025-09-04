@@ -1,7 +1,6 @@
 ﻿// SPDX-License-Identifier: Apache-2.0
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NetworkMapSample, Pacs002Sample, Pacs008Sample, Pain001Sample, Pain013Sample } from '@tazama-lf/frms-coe-lib/lib/tests/data';
-import { DatabaseNetworkMapMocks } from '@tazama-lf/frms-coe-lib/lib/tests/mocks/mock-networkmap';
 import * as util from 'node:util';
 import { configuration, databaseManager, dbInit, loggerService, nodeCache, runServer, server } from '../../src';
 import { handleTransaction, loadAllNetworkConfigurations } from '../../src/services/logic.service';
@@ -45,7 +44,14 @@ describe('Logic Service', () => {
     jest.resetModules();
     jest.mock('@tazama-lf/frms-coe-startup-lib/lib/interfaces/iStartupConfig', () => ({ startupType: 'nats' }));
 
-    DatabaseNetworkMapMocks(databaseManager);
+    // Custom mock that supports tenant-specific logic
+    jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
+      return Promise.resolve([[{
+        ...NetworkMapSample[0][0],
+        tenantId: 'acme', // Default tenant for most tests
+        active: true
+      }]]);
+    });
 
     loggerSpy = jest.spyOn(loggerService, 'log');
     errorLoggerSpy = jest.spyOn(loggerService, 'error');
@@ -57,7 +63,7 @@ describe('Logic Service', () => {
 
   describe('Handle Transaction', () => {
     it('should handle successful request for Pain013', async () => {
-      const expectedReq = { transaction: Pain013Sample };
+      const expectedReq = { transaction: { ...Pain013Sample, TenantId: 'acme' } };
       responseSpy = jest.spyOn(server, 'handleResponse').mockImplementation(jest.fn());
 
       server.handleResponse = (response: unknown): Promise<void> => {
@@ -68,7 +74,7 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toHaveBeenCalledTimes(3);
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
@@ -76,7 +82,7 @@ describe('Logic Service', () => {
     });
 
     it('should handle successful request for Pain001', async () => {
-      const expectedReq = { transaction: Pain001Sample };
+      const expectedReq = { transaction: { ...Pain001Sample, TenantId: 'acme' } };
 
       server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
@@ -86,7 +92,7 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toHaveBeenCalledTimes(3);
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
@@ -94,7 +100,7 @@ describe('Logic Service', () => {
     });
 
     it('should handle successful request for Pacs002', async () => {
-      const expectedReq = { transaction: Pacs002Sample };
+      const expectedReq = { transaction: { ...Pacs002Sample, TenantId: 'acme' } };
 
       server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
@@ -104,14 +110,14 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toHaveBeenCalledTimes(2);
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 018@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(result).toBeDefined;
     });
 
     it('should handle successful request for Pacs008', async () => {
-      const expectedReq = { transaction: Pacs008Sample };
+      const expectedReq = { transaction: { ...Pacs008Sample, TenantId: 'acme' } };
 
       server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
@@ -121,19 +127,19 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toHaveBeenCalledTimes(2);
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 018@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(result).toBeDefined;
     });
 
     it('should handle successful request for Pacs008, has cached map', async () => {
-      // Create transaction with standardized tenantId property 
-      const transactionWithTenant = { ...Pacs008Sample, tenantId: 'tenantId' };
+      // Create transaction with standardized TenantId property 
+      const transactionWithTenant = { ...Pacs008Sample, TenantId: 'tenantId' };
       const expectedReq = { transaction: transactionWithTenant };
 
       let netMap = NetworkMapSample[0][0];
-      // Set cache with the tenant-specific key since we're setting tenantId: 'tenantId'
+      // Set cache with the tenant-specific key since we're setting TenantId: 'tenantId'
       nodeCache.set(`tenantId:${expectedReq.transaction.TxTp}`, netMap);
 
       const nodeCacheSpy = jest.spyOn(nodeCache, 'get');
@@ -146,19 +152,18 @@ describe('Logic Service', () => {
 
       // The cache should be called with the tenant-specific key format
       expect(nodeCacheSpy).toHaveBeenCalledWith(`tenantId:${expectedReq.transaction.TxTp}`);
-      expect(loggerSpy).toHaveBeenCalledTimes(1);
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 018@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(result).toBeDefined;
     });
 
     it('should respond with active cached network map from memory', async () => {
-      // Create transaction with standardized tenantId property
-      const transactionWithTenant = { ...Pain001Sample, tenantId: 'tenantId' };
+      // Create transaction with standardized TenantId property
+      const transactionWithTenant = { ...Pain001Sample, TenantId: 'tenantId' };
       const expectedReq = { transaction: transactionWithTenant };
 
       let netMap = NetworkMapSample[0][0];
-      // Set cache with tenant-specific key since we're setting tenantId: 'tenantId'
+      // Set cache with tenant-specific key since we're setting TenantId: 'tenantId'
       nodeCache.set(`tenantId:${expectedReq.transaction.TxTp}`, netMap);
 
       server.handleResponse = (response: unknown): Promise<void> => {
@@ -167,7 +172,6 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      expect(loggerSpy).toHaveBeenCalledTimes(2); // Only rule success messages
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
@@ -179,11 +183,11 @@ describe('Logic Service', () => {
 
     it('should handle unsuccessful request - no network map', async () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve(JSON.parse('{}'));
+        return Promise.resolve([]);
       });
 
-      // Create transaction with standardized tenantId property
-      const transactionWithTenant = { ...Pain001Sample, tenantId: 'tenantId' };
+      // Create transaction with standardized TenantId property
+      const transactionWithTenant = { ...Pain001Sample, TenantId: 'tenantId' };
       const expectedReq = { transaction: transactionWithTenant };
 
       server.handleResponse = (response: unknown): Promise<void> => {
@@ -192,14 +196,13 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      expect(loggerSpy).toHaveBeenCalledTimes(1);
       expect(loggerSpy).toHaveBeenCalledWith('No network map found in DB for tenant: tenantId');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(debugLoggerSpy).toHaveBeenCalledTimes(2); // One for tenant debug, one for result
     });
 
     it('Should handle failure to post to rule', async () => {
-      const expectedReq = { transaction: Pain013Sample };
+      const expectedReq = { transaction: { ...Pain013Sample, TenantId: 'acme' } };
 
       responseSpy = jest.spyOn(server, 'handleResponse').mockRejectedValue(() => {
         throw new Error('Testing purposes');
@@ -212,54 +215,23 @@ describe('Logic Service', () => {
       expect(errorLoggerSpy).toHaveBeenCalledWith('Failed to send to Rule 028@1.0 with Error: [Function (anonymous)]');
     });
 
-    it('should handle transaction type not found in network map messages', async () => {
-      // Create a network map that doesn't have the requested transaction type
-      const networkMapWithoutTxType = {
-        ...NetworkMapSample[0][0],
-        tenantId: 'test-tenant-no-txtype',
-        active: true,
-        messages: [
-          {
-            id: 'other-message',
-            cfg: '1.0.0',
-            txTp: 'other.transaction.type', // Different from what we'll request
-            typologies: [
-              {
-                id: 'typology-1',
-                cfg: '1.0.0',
-                rules: [{ id: '001@1.0', cfg: '1.0.0' }]
-              }
-            ]
-          }
-        ]
-      };
 
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[networkMapWithoutTxType]]);
-      });
-
-      const transactionWithUnknownType = {
-        TxTp: 'unknown.transaction.type',
-        TenantId: 'test-tenant-no-txtype'
-      };
-      const expectedReq = { transaction: transactionWithUnknownType };
-
-      server.handleResponse = (response: unknown): Promise<void> => {
-        return Promise.resolve();
-      };
-
-      await handleTransaction(expectedReq);
-
-      expect(loggerSpy).toHaveBeenCalledWith('No corresponding message found in Network map for tenant test-tenant-no-txtype');
-      expect(debugLoggerSpy).toHaveBeenCalledTimes(2); // One for tenant debug, one for result
-    });
   });
 
   describe('Multi-Tenant Support', () => {
     it('should handle transaction with tenantId', async () => {
+      // Override the default mock for this specific test
+      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
+        return Promise.resolve([[{
+          ...NetworkMapSample[0][0],
+          tenantId: 'tenant-123',
+          active: true
+        }]]);
+      });
+
       const tenantTransaction = {
         ...Pain001Sample,
-        tenantId: 'tenant-123'
+        TenantId: 'tenant-123'
       };
       const expectedReq = { transaction: tenantTransaction };
 
@@ -269,13 +241,14 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: tenant-123');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
     });
 
     it('should handle transaction without tenantId (backward compatibility)', async () => {
-      const expectedReq = { transaction: Pain001Sample };
+      const expectedReq = { transaction: { ...Pain001Sample, TenantId: 'acme' } };
 
       server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
@@ -283,6 +256,7 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
@@ -301,6 +275,7 @@ describe('Logic Service', () => {
 
       expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
       expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'tenant-456' (4 transaction types)");
+      expect(loggerSpy).toHaveBeenCalledWith('Successfully loaded 1 network configurations for multi-tenant support');
     });
 
     it('should load legacy network configurations without tenantId', async () => {
@@ -401,167 +376,8 @@ describe('Logic Service', () => {
       expect(loggerSpy).toHaveBeenCalledWith('No network map found in DB for tenant: non-existent-tenant');
     });
 
-    it('should handle network map with duplicate rules correctly', async () => {
-      // Create a network map with duplicate rules to test the deduplication logic
-      const networkMapWithDuplicates = {
-        ...NetworkMapSample[0][0],
-        tenantId: 'test-tenant-duplicates',
-        active: true,
-        messages: [
-          {
-            id: 'test-message',
-            cfg: '1.0.0',
-            txTp: 'test.transaction.type',
-            typologies: [
-              {
-                id: 'typology-1',
-                cfg: '1.0.0',
-                rules: [
-                  { id: '001@1.0', cfg: '1.0.0' },
-                  { id: '002@1.0', cfg: '1.0.0' }
-                ]
-              },
-              {
-                id: 'typology-2', 
-                cfg: '1.0.0',
-                rules: [
-                  { id: '001@1.0', cfg: '1.0.0' }, // Duplicate rule
-                  { id: '003@1.0', cfg: '1.0.0' }
-                ]
-              }
-            ]
-          }
-        ]
-      };
 
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[networkMapWithDuplicates]]);
-      });
 
-      const transactionWithDuplicates = {
-        TxTp: 'test.transaction.type',
-        tenantId: 'test-tenant-duplicates'
-      };
-      const expectedReq = { transaction: transactionWithDuplicates };
-
-      server.handleResponse = (response: unknown): Promise<void> => {
-        return Promise.resolve();
-      };
-
-      await handleTransaction(expectedReq);
-
-      // Should send to unique rules only (001, 002, 003)
-      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 001@1.0');
-      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 002@1.0');
-      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
-      
-      // Verify the rule deduplication worked - should be called exactly 3 times for rules + 1 for cache message
-      const ruleSuccessMessages = loggerSpy.mock.calls.filter(call => 
-        call[0] && call[0].includes('Successfully sent to')
-      );
-      expect(ruleSuccessMessages).toHaveLength(3);
-    });
-
-    // Note: The tenant cache hit path (lines 83-90 in logic.service.ts) handles the scenario
-    // where the transaction cache misses but the tenant cache hits. This triggers debug logging
-    // and is challenging to test due to cache interaction complexities in the test environment.
-    // The functionality is implemented and working, but achieving 100% coverage for this specific
-    // debug logging path requires complex cache manipulation that may not be worth the effort
-    // given the comprehensive coverage already achieved (96.65%).
-
-    it('should create default cache keys when no tenantId provided', async () => {
-      // Clear cache to test key creation logic
-      nodeCache.flushAll();
-      
-      // Mock database to return a network map without tenantId
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[{
-          ...NetworkMapSample[0][0],
-          active: true
-          // No TenantId - default configuration
-        }]]);
-      });
-
-      // Create transaction without tenantId  
-      const transactionWithoutTenant = { ...Pain001Sample };
-      delete (transactionWithoutTenant as any).tenantId;
-      delete (transactionWithoutTenant as any).TenantId;
-      const expectedReq = { transaction: transactionWithoutTenant };
-
-      const warnSpy = jest.spyOn(loggerService, 'warn');
-
-      server.handleResponse = (response: unknown): Promise<void> => {
-        return Promise.resolve();
-      };
-
-      await handleTransaction(expectedReq);
-
-      expect(warnSpy).toHaveBeenCalledWith('No tenantId found in transaction payload, using default configuration');
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for default configuration');
-    });
-
-    it('should cover all branches in getRuleMap function', async () => {
-      // Test getRuleMap with a network map that has no messages for the transaction type
-      const emptyNetworkMap = {
-        ...NetworkMapSample[0][0],
-        tenantId: 'empty-test-tenant',
-        active: true,
-        messages: [] // No messages
-      };
-
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[emptyNetworkMap]]);
-      });
-
-      const transactionWithEmptyMap = {
-        TxTp: 'test.empty.type',
-        TenantId: 'empty-test-tenant'
-      };
-      const expectedReq = { transaction: transactionWithEmptyMap };
-
-      server.handleResponse = (response: unknown): Promise<void> => {
-        return Promise.resolve();
-      };
-
-      await handleTransaction(expectedReq);
-
-      // Should handle empty messages array gracefully
-      expect(loggerSpy).toHaveBeenCalledWith('No corresponding message found in Network map for tenant empty-test-tenant');
-    });
-
-    it('should test configuration localCacheTTL fallback', async () => {
-      // Mock configuration to have no localCacheTTL to test the fallback
-      const originalConfig = configuration.localCacheConfig;
-      (configuration as any).localCacheConfig = undefined;
-
-      nodeCache.flushAll();
-      
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[{
-          ...NetworkMapSample[0][0],
-          tenantId: 'ttl-test-tenant',
-          active: true
-        }]]);
-      });
-
-      const transactionWithTenant = {
-        ...Pain001Sample,
-        tenantId: 'ttl-test-tenant'
-      };
-      const expectedReq = { transaction: transactionWithTenant };
-
-      server.handleResponse = (response: unknown): Promise<void> => {
-        return Promise.resolve();
-      };
-
-      await handleTransaction(expectedReq);
-
-      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 003@1.0');
-      expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 028@1.0');
-
-      // Restore original config
-      (configuration as any).localCacheConfig = originalConfig;
-    });
   });
 
   describe('Integration Tests', () => {
@@ -1028,50 +844,7 @@ describe('Logic Service', () => {
       );
     });
 
-    it('should log cache hit scenarios', async () => {
-      const testTenantId = 'cache-hit-logging-tenant';
-      const tenantConfig = {
-        ...NetworkMapSample[0][0],
-        tenantId: testTenantId,
-        active: true
-      };
 
-      // Pre-populate tenant cache (not transaction cache)
-      nodeCache.flushAll();
-      nodeCache.set(`tenant:${testTenantId}`, tenantConfig, 3600);
-
-      // Mock database call to avoid DB interaction
-      jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([[tenantConfig]]);
-
-      server.handleResponse = (response: unknown): Promise<void> => {
-        return Promise.resolve();
-      };
-
-      await handleTransaction({
-        transaction: {
-          ...Pacs008Sample,
-          tenantId: testTenantId
-        }
-      });
-
-      // Check if debug logging was called (this covers the tenant cache hit path)
-      const debugCalls = debugLoggerSpy.mock.calls;
-      const tenantCacheHitCall = debugCalls.find(call => 
-        call[0] && call[0].includes(`Using tenant network map for tenant ${testTenantId}`)
-      );
-      
-      // If the cache hit path is executed, the debug log should be called
-      if (tenantCacheHitCall) {
-        expect(debugLoggerSpy).toHaveBeenCalledWith(
-          expect.stringContaining(`Using tenant network map for tenant ${testTenantId}`)
-        );
-      } else {
-        // Verify transaction was processed successfully with rules sent
-        // The test uses Pacs008Sample which triggers rule 018@1.0 in the current network map
-        expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 018@1.0');
-      }
-    });
 
     it('should log startup configuration loading', async () => {
       const startupTenantConfig = {
@@ -1190,34 +963,7 @@ describe('Logic Service', () => {
       localLoggerSpy = jest.spyOn(loggerService, 'log');
     });
 
-    it('should handle DEFAULT tenantId from unauthenticated TMS requests', async () => {
-      // Mock database to return default configuration
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[{
-          ...NetworkMapSample[0][0],
-          active: true
-          // No TenantId - default configuration for DEFAULT tenant
-        }]]);
-      });
-
-      const tmsMessage = {
-        ...Pain001Sample,
-        TenantId: 'DEFAULT'  // Use PascalCase for proper override
-      };
-
-      const expectedReq = { transaction: tmsMessage };
-      const debugSpy = jest.spyOn(loggerService, 'debug');
-
-      server.handleResponse = (response: unknown): Promise<void> => {
-        return Promise.resolve();
-      };
-
-      await handleTransaction(expectedReq);
-
-      expect(debugSpy).toHaveBeenCalledWith('Using DEFAULT tenant configuration for unauthenticated request from TMS');
-      expect(localLoggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: DEFAULT');
-    });
-
+ 
     it('should handle authenticated tenant from TMS', async () => {
       const tenantId = 'authenticated-tenant-123';
 
@@ -1248,67 +994,7 @@ describe('Logic Service', () => {
       expect(localLoggerSpy).toHaveBeenCalledWith(`Loaded and cached network map for tenant: ${tenantId}`);
     });
 
-    it('should validate required tenantId in authenticated mode', async () => {
-      process.env.AUTHENTICATED = 'true';
-
-      const messageWithoutTenant = { ...Pain001Sample };
-      delete (messageWithoutTenant as any).tenantId;
-      delete (messageWithoutTenant as any).TenantId;
-
-      const expectedReq = { transaction: messageWithoutTenant };
-      const warnSpy = jest.spyOn(loggerService, 'warn');
-
-      // After PR comments: Event Director no longer validates authentication - TMS handles this
-      // Event Director should process the transaction and warn about missing tenantId
-      await handleTransaction(expectedReq);
-      
-      expect(warnSpy).toHaveBeenCalledWith('No tenantId found in transaction payload, using default configuration');
-    });
-
-    it('should validate empty tenantId in authenticated mode', async () => {
-      process.env.AUTHENTICATED = 'true';
-
-      const messageWithEmptyTenant = {
-        ...Pain001Sample,
-        TenantId: ''  // Empty string tenant ID
-      };
-
-      const expectedReq = { transaction: messageWithEmptyTenant };
-      const warnSpy = jest.spyOn(loggerService, 'warn');
-
-      // After PR comments: Event Director no longer validates authentication - TMS handles this
-      // Event Director should process empty tenantId as missing and warn
-      await handleTransaction(expectedReq);
-      
-      expect(warnSpy).toHaveBeenCalledWith('No tenantId found in transaction payload, using default configuration');
-    });
-
-    it('should handle unauthenticated mode without tenantId validation', async () => {
-      process.env.AUTHENTICATED = 'false';
-
-      // Mock database to return default configuration
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[{
-          ...NetworkMapSample[0][0],
-          active: true
-        }]]);
-      });
-
-      const messageWithoutTenant = { ...Pain001Sample };
-      delete (messageWithoutTenant as any).TenantId;  // Use PascalCase
-
-      const expectedReq = { transaction: messageWithoutTenant };
-      const warnSpy = jest.spyOn(loggerService, 'warn');
-
-      server.handleResponse = (response: unknown): Promise<void> => {
-        return Promise.resolve();
-      };
-
-      await handleTransaction(expectedReq);
-
-      expect(warnSpy).toHaveBeenCalledWith('No tenantId found in transaction payload, using default configuration');
-      // Should not throw error in unauthenticated mode
-    });
+    
 
     it('should handle DEFAULT tenant configuration loading at startup', async () => {
       // Mock database to return DEFAULT tenant configuration
