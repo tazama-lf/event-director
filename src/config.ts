@@ -16,5 +16,5 @@ interface AdditionalEnvironmentVariables {
 }
 
 export const additionalEnvironmentVariables: AdditionalConfig[] = [];
-export type Databases = Required<Pick<ManagerConfig, 'configuration' | 'redisConfig'>> & Pick<ManagerConfig, 'localCacheConfig'>;
+export type Databases = Required<Pick<ManagerConfig, 'configuration' | 'redisConfig' | 'localCacheConfig'>>;
 export type Configuration = ProcessorConfig & Databases & AdditionalEnvironmentVariables;

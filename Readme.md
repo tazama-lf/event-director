@@ -3,7 +3,7 @@
 # Event Director (ED)
 
 <div align="center">
-<img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/frmscoe/channel-router-setup-processor/node.js.yml">
+<img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/tazama-lf/channel-router-setup-processor/node.js.yml">
 </div>
 
 ## Overview
@@ -19,7 +19,7 @@ You also need NodeJS to be installed in your system. The current [LTS](https://n
 #### Setting Up
 
 ```sh
-git clone https://github.com/frmscoe/event-director
+git clone https://github.com/tazama-lf/event-director
 cd event-director
 ```
 You then need to configure your environment: a [sample](.env.template) configuration file has been provided and you may adapt that to your environment. Copy it to `.env` and modify as needed:
@@ -27,18 +27,19 @@ You then need to configure your environment: a [sample](.env.template) configura
 ```sh
 cp .env.template .env
 ```
-A [registry](https://github.com/tazama-lf/docs/blob/2ec52a702996bf66f8f015dd71f35c1e07a420b8/Research-Articles/Environment-Variables.md) of environment variables is provided to provide more context for what each variable is used for.
+A [registry](https://github.com/tazama-lf/docs/blob/f292c9ddabf52d6fe62addc1c61957419ed4ad05/Technical/processor-startup-config-registry.md) of environment variables is provided to provide more context for what each variable is used for.
 
 ##### Additional Variables
 
-| Variable | Purpose | Example
-| ------ | ------ | ------ |
-| `CONFIGURATION_DATABASE` | PostgreSQL database name | `configuration`
-| `CONFIGURATION_DATABASE_HOST` | PostgreSQL hostname or endpoint | `localhost`
-| `CONFIGURATION_DATABASE_PORT` | PostgreSQL post used | `5432`
-| `CONFIGURATION_DATABASE_USER` | PostgreSQL username | `root`
-| `CONFIGURATION_DATABASE_PASSWORD` | PostgreSQL database password | `password`
-| `CONFIGURATION_DATABASE_CERT_PATH` | PostgreSQL certificate path | `/path/to/certificate.crt`
+| Variable                           | Purpose                         | Example                    |
+|------------------------------------|---------------------------------|----------------------------|
+| `CONFIGURATION_DATABASE`           | PostgreSQL database name        | `configuration`            |
+| `CONFIGURATION_DATABASE_HOST`      | PostgreSQL hostname or endpoint | `localhost`                |
+| `CONFIGURATION_DATABASE_PORT`      | PostgreSQL post used            | `5432`                     |
+| `CONFIGURATION_DATABASE_USER`      | PostgreSQL username             | `root`                     |
+| `CONFIGURATION_DATABASE_PASSWORD`  | PostgreSQL database password    | `password`                 |
+| `CONFIGURATION_DATABASE_CERT_PATH` | PostgreSQL certificate path     | `/path/to/certificate.crt` |
+
 #### Build and Start
 
 ```sh
@@ -56,7 +57,7 @@ const transactionRequest = {
   DataCache: { /* cached data relevant to the transaction */ }
 };
 ```
-A Pacs002 message is expected as an input as defined [here](https://github.com/frmscoe/frms-coe-lib/blob/dev/src/interfaces/Pacs.002.001.12.ts)
+A Pacs002 message is expected as an input as defined [here](https://github.com/tazama-lf/frms-coe-lib/blob/dev/src/interfaces/Pacs.002.001.12.ts)
 
 ## Internal Process Flow
 
@@ -104,7 +105,7 @@ flowchart TD
 ```
 
 ## Outputs
-The output is the input with an added [NetworkMap](https://github.com/frmscoe/frms-coe-lib/blob/dev/src/interfaces/NetworkMap.ts):
+The output is the input with an added [NetworkMap](https://github.com/tazama-lf/frms-coe-lib/blob/dev/src/interfaces/NetworkMap.ts):
 
 ```js
 {
