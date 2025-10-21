@@ -46,11 +46,11 @@ describe('Logic Service', () => {
 
     // Custom mock that supports tenant-specific logic
     jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-      return Promise.resolve([[{
-        ...NetworkMapSample[0][0],
+      return Promise.resolve([{
+        ...NetworkMapSample[0],
         tenantId: 'acme', // Default tenant for most tests
         active: true
-      }]]);
+      }]);
     });
 
     loggerSpy = jest.spyOn(loggerService, 'log');
@@ -132,7 +132,7 @@ describe('Logic Service', () => {
       const transactionWithTenant = { ...Pacs008Sample, TenantId: 'tenantId' };
       const expectedReq = { transaction: transactionWithTenant };
 
-      let netMap = NetworkMapSample[0][0];
+      let netMap = NetworkMapSample[0];
       // Set cache with the tenant-specific key since we're setting TenantId: 'tenantId'
       nodeCache.set(`tenantId:${expectedReq.transaction.TxTp}`, netMap);
 
@@ -156,7 +156,7 @@ describe('Logic Service', () => {
       const transactionWithTenant = { ...Pain001Sample, TenantId: 'tenantId' };
       const expectedReq = { transaction: transactionWithTenant };
 
-      let netMap = NetworkMapSample[0][0];
+      let netMap = NetworkMapSample[0];
       // Set cache with tenant-specific key since we're setting TenantId: 'tenantId'
       nodeCache.set(`tenantId:${expectedReq.transaction.TxTp}`, netMap);
 
@@ -215,11 +215,11 @@ describe('Logic Service', () => {
     it('should handle transaction with tenantId', async () => {
       // Override the default mock for this specific test
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[{
-          ...NetworkMapSample[0][0],
+        return Promise.resolve([{
+          ...NetworkMapSample[0],
           tenantId: 'tenant-123',
           active: true
-        }]]);
+        }]);
       });
 
       const tenantTransaction = {
@@ -253,11 +253,11 @@ describe('Logic Service', () => {
 
     it('should load network configurations at startup', async () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[{
-          ...NetworkMapSample[0][0],
+        return Promise.resolve([{
+          ...NetworkMapSample[0],
           tenantId: 'tenant-456',
           active: true
-        }]]);
+        }]);
       });
 
       await loadAllNetworkConfigurations();
@@ -269,11 +269,11 @@ describe('Logic Service', () => {
 
     it('should load legacy network configurations without tenantId', async () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[{
-          ...NetworkMapSample[0][0],
-          active: true
-          // No TenantId field - legacy configuration
-        }]]);
+        return Promise.resolve([{
+          ...NetworkMapSample[0],
+          active: true,
+          tenantId: undefined!, // tenantId is a required field but undefined for test
+        }]);
       });
 
       await loadAllNetworkConfigurations();
@@ -285,11 +285,11 @@ describe('Logic Service', () => {
 
     it('should handle inactive network configurations during startup', async () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[{
-          ...NetworkMapSample[0][0],
+        return Promise.resolve([{
+          ...NetworkMapSample[0],
           tenantId: 'inactive-tenant',
           active: false // Inactive configuration
-        }]]);
+        }]);
       });
 
       await loadAllNetworkConfigurations();
@@ -301,7 +301,7 @@ describe('Logic Service', () => {
 
     it('should handle null network configuration during startup', async () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve(null);
+        return Promise.resolve([]);
       });
 
       await loadAllNetworkConfigurations();
@@ -374,7 +374,7 @@ describe('Logic Service', () => {
     it('should process transactions for different tenants independently', async () => {
       // Setup tenant A configuration
       const tenantAConfig = {
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: 'tenant-a',
         active: true,
         messages: [{
@@ -383,6 +383,7 @@ describe('Logic Service', () => {
           txTp: 'pacs.008.001.10',
           typologies: [{
             id: 'typology-processor@1.0.0',
+            tenantId: 'tenant-a',
             cfg: '000@1.0.0',
             rules: [{ id: '001@1.0.0', cfg: '1.0.0' }]
           }]
@@ -390,7 +391,7 @@ describe('Logic Service', () => {
       };
 
       const tenantBConfig = {
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: 'tenant-b',
         active: true,
         messages: [{
@@ -399,6 +400,7 @@ describe('Logic Service', () => {
           txTp: 'pacs.008.001.10',
           typologies: [{
             id: 'typology-processor-b@1.0.0',
+            tenantId: 'tenant-b',
             cfg: '001@1.0.0',
             rules: [{ id: '002@1.0.0', cfg: '1.0.0' }]
           }]
@@ -407,8 +409,8 @@ describe('Logic Service', () => {
 
       // Mock database to return different configs for different tenants
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockImplementationOnce(() => Promise.resolve([[tenantAConfig]]))
-        .mockImplementationOnce(() => Promise.resolve([[tenantBConfig]]));
+        .mockImplementationOnce(() => Promise.resolve([tenantAConfig]))
+        .mockImplementationOnce(() => Promise.resolve([tenantBConfig]));
 
       // Clear cache to ensure fresh database calls
       nodeCache.flushAll();
@@ -439,16 +441,16 @@ describe('Logic Service', () => {
     it('should maintain tenant isolation in concurrent processing', async () => {
       // Setup multiple tenant configurations
       const tenantConfigs = ['tenant-1', 'tenant-2', 'tenant-3'].map(tenantId => ({
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: tenantId,
         active: true
       }));
 
       // Mock database to return different configs for each call
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockImplementationOnce(() => Promise.resolve([[tenantConfigs[0]]]))
-        .mockImplementationOnce(() => Promise.resolve([[tenantConfigs[1]]]))
-        .mockImplementationOnce(() => Promise.resolve([[tenantConfigs[2]]]));
+        .mockImplementationOnce(() => Promise.resolve([tenantConfigs[0]]))
+        .mockImplementationOnce(() => Promise.resolve([tenantConfigs[1]]))
+        .mockImplementationOnce(() => Promise.resolve([tenantConfigs[2]]));
 
       nodeCache.flushAll();
 
@@ -480,13 +482,13 @@ describe('Logic Service', () => {
   describe('Database Multi-Tenant Tests', () => {
     it('should retrieve tenant-specific network configurations from database', async () => {
       const mockTenantAConfig = {
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: 'db-tenant-a',
         active: true
       };
 
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([[mockTenantAConfig]]);
+        .mockResolvedValue([mockTenantAConfig]);
 
       nodeCache.flushAll();
 
@@ -508,7 +510,7 @@ describe('Logic Service', () => {
 
     it('should handle empty database responses', async () => {
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue(null);
+        .mockResolvedValue([]);
 
       await loadAllNetworkConfigurations();
 
@@ -519,13 +521,13 @@ describe('Logic Service', () => {
   describe('Cache Multi-Tenant Tests', () => {
     it('should cache configurations separately by tenantId', async () => {
       const configA = {
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: 'cache-tenant-a',
         active: true
       };
 
       const configB = {
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: 'cache-tenant-b',
         active: true
       };
@@ -534,8 +536,8 @@ describe('Logic Service', () => {
       nodeCache.flushAll();
 
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockImplementationOnce(() => Promise.resolve([[configA]]))
-        .mockImplementationOnce(() => Promise.resolve([[configB]]));
+        .mockImplementationOnce(() => Promise.resolve([configA]))
+        .mockImplementationOnce(() => Promise.resolve([configB]));
 
       server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
@@ -557,14 +559,14 @@ describe('Logic Service', () => {
 
     it('should handle cache key conflicts gracefully', async () => {
       const config1 = { 
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: 'test-tenant', 
         active: true,
         cfg: '1.0.0'
       };
       
       const config2 = { 
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: 'test-tenant', 
         active: true,
         cfg: '2.0.0'
@@ -573,8 +575,8 @@ describe('Logic Service', () => {
       nodeCache.flushAll();
 
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockImplementationOnce(() => Promise.resolve([[config1]]))
-        .mockImplementationOnce(() => Promise.resolve([[config2]]));
+        .mockImplementationOnce(() => Promise.resolve([config1]))
+        .mockImplementationOnce(() => Promise.resolve([config2]));
 
       server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
@@ -621,13 +623,13 @@ describe('Logic Service', () => {
       
       // Setup mock configurations for 5 tenants
       const tenantConfigs = Array.from({ length: 5 }, (_, i) => ({
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: `perf-tenant-${i}`,
         active: true
       }));
 
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([tenantConfigs]);
+        .mockResolvedValue(tenantConfigs);
 
       nodeCache.flushAll();
 
@@ -659,7 +661,7 @@ describe('Logic Service', () => {
 
     it('should demonstrate cache performance benefits', async () => {
       const tenantConfig = {
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: 'cache-perf-tenant',
         active: true
       };
@@ -697,7 +699,7 @@ describe('Logic Service', () => {
   describe('Error Scenario Tests', () => {
     it('should handle missing tenant configuration gracefully', async () => {
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([[]]); // Empty result
+        .mockResolvedValue([]); // Empty result
 
       nodeCache.flushAll();
 
@@ -724,13 +726,13 @@ describe('Logic Service', () => {
       // This test validates that cache operations don't crash the application
       // In practice, the application should validate data when retrieving from cache
       const validConfig = {
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: 'data-validation-tenant',
         active: true
       };
 
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([[validConfig]]);
+        .mockResolvedValue([validConfig]);
 
       server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
@@ -750,7 +752,7 @@ describe('Logic Service', () => {
 
     it('should handle transaction processing errors', async () => {
       const validConfig = {
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: 'error-tenant',
         active: true
       };
@@ -808,13 +810,13 @@ describe('Logic Service', () => {
     it('should log tenant-specific operations', async () => {
       const testTenantId = 'logging-test-tenant';
       const tenantConfig = {
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: testTenantId,
         active: true
       };
 
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([[tenantConfig]]);
+        .mockResolvedValue([tenantConfig]);
 
       nodeCache.flushAll();
 
@@ -838,13 +840,13 @@ describe('Logic Service', () => {
 
     it('should log startup configuration loading', async () => {
       const startupTenantConfig = {
-        ...NetworkMapSample[0][0],
+        ...NetworkMapSample[0],
         tenantId: 'startup-tenant',
         active: true
       };
 
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([[startupTenantConfig]]);
+        .mockResolvedValue([startupTenantConfig]);
 
       await loadAllNetworkConfigurations();
 
@@ -868,6 +870,7 @@ describe('Logic Service', () => {
               {
                 "id": "typology-processor@1.0.0",
                 "cfg": "000@1.0.0",
+                "tenantId": "tenant-identity-string",
                 "rules": [
                   {
                     "id": "001@1.0.0",
@@ -882,7 +885,7 @@ describe('Logic Service', () => {
 
       // Mock database to return the user story structure
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([[userStoryNetworkConfig]]);
+        .mockResolvedValue([userStoryNetworkConfig]);
 
       nodeCache.flushAll();
 
@@ -932,7 +935,7 @@ describe('Logic Service', () => {
       };
       
       jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([[mixedCaseConfig]]);
+        .mockResolvedValue([mixedCaseConfig]);
 
       await loadAllNetworkConfigurations();
 
@@ -959,11 +962,11 @@ describe('Logic Service', () => {
 
       // Mock database to return tenant-specific configuration
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[{
-          ...NetworkMapSample[0][0],
+        return Promise.resolve([{
+          ...NetworkMapSample[0],
           tenantId: tenantId,
           active: true
-        }]]);
+        }]);
       });
 
       const tmsMessage = {
@@ -984,16 +987,14 @@ describe('Logic Service', () => {
       expect(localLoggerSpy).toHaveBeenCalledWith(`Loaded and cached network map for tenant: ${tenantId}`);
     });
 
-    
-
     it('should handle DEFAULT tenant configuration loading at startup', async () => {
       // Mock database to return DEFAULT tenant configuration
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[{
-          ...NetworkMapSample[0][0],
+        return Promise.resolve([{
+          ...NetworkMapSample[0],
           tenantId: 'DEFAULT',
           active: true
-        }]]);
+        }]);
       });
 
       nodeCache.flushAll();
@@ -1011,11 +1012,11 @@ describe('Logic Service', () => {
 
       // Mock database to return tenant-specific configuration
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([[{
-          ...NetworkMapSample[0][0],
+        return Promise.resolve([{
+          ...NetworkMapSample[0],
           tenantId: tenantId,
           active: true
-        }]]);
+        }]);
       });
 
       const tmsMessage = {

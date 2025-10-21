@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import apm from '../apm';
-import { NetworkMap, type DataCache, type Message, type Rule } from '@tazama-lf/frms-coe-lib/lib/interfaces';
+import type { NetworkMap, DataCache, Message, Rule } from '@tazama-lf/frms-coe-lib/lib/interfaces';
 import type { MetaData } from '@tazama-lf/frms-coe-lib/lib/interfaces/metaData';
 import { configuration, databaseManager, loggerService, nodeCache, server } from '..';
 import * as util from 'node:util';
@@ -65,8 +65,9 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
  */
 export const handleTransaction = async (req: unknown): Promise<void> => {
   const startTime = process.hrtime.bigint();
-  let networkMap: NetworkMap = new NetworkMap();
-  let prunedMap: Message[] = [];
+  let networkMap: NetworkMap | undefined;
+  let cachedActiveNetworkMap: NetworkMap;
+  let prunedMessage: Message[] = [];
 
   const parsedRequest = req as { transaction: UnknownTransaction; DataCache: DataCache; metaData?: MetaData };
   const traceParent = parsedRequest.metaData?.traceParent;
@@ -74,36 +75,35 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     childOf: typeof traceParent === 'string' ? traceParent : undefined,
   });
 
-  const tenantId = parsedRequest.transaction.TenantId;
+  const { TenantId: tenantId, TxTp: txTp } = parsedRequest.transaction;
 
   loggerService.debug(`Processing transaction for tenant: ${tenantId}`);
 
-  const cacheKey = `${tenantId}:${parsedRequest.transaction.TxTp}`;
+  const cacheKey = `${tenantId}:${txTp}`;
 
-  const cachedNetworkMap = nodeCache.get(cacheKey);
-  if (cachedNetworkMap) {
-    networkMap = cachedNetworkMap as NetworkMap;
-    prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
-    loggerService.debug(`Using cached networkMap for tenant ${tenantId}: ${util.inspect(prunedMap)}`);
+  // check if there's an active network map in memory
+  const activeNetworkMap = nodeCache.get<NetworkMap>(cacheKey);
+  if (activeNetworkMap) {
+    cachedActiveNetworkMap = activeNetworkMap;
+    networkMap = cachedActiveNetworkMap;
+    prunedMessage = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === txTp);
+    loggerService.debug(`Using cached networkMap for tenant ${tenantId}: ${util.inspect(prunedMessage)}`);
   } else {
     // Cache miss - load from DB
     const spanNetworkMap = apm.startSpan('db.get.NetworkMap');
-    const networkConfigurationList = (await databaseManager.getNetworkMap()) as NetworkMap[][];
+    const networkConfigurationList = await databaseManager.getNetworkMap();
     spanNetworkMap?.end();
 
-    if (Array.isArray(networkConfigurationList) && networkConfigurationList.length > 0) {
+    if (networkConfigurationList.length) {
       const localCacheTTL: number = configuration.localCacheConfig?.localCacheTTL ?? 0;
-
-      for (const networkMapArray of networkConfigurationList) {
-        for (const networkMap of networkMapArray) {
-          const { tenantId } = networkMap;
-          for (const message of networkMap.messages) {
-            const cacheKey = `${tenantId}:${message.txTp}`;
-            nodeCache.set(cacheKey, networkMap, localCacheTTL);
-            if (tenantId === parsedRequest.transaction.TenantId && message.txTp === parsedRequest.transaction.TxTp) {
-              prunedMap = networkMap.messages.filter((msg) => msg.txTp === parsedRequest.transaction.TxTp);
-              loggerService.log(`Loaded and cached network map for tenant: ${tenantId}`);
-            }
+      for (const networkMap of networkConfigurationList) {
+        const { tenantId } = networkMap;
+        for (const message of networkMap.messages) {
+          const cacheKey = `${tenantId}:${message.txTp}`;
+          nodeCache.set(cacheKey, networkMap, localCacheTTL);
+          if (tenantId === parsedRequest.transaction.TenantId && message.txTp === txTp) {
+            prunedMessage = networkMap.messages.filter((msg) => msg.txTp === txTp);
+            loggerService.log(`Loaded and cached network map for tenant: ${tenantId}`);
           }
         }
       }
@@ -120,13 +120,14 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
       loggerService.debug(util.inspect(result));
     }
   }
-  if (prunedMap.length > 0) {
-    const networkSubMap: NetworkMap = Object.assign(new NetworkMap(), {
+
+  if (prunedMessage.length && networkMap) {
+    const networkSubMap: NetworkMap = {
       active: networkMap.active,
       cfg: networkMap.cfg,
-      messages: prunedMap,
+      messages: prunedMessage,
       tenantId: networkMap.tenantId,
-    });
+    };
 
     const rules = getRuleMap(networkMap, parsedRequest.transaction.TxTp);
 
@@ -181,22 +182,20 @@ export const loadAllNetworkConfigurations = async (): Promise<void> => {
   try {
     loggerService.log('Loading all tenant network configurations at startup...');
 
-    const networkConfigurationList = (await databaseManager.getNetworkMap()) as NetworkMap[][];
+    const networkConfigurationList = await databaseManager.getNetworkMap();
 
-    if (networkConfigurationList && networkConfigurationList.length > 0) {
+    if (networkConfigurationList.length) {
       const localCacheTTL: number = configuration.localCacheConfig?.localCacheTTL ?? 0;
       let loadedCount = 0;
 
-      for (const networkMapArray of networkConfigurationList) {
-        for (const networkMap of networkMapArray) {
-          const { tenantId } = networkMap;
-          for (const message of networkMap.messages) {
-            const cacheKey = `${tenantId}:${message.txTp}`;
-            nodeCache.set(cacheKey, networkMap, localCacheTTL);
-          }
-          loggerService.log(`Loaded network configuration for tenant '${tenantId}' (${networkMap.messages.length} transaction types)`);
-          loadedCount++;
+      for (const networkMap of networkConfigurationList) {
+        const { tenantId } = networkMap;
+        for (const message of networkMap.messages) {
+          const cacheKey = `${tenantId}:${message.txTp}`;
+          nodeCache.set(cacheKey, networkMap, localCacheTTL);
         }
+        loggerService.log(`Loaded network configuration for tenant '${tenantId}' (${networkMap.messages.length} transaction types)`);
+        loadedCount++;
       }
 
       if (loadedCount > 0) {

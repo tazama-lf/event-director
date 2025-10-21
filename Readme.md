@@ -3,7 +3,7 @@
 # Event Director (ED)
 
 <div align="center">
-<img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/frmscoe/channel-router-setup-processor/node.js.yml">
+<img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/tazama-lf/channel-router-setup-processor/node.js.yml">
 </div>
 
 ## Overview
@@ -11,7 +11,7 @@ This application fetches an active network map either from cache or from a datab
 
 ### Services
 
-- [ArangoDB](https://arangodb.com/): Database Management
+- [PostgreSQL](https://www.postgresql.org//): Database Management
 - [NATS](https://nats.io): Message queue
 
 You also need NodeJS to be installed in your system. The current [LTS](https://nodejs.org/en) should be suitable. Please open an issue if the application fails to build on the current LTS version. Unix platforms, you should be able to find `nodejs` in your package manager's repositories.
@@ -19,7 +19,7 @@ You also need NodeJS to be installed in your system. The current [LTS](https://n
 #### Setting Up
 
 ```sh
-git clone https://github.com/frmscoe/event-director
+git clone https://github.com/tazama-lf/event-director
 cd event-director
 ```
 You then need to configure your environment: a [sample](.env.template) configuration file has been provided and you may adapt that to your environment. Copy it to `.env` and modify as needed:
@@ -27,16 +27,18 @@ You then need to configure your environment: a [sample](.env.template) configura
 ```sh
 cp .env.template .env
 ```
-A [registry](https://github.com/frmscoe/docs) of environment variables is provided to provide more context for what each variable is used for.
+A [registry](https://github.com/tazama-lf/docs/blob/f292c9ddabf52d6fe62addc1c61957419ed4ad05/Technical/processor-startup-config-registry.md) of environment variables is provided to provide more context for what each variable is used for.
 
 ##### Additional Variables
 
-| Variable | Purpose | Example
-| ------ | ------ | ------ |
-| `DATABASE_URL` | URL where Arango is served | `tcp://arango:8529`
-| `DATABASE_USER` | Arango database username | `root`
-| `DATABASE_PASSWORD` | Arango database password | `password`
-| `DATABASE_NAME` | Arango database name | `configuration`
+| Variable                           | Purpose                         | Example                    |
+|------------------------------------|---------------------------------|----------------------------|
+| `CONFIGURATION_DATABASE`           | PostgreSQL database name        | `configuration`            |
+| `CONFIGURATION_DATABASE_HOST`      | PostgreSQL hostname or endpoint | `localhost`                |
+| `CONFIGURATION_DATABASE_PORT`      | PostgreSQL post used            | `5432`                     |
+| `CONFIGURATION_DATABASE_USER`      | PostgreSQL username             | `root`                     |
+| `CONFIGURATION_DATABASE_PASSWORD`  | PostgreSQL database password    | `password`                 |
+| `CONFIGURATION_DATABASE_CERT_PATH` | PostgreSQL certificate path     | `/path/to/certificate.crt` |
 
 #### Build and Start
 
@@ -55,7 +57,7 @@ const transactionRequest = {
   DataCache: { /* cached data relevant to the transaction */ }
 };
 ```
-A Pacs002 message is expected as an input as defined [here](https://github.com/frmscoe/frms-coe-lib/blob/dev/src/interfaces/Pacs.002.001.12.ts)
+A Pacs002 message is expected as an input as defined [here](https://github.com/tazama-lf/frms-coe-lib/blob/dev/src/interfaces/Pacs.002.001.12.ts)
 
 ## Internal Process Flow
 
@@ -103,7 +105,7 @@ flowchart TD
 ```
 
 ## Outputs
-The output is the input with an added [NetworkMap](https://github.com/frmscoe/frms-coe-lib/blob/dev/src/interfaces/NetworkMap.ts):
+The output is the input with an added [NetworkMap](https://github.com/tazama-lf/frms-coe-lib/blob/dev/src/interfaces/NetworkMap.ts):
 
 ```js
 {
