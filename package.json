@@ -16,7 +16,7 @@
     "lint:eslint-unused": "eslint --report-unused-disable-directives",
     "lint:eslint-no-inline": "eslint --no-inline-config",
     "lint:prettier": "prettier --check \"**/*.ts\"",
-    "prepare": "husky install",
+    "prepare": "husky",
     "test": "jest --config=jest.config.ts --passWithNoTests --forceExit",
     "test:watch": "jest --config=jest.config.ts --watch"
   },
@@ -37,7 +37,7 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@tazama-lf/frms-coe-lib": "6.0.0",
+    "@tazama-lf/frms-coe-lib": "7.0.0-rc.0",
     "@tazama-lf/frms-coe-startup-lib": "3.0.0",
     "dotenv": "^17.2.1",
     "node-cache": "^5.1.2",
