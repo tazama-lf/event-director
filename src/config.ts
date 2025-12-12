@@ -10,11 +10,29 @@ import type { AdditionalConfig, ProcessorConfig } from '@tazama-lf/frms-coe-lib/
  * @example { HOST: string, PORT: number }
  */
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Placeholder for additional env
+export const additionalEnvironmentVariables: AdditionalConfig[] = [
+  {
+    name: 'COMMAND_CHANNEL_STREAM_SUBJECT',
+    type: 'string',
+    optional: false,
+  },
+  {
+    name: 'COMMAND_CHANNEL_CONSUMER_STREAM',
+    type: 'string',
+    optional: false,
+  },
+  {
+    name: 'COMMAND_CHANNEL_PRODUCER_STREAM',
+    type: 'string',
+    optional: false,
+  },
+];
+
 interface AdditionalEnvironmentVariables {
-  // ENVIRONMENTVARIABLENAME: string;
+  COMMAND_CHANNEL_STREAM_SUBJECT: string;
+  COMMAND_CHANNEL_CONSUMER_STREAM: string;
+  COMMAND_CHANNEL_PRODUCER_STREAM: string;
 }
 
-export const additionalEnvironmentVariables: AdditionalConfig[] = [];
 export type Databases = Required<Pick<ManagerConfig, 'configuration' | 'redisConfig' | 'localCacheConfig'>>;
 export type Configuration = ProcessorConfig & Databases & AdditionalEnvironmentVariables;

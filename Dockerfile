@@ -84,5 +84,10 @@ ENV PRODUCER_RETENTION_POLICY=Workqueue
 
 ENV SIDECAR_HOST=0.0.0.0:5000
 
+#COMMAND_CHANNEL
+ENV COMMAND_CHANNEL_STREAM_SUBJECT=command-channel.subject
+ENV COMMAND_CHANNEL_CONSUMER_STREAM=event-director:command-channel:consumer
+ENV COMMAND_CHANNEL_PRODUCER_STREAM=event-director:command-channel:producer
+
 # Execute watchdog command
 CMD ["build/index.js"]
