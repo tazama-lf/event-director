@@ -37,7 +37,7 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@tazama-lf/frms-coe-lib": "7.0.0-rc.ak.17",
+    "@tazama-lf/frms-coe-lib": "7.0.1-rc.ak.17",
     "@tazama-lf/frms-coe-startup-lib": "3.0.0-rc.ak.17",
     "dotenv": "^17.2.1",
     "node-cache": "^5.1.2",
