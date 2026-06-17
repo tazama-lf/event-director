@@ -12,7 +12,6 @@ const mockStartupService = {
 };
 
 const mockHandleTransaction = jest.fn();
-const mockLoadAllNetworkConfigurations = jest.fn().mockResolvedValue(undefined);
 
 jest.mock('@tazama-lf/frms-coe-startup-lib', () => ({
   StartupFactory: jest.fn(() => mockStartupService),
@@ -20,7 +19,6 @@ jest.mock('@tazama-lf/frms-coe-startup-lib', () => ({
 
 jest.mock('../../src/services/logic.service', () => ({
   handleTransaction: (...args: unknown[]) => mockHandleTransaction(...args),
-  loadAllNetworkConfigurations: (...args: unknown[]) => mockLoadAllNetworkConfigurations(...args),
 }));
 
 import { additionalEnvironmentVariables } from '../../src/config';
@@ -83,7 +81,6 @@ describe('service-channel receive seam', () => {
 
     expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(mockHandleTransaction).not.toHaveBeenCalled();
-    expect(mockLoadAllNetworkConfigurations).not.toHaveBeenCalled();
   });
 
   it('drops a non-JSON service-channel payload at warn without crashing', async () => {

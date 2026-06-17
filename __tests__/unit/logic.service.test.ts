@@ -3,7 +3,7 @@
 import { NetworkMapSample, Pacs002Sample, Pacs008Sample, Pain001Sample, Pain013Sample } from '@tazama-lf/frms-coe-lib/lib/tests/data';
 import * as util from 'node:util';
 import { configuration, databaseManager, dbInit, loggerService, nodeCache, runServer, server } from '../../src';
-import { handleTransaction, loadAllNetworkConfigurations } from '../../src/services/logic.service';
+import { handleTransaction } from '../../src/services/logic.service';
 
 jest.mock('@tazama-lf/frms-coe-lib/lib/services/dbManager', () => ({
   CreateStorageManager: jest.fn().mockReturnValue({
@@ -251,77 +251,6 @@ describe('Logic Service', () => {
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
     });
 
-    it('should load network configurations at startup', async () => {
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([{
-          ...NetworkMapSample[0],
-          tenantId: 'tenant-456',
-          active: true
-        }]);
-      });
-
-      await loadAllNetworkConfigurations();
-
-      expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'tenant-456' (4 transaction types)");
-      expect(loggerSpy).toHaveBeenCalledWith('Successfully loaded 1 network configurations for multi-tenant support');
-    });
-
-    it('should load legacy network configurations without tenantId', async () => {
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([{
-          ...NetworkMapSample[0],
-          active: true,
-          tenantId: undefined!, // tenantId is a required field but undefined for test
-        }]);
-      });
-
-      await loadAllNetworkConfigurations();
-
-      expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'undefined' (4 transaction types)");
-      expect(loggerSpy).toHaveBeenCalledWith('Successfully loaded 1 network configurations for multi-tenant support');
-    });
-
-    it('should handle inactive network configurations during startup', async () => {
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([{
-          ...NetworkMapSample[0],
-          tenantId: 'inactive-tenant',
-          active: false // Inactive configuration
-        }]);
-      });
-
-      await loadAllNetworkConfigurations();
-
-      expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'inactive-tenant' (4 transaction types)");
-      expect(loggerSpy).toHaveBeenCalledWith('Successfully loaded 1 network configurations for multi-tenant support');
-    });
-
-    it('should handle null network configuration during startup', async () => {
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([]);
-      });
-
-      await loadAllNetworkConfigurations();
-
-      expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(loggerSpy).toHaveBeenCalledWith('No network configurations found in database');
-    });
-
-    it('should handle error during network configuration loading', async () => {
-      const testError = new Error('Database connection failed');
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        throw testError;
-      });
-
-      await expect(loadAllNetworkConfigurations()).rejects.toThrow('Database connection failed');
-
-      expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(errorLoggerSpy).toHaveBeenCalledWith(`Failed to load network configurations at startup: ${util.inspect(testError)}`);
-    });
-
     it('should handle network map with mismatched tenantId', async () => {
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
         // Return empty result to simulate no network map found for this tenant
@@ -476,45 +405,6 @@ describe('Logic Service', () => {
       expect(loggerSpy).toHaveBeenCalledWith(
         expect.stringContaining('Loaded and cached network map for tenant: tenant-1')
       );
-    });
-  });
-
-  describe('Database Multi-Tenant Tests', () => {
-    it('should retrieve tenant-specific network configurations from database', async () => {
-      const mockTenantAConfig = {
-        ...NetworkMapSample[0],
-        tenantId: 'db-tenant-a',
-        active: true
-      };
-
-      jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([mockTenantAConfig]);
-
-      nodeCache.flushAll();
-
-      await loadAllNetworkConfigurations();
-
-      expect(databaseManager.getNetworkMap).toHaveBeenCalled();
-      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'db-tenant-a' (4 transaction types)");
-    });
-
-    it('should handle database connection errors gracefully', async () => {
-      jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockRejectedValue(new Error('Database connection failed'));
-
-      await expect(loadAllNetworkConfigurations()).rejects.toThrow('Database connection failed');
-      expect(errorLoggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to load network configurations at startup')
-      );
-    });
-
-    it('should handle empty database responses', async () => {
-      jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([]);
-
-      await loadAllNetworkConfigurations();
-
-      expect(loggerSpy).toHaveBeenCalledWith('No network configurations found in database');
     });
   });
 
@@ -835,113 +725,6 @@ describe('Logic Service', () => {
         expect.stringContaining(testTenantId)
       );
     });
-
-
-
-    it('should log startup configuration loading', async () => {
-      const startupTenantConfig = {
-        ...NetworkMapSample[0],
-        tenantId: 'startup-tenant',
-        active: true
-      };
-
-      jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([startupTenantConfig]);
-
-      await loadAllNetworkConfigurations();
-
-      expect(loggerSpy).toHaveBeenCalledWith('Loading all tenant network configurations at startup...');
-      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'startup-tenant' (4 transaction types)");
-      expect(loggerSpy).toHaveBeenCalledWith('Successfully loaded 1 network configurations for multi-tenant support');
-    });
-
-    it('should validate network configuration document structure with tenantId at root', async () => {
-      // Test the exact structure specified in the user story
-      const userStoryNetworkConfig = {
-        "tenantId": "tenant-identity-string",
-        "active": true,
-        "cfg": "1.0.0",
-        "messages": [
-          {
-            "id": "004@1.0.0",
-            "cfg": "1.0.0",
-            "txTp": "pacs.002.001.12",
-            "typologies": [
-              {
-                "id": "typology-processor@1.0.0",
-                "cfg": "000@1.0.0",
-                "tenantId": "tenant-identity-string",
-                "rules": [
-                  {
-                    "id": "001@1.0.0",
-                    "cfg": "1.0.0"
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      };
-
-      // Mock database to return the user story structure
-      jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([userStoryNetworkConfig]);
-
-      nodeCache.flushAll();
-
-      // Load configurations at startup
-      await loadAllNetworkConfigurations();
-
-      // Verify the structure is loaded correctly
-      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'tenant-identity-string' (1 transaction types)");
-
-      // Test transaction processing with this structure
-      server.handleResponse = (response: unknown): Promise<void> => {
-        return Promise.resolve();
-      };
-
-      const testTransaction = {
-        TenantId: 'tenant-identity-string',  // Use PascalCase for proper override
-        TxTp: 'pacs.002.001.12',
-        transaction: { /* transaction data */ }
-      };
-
-      // Create debug spy for capturing debug level logs
-      const debugSpy = jest.spyOn(loggerService, 'debug');
-
-      await handleTransaction({ transaction: testTransaction });
-
-      // Verify tenant-specific processing logs use the correct tenant ID
-      expect(debugSpy).toHaveBeenCalledWith(
-        'Processing transaction for tenant: tenant-identity-string'
-      );
-
-      // Verify the document structure has the correct format
-      expect(userStoryNetworkConfig.tenantId).toBe('tenant-identity-string');
-      expect(userStoryNetworkConfig.active).toBe(true);
-      expect(userStoryNetworkConfig.cfg).toBe('1.0.0');
-      expect(userStoryNetworkConfig.messages).toBeDefined();
-      expect(userStoryNetworkConfig.messages[0].id).toBe('004@1.0.0');
-      expect(userStoryNetworkConfig.messages[0].txTp).toBe('pacs.002.001.12');
-      expect(userStoryNetworkConfig.messages[0].typologies[0].id).toBe('typology-processor@1.0.0');
-      expect(userStoryNetworkConfig.messages[0].typologies[0].cfg).toBe('000@1.0.0');
-      expect(userStoryNetworkConfig.messages[0].typologies[0].rules[0].id).toBe('001@1.0.0');
-      expect(userStoryNetworkConfig.messages[0].typologies[0].rules[0].cfg).toBe('1.0.0');
-
-      // Verify the system can handle both lowercase 'tenantId' and uppercase 'TenantId'
-      const mixedCaseConfig = {
-        ...userStoryNetworkConfig,
-        tenantId: 'mixed-case-tenant' // Uppercase version
-      };
-      
-      jest.spyOn(databaseManager, 'getNetworkMap')
-        .mockResolvedValue([mixedCaseConfig]);
-
-      await loadAllNetworkConfigurations();
-
-      // Should handle both cases and use simplified logging
-      expect(loggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'mixed-case-tenant' (1 transaction types)");
-    });
   });
 });  describe('TMS Integration Compatibility', () => {
     let localLoggerSpy: jest.SpyInstance;
@@ -985,23 +768,6 @@ describe('Logic Service', () => {
 
       expect(debugSpy).toHaveBeenCalledWith(`Processing transaction for tenant: ${tenantId}`);
       expect(localLoggerSpy).toHaveBeenCalledWith(`Loaded and cached network map for tenant: ${tenantId}`);
-    });
-
-    it('should handle DEFAULT tenant configuration loading at startup', async () => {
-      // Mock database to return DEFAULT tenant configuration
-      jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve([{
-          ...NetworkMapSample[0],
-          tenantId: 'DEFAULT',
-          active: true
-        }]);
-      });
-
-      nodeCache.flushAll();
-      await loadAllNetworkConfigurations();
-
-      // Expect simplified startup logging after PR changes
-      expect(localLoggerSpy).toHaveBeenCalledWith("Loaded network configuration for tenant 'DEFAULT' (4 transaction types)");
     });
 
     it('should use tenant-specific cache keys for non-DEFAULT tenants', async () => {
