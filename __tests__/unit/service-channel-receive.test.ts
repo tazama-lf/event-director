@@ -68,10 +68,10 @@ describe('service-channel receive seam', () => {
     expect(mockStartupService.initServiceChannel).not.toHaveBeenCalled();
   });
 
-  it('logs received service-channel bytes without invoking transaction handling', async () => {
+  it('routes received bytes through the service-channel handler without invoking transaction handling', async () => {
     await runServer();
 
-    const logSpy = jest.spyOn(loggerService, 'log').mockImplementation(() => undefined);
+    const warnSpy = jest.spyOn(loggerService, 'warn').mockImplementation(() => undefined);
     const [onMessage] = mockStartupService.initServiceChannel.mock.calls[0] as [
       (data: Uint8Array) => void | Promise<void>,
       string,
@@ -81,15 +81,15 @@ describe('service-channel receive seam', () => {
     const body = new TextEncoder().encode('{"type":"org.tazama.network-map.activated"}');
     await onMessage(body);
 
-    expect(logSpy).toHaveBeenCalledWith('Received org.tazama.network-map.activated on service channel');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
     expect(mockHandleTransaction).not.toHaveBeenCalled();
     expect(mockLoadAllNetworkConfigurations).not.toHaveBeenCalled();
   });
 
-  it('falls back to a generic receive log when the payload has no parsable type', async () => {
+  it('drops a non-JSON service-channel payload at warn without crashing', async () => {
     await runServer();
 
-    const logSpy = jest.spyOn(loggerService, 'log').mockImplementation(() => undefined);
+    const warnSpy = jest.spyOn(loggerService, 'warn').mockImplementation(() => undefined);
     const [onMessage] = mockStartupService.initServiceChannel.mock.calls[0] as [
       (data: Uint8Array) => void | Promise<void>,
       string,
@@ -97,8 +97,9 @@ describe('service-channel receive seam', () => {
     ];
 
     const body = new TextEncoder().encode('not-json');
-    await onMessage(body);
+    await expect(Promise.resolve(onMessage(body))).resolves.not.toThrow();
 
-    expect(logSpy).toHaveBeenCalledWith('Received service-channel message');
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(mockHandleTransaction).not.toHaveBeenCalled();
   });
 });

@@ -10,6 +10,7 @@ import * as util from 'node:util';
 import { setTimeout } from 'node:timers/promises';
 import { additionalEnvironmentVariables, type Configuration, validateServiceChannelConfiguration } from './config';
 import { handleTransaction, loadAllNetworkConfigurations } from './services/logic.service';
+import { handleServiceChannelMessage } from './services/service-channel.service';
 import { Singleton } from './services/services';
 
 let configuration = validateProcessorConfig(additionalEnvironmentVariables) as Configuration;
@@ -18,22 +19,6 @@ export const loggerService: LoggerService = new LoggerService(configuration);
 
 export const nodeCache = new NodeCache();
 export let server: IStartupService;
-
-const handleServiceChannelMessage = (data: Uint8Array): void => {
-  const decoded = new TextDecoder().decode(data);
-
-  try {
-    const parsed = JSON.parse(decoded) as { type?: string };
-    if (typeof parsed.type === 'string' && parsed.type.length > 0) {
-      loggerService.log(`Received ${parsed.type} on service channel`);
-      return;
-    }
-  } catch {
-    // Phase 2 is log-only; malformed payloads still get a generic receipt log.
-  }
-
-  loggerService.log('Received service-channel message');
-};
 
 export const runServer = async (): Promise<void> => {
   server = new StartupFactory();

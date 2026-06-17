@@ -138,5 +138,10 @@ Ensure that you're on the current LTS version of Node.JS
 For changes in the network map, you will have to restart the application
 
 #### Service-channel receive seam
-At startup, event-director now also subscribes to the service-channel forward subject and logs each received message.
-Phase 2 is receive-only: it does not yet validate, filter, dispatch, or publish acknowledgements.
+At startup, event-director subscribes to the service-channel forward subject and processes each received message through a validate, dispatch, cache-bust pipeline.
+Incoming structured-mode CloudEvent bytes are decoded and the envelope is re-validated; a malformed message is dropped at `warn` without tearing down the subscription.
+The handler dispatches on the CloudEvent `type` verb (currently only `org.tazama.network-map.activated`); an unrecognised type is dropped at `warn`.
+An audience gate then applies: a message acts only when its `audience` is absent, `all`, this service's class (`event-director`), or its own function name, otherwise it is ignored at `debug`.
+For a valid, in-audience `network-map.activated` event, every cached network map entry for the event's `tenantId` is evicted so the next transaction reloads the active map from the database; other tenants' cache entries are untouched, and re-delivery is a safe idempotent no-op.
+Acknowledgement publishing on the reply subject remains deferred to a later phase.
+
