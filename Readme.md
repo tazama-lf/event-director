@@ -44,8 +44,8 @@ A [registry](https://github.com/tazama-lf/docs/blob/f292c9ddabf52d6fe62addc1c619
 
 | Variable                             | Purpose                                                       | Example                 |
 |--------------------------------------|---------------------------------------------------------------|-------------------------|
-| `SERVICE_CHANNEL_PRODUCER`           | Forward subject subscribed to for service-channel events      | `service-channel`       |
-| `SERVICE_CHANNEL_CONSUMER`           | Reply subject reserved for later acknowledgement publishing   | `service-channel-ack`   |
+| `SERVICE_CHANNEL_CONSUMER`           | Forward subject subscribed to for service-channel events      | `service-channel`       |
+| `SERVICE_CHANNEL_PRODUCER`           | Reply subject reserved for later acknowledgement publishing   | `service-channel-ack`   |
 | `SERVICE_CHANNEL_SOURCE_URI_PREFIX`  | Optional prefix for CloudEvents source composition            | `urn:tazama:`           |
 | `SERVICE_CHANNEL_CLASS`              | Required service-channel audience class for this service      | `event-director`        |
 

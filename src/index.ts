@@ -56,7 +56,7 @@ export const runServer = async (): Promise<void> => {
 
     const serviceChannelInitialized = await server.initServiceChannel!(
       handleServiceChannelMessage,
-      configuration.SERVICE_CHANNEL_PRODUCER,
+      configuration.SERVICE_CHANNEL_CONSUMER,
       loggerService,
     );
 

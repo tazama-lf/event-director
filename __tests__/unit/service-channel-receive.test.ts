@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-process.env.SERVICE_CHANNEL_PRODUCER = 'service-channel';
-process.env.SERVICE_CHANNEL_CONSUMER = 'service-channel-ack';
+process.env.SERVICE_CHANNEL_CONSUMER = 'service-channel';
+process.env.SERVICE_CHANNEL_PRODUCER = 'service-channel-ack';
 process.env.SERVICE_CHANNEL_SOURCE_URI_PREFIX = '';
 process.env.SERVICE_CHANNEL_CLASS = 'event-director';
 
@@ -58,7 +58,7 @@ describe('service-channel receive seam', () => {
     expect(mockStartupService.initServiceChannel).toHaveBeenCalledTimes(1);
 
     const [, subject] = mockStartupService.initServiceChannel.mock.calls[0];
-    expect(subject).toBe(process.env.SERVICE_CHANNEL_PRODUCER);
+    expect(subject).toBe(process.env.SERVICE_CHANNEL_CONSUMER);
   });
 
   it('fails fast when SERVICE_CHANNEL_CLASS is not event-director', async () => {
