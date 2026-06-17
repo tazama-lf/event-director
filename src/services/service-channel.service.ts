@@ -44,7 +44,7 @@ const handleNetworkMapActivated = (event: CloudEvent<NetworkMapActivatedData>): 
   evictNetworkMap(tenantId);
 };
 
-const dispatchTable: Record<string, (event: CloudEvent<NetworkMapActivatedData>) => void> = {
+const dispatchTable: Record<string, (event: CloudEvent<NetworkMapActivatedData>) => void | Promise<void>> = {
   [ServiceChannelType.NETWORK_MAP_ACTIVATED]: handleNetworkMapActivated,
 };
 
@@ -113,7 +113,7 @@ export const handleServiceChannelMessage = async (data: Uint8Array): Promise<voi
   let outcome: ServiceChannelAckOutcome = 'success';
   let ackError: string | undefined;
   try {
-    handler(event);
+    await handler(event);
   } catch (err) {
     outcome = 'error';
     ackError = err instanceof Error ? err.message : util.inspect(err);

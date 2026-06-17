@@ -43,6 +43,13 @@ const decodeAck = (call: unknown[]): DecodedAck => {
   return { event: JSON.parse(new TextDecoder().decode(bytes)) as Record<string, unknown>, subject } as DecodedAck;
 };
 
+beforeAll(async () => {
+  // Populate the exported `server` live-binding (nodeEnv === 'test' short-circuits the connect/retry
+  // inside runServer) so the mocked publishServiceChannel is available for every awaited handler call.
+  await runServer();
+  configuration.functionName = 'event-director';
+});
+
 describe('service-channel dispatch + cache-bust (#390)', () => {
   let warnSpy: jest.SpyInstance;
   let debugSpy: jest.SpyInstance;
@@ -63,30 +70,30 @@ describe('service-channel dispatch + cache-bust (#390)', () => {
   });
 
   describe('valid network-map.activated', () => {
-    it('evicts every cache entry for the addressed tenant', () => {
+    it('evicts every cache entry for the addressed tenant', async () => {
       seedTenant('tenant-A');
 
-      handleServiceChannelMessage(buildEvent({ data: { cfg: '1.0.0', tenantId: 'tenant-A' } }));
+      await handleServiceChannelMessage(buildEvent({ data: { cfg: '1.0.0', tenantId: 'tenant-A' } }));
 
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(0);
     });
 
-    it('leaves cache entries for other tenants untouched', () => {
+    it('leaves cache entries for other tenants untouched', async () => {
       seedTenant('tenant-A');
       seedTenant('tenant-B');
 
-      handleServiceChannelMessage(buildEvent({ data: { cfg: '1.0.0', tenantId: 'tenant-A' } }));
+      await handleServiceChannelMessage(buildEvent({ data: { cfg: '1.0.0', tenantId: 'tenant-A' } }));
 
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-B:'))).toHaveLength(2);
     });
 
-    it('is an idempotent no-op on re-delivery of the same event', () => {
+    it('is an idempotent no-op on re-delivery of the same event', async () => {
       seedTenant('tenant-A');
 
-      handleServiceChannelMessage(buildEvent({ data: { cfg: '1.0.0', tenantId: 'tenant-A' } }));
-      expect(() => {
-        handleServiceChannelMessage(buildEvent({ data: { cfg: '1.0.0', tenantId: 'tenant-A' } }));
-      }).not.toThrow();
+      await handleServiceChannelMessage(buildEvent({ data: { cfg: '1.0.0', tenantId: 'tenant-A' } }));
+      await expect(
+        handleServiceChannelMessage(buildEvent({ data: { cfg: '1.0.0', tenantId: 'tenant-A' } })),
+      ).resolves.toBeUndefined();
 
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(0);
       expect(warnSpy).not.toHaveBeenCalled();
@@ -94,23 +101,19 @@ describe('service-channel dispatch + cache-bust (#390)', () => {
   });
 
   describe('malformed input is dropped at warn without crashing', () => {
-    it('drops non-JSON bytes', () => {
+    it('drops non-JSON bytes', async () => {
       seedTenant('tenant-A');
 
-      expect(() => {
-        handleServiceChannelMessage(new TextEncoder().encode('not-json'));
-      }).not.toThrow();
+      await expect(handleServiceChannelMessage(new TextEncoder().encode('not-json'))).resolves.toBeUndefined();
 
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(2);
     });
 
-    it('drops an envelope missing the required type attribute', () => {
+    it('drops an envelope missing the required type attribute', async () => {
       seedTenant('tenant-A');
 
-      expect(() => {
-        handleServiceChannelMessage(buildEvent({ type: undefined }));
-      }).not.toThrow();
+      await expect(handleServiceChannelMessage(buildEvent({ type: undefined }))).resolves.toBeUndefined();
 
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(2);
@@ -118,12 +121,12 @@ describe('service-channel dispatch + cache-bust (#390)', () => {
   });
 
   describe('unknown type is dropped at warn', () => {
-    it('does not evict and does not throw', () => {
+    it('does not evict and does not throw', async () => {
       seedTenant('tenant-A');
 
-      expect(() => {
-        handleServiceChannelMessage(buildEvent({ type: 'org.tazama.network-map.deactivated' }));
-      }).not.toThrow();
+      await expect(
+        handleServiceChannelMessage(buildEvent({ type: 'org.tazama.network-map.deactivated' })),
+      ).resolves.toBeUndefined();
 
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(2);
@@ -131,56 +134,56 @@ describe('service-channel dispatch + cache-bust (#390)', () => {
   });
 
   describe('audience gate', () => {
-    it('acts when audience is absent (broadcast default)', () => {
+    it('acts when audience is absent (broadcast default)', async () => {
       seedTenant('tenant-A');
 
-      handleServiceChannelMessage(buildEvent());
+      await handleServiceChannelMessage(buildEvent());
 
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(0);
     });
 
-    it('acts when audience is the broadcast token', () => {
+    it('acts when audience is the broadcast token', async () => {
       seedTenant('tenant-A');
 
-      handleServiceChannelMessage(buildEvent({ audience: SERVICE_CHANNEL_AUDIENCE.ALL }));
+      await handleServiceChannelMessage(buildEvent({ audience: SERVICE_CHANNEL_AUDIENCE.ALL }));
 
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(0);
     });
 
-    it('acts when audience is its own class token', () => {
+    it('acts when audience is its own class token', async () => {
       seedTenant('tenant-A');
 
-      handleServiceChannelMessage(buildEvent({ audience: SERVICE_CHANNEL_AUDIENCE.EVENT_DIRECTOR }));
+      await handleServiceChannelMessage(buildEvent({ audience: SERVICE_CHANNEL_AUDIENCE.EVENT_DIRECTOR }));
 
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(0);
     });
 
-    it('acts when audience is its own function name (distinct from the class token)', () => {
+    it('acts when audience is its own function name (distinct from the class token)', async () => {
       const originalFunctionName = configuration.functionName;
       configuration.functionName = 'event-director-worker-1';
       seedTenant('tenant-A');
 
       try {
-        handleServiceChannelMessage(buildEvent({ audience: 'event-director-worker-1' }));
+        await handleServiceChannelMessage(buildEvent({ audience: 'event-director-worker-1' }));
         expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(0);
       } finally {
         configuration.functionName = originalFunctionName;
       }
     });
 
-    it('ignores a message addressed to another tier at debug, leaving cache intact', () => {
+    it('ignores a message addressed to another tier at debug, leaving cache intact', async () => {
       seedTenant('tenant-A');
 
-      handleServiceChannelMessage(buildEvent({ audience: SERVICE_CHANNEL_AUDIENCE.RULE_PROCESSOR }));
+      await handleServiceChannelMessage(buildEvent({ audience: SERVICE_CHANNEL_AUDIENCE.RULE_PROCESSOR }));
 
       expect(debugSpy).toHaveBeenCalledTimes(1);
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(2);
     });
 
-    it('ignores an empty-string audience at debug (not broadcast), leaving cache intact', () => {
+    it('ignores an empty-string audience at debug (not broadcast), leaving cache intact', async () => {
       seedTenant('tenant-A');
 
-      handleServiceChannelMessage(buildEvent({ audience: '' }));
+      await handleServiceChannelMessage(buildEvent({ audience: '' }));
 
       expect(debugSpy).toHaveBeenCalledTimes(1);
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(2);
@@ -188,23 +191,19 @@ describe('service-channel dispatch + cache-bust (#390)', () => {
   });
 
   describe('malformed network-map.activated payload is dropped at warn', () => {
-    it('drops an event with no data, leaving cache intact', () => {
+    it('drops an event with no data, leaving cache intact', async () => {
       seedTenant('tenant-A');
 
-      expect(() => {
-        handleServiceChannelMessage(buildEvent({ data: undefined }));
-      }).not.toThrow();
+      await expect(handleServiceChannelMessage(buildEvent({ data: undefined }))).resolves.toBeUndefined();
 
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(2);
     });
 
-    it('drops an event whose data is missing tenantId, leaving cache intact', () => {
+    it('drops an event whose data is missing tenantId, leaving cache intact', async () => {
       seedTenant('tenant-A');
 
-      expect(() => {
-        handleServiceChannelMessage(buildEvent({ data: { cfg: '1.0.0' } }));
-      }).not.toThrow();
+      await expect(handleServiceChannelMessage(buildEvent({ data: { cfg: '1.0.0' } }))).resolves.toBeUndefined();
 
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(nodeCache.keys().filter((k) => k.startsWith('tenant-A:'))).toHaveLength(2);
