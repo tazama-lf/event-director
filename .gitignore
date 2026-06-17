@@ -62,6 +62,9 @@ typings/
 # dotenv environment variables file
 .env
 
+# Local key material used for testing (treated like .env)
+*.pem
+
 # next.js build output
 .next
 Katalon Tests/Profiles/
