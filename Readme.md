@@ -40,6 +40,15 @@ A [registry](https://github.com/tazama-lf/docs/blob/f292c9ddabf52d6fe62addc1c619
 | `CONFIGURATION_DATABASE_PASSWORD`  | PostgreSQL database password    | `password`                 |
 | `CONFIGURATION_DATABASE_CERT_PATH` | PostgreSQL certificate path     | `/path/to/certificate.crt` |
 
+##### Service Channel Variables
+
+| Variable                             | Purpose                                                       | Example                 |
+|--------------------------------------|---------------------------------------------------------------|-------------------------|
+| `SERVICE_CHANNEL_CONSUMER`           | Forward subject subscribed to for service-channel events      | `service-channel`       |
+| `SERVICE_CHANNEL_PRODUCER`           | Reply subject reserved for later acknowledgement publishing   | `service-channel-ack`   |
+| `SERVICE_CHANNEL_SOURCE_URI_PREFIX`  | Optional prefix for CloudEvents source composition            | `urn:tazama:`           |
+| `SERVICE_CHANNEL_CLASS`              | Required service-channel audience class for this service      | `event-director`        |
+
 #### Build and Start
 
 ```sh
@@ -127,3 +136,7 @@ Ensure that you're on the current LTS version of Node.JS
 ### Runtime issues
 #### Network Map changes are not reflected on the application
 For changes in the network map, you will have to restart the application
+
+#### Service-channel receive seam
+At startup, event-director now also subscribes to the service-channel forward subject and logs each received message.
+Phase 2 is receive-only: it does not yet validate, filter, dispatch, or publish acknowledgements.

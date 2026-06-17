@@ -8,7 +8,7 @@ import cluster from 'node:cluster';
 import os from 'node:os';
 import * as util from 'node:util';
 import { setTimeout } from 'node:timers/promises';
-import { additionalEnvironmentVariables, type Configuration } from './config';
+import { additionalEnvironmentVariables, type Configuration, validateServiceChannelConfiguration } from './config';
 import { handleTransaction, loadAllNetworkConfigurations } from './services/logic.service';
 import { Singleton } from './services/services';
 
@@ -19,9 +19,26 @@ export const loggerService: LoggerService = new LoggerService(configuration);
 export const nodeCache = new NodeCache();
 export let server: IStartupService;
 
+const handleServiceChannelMessage = (data: Uint8Array): void => {
+  const decoded = new TextDecoder().decode(data);
+
+  try {
+    const parsed = JSON.parse(decoded) as { type?: string };
+    if (typeof parsed.type === 'string' && parsed.type.length > 0) {
+      loggerService.log(`Received ${parsed.type} on service channel`);
+      return;
+    }
+  } catch {
+    // Phase 2 is log-only; malformed payloads still get a generic receipt log.
+  }
+
+  loggerService.log('Received service-channel message');
+};
+
 export const runServer = async (): Promise<void> => {
   server = new StartupFactory();
   if (configuration.nodeEnv !== 'test') {
+    validateServiceChannelConfiguration(configuration);
     let isConnected = false;
     for (let retryCount = 0; retryCount < 10; retryCount++) {
       loggerService.log('Connecting to nats server...');
@@ -35,6 +52,16 @@ export const runServer = async (): Promise<void> => {
     }
     if (!isConnected) {
       throw new Error('Unable to connect to nats after 10 retries');
+    }
+
+    const serviceChannelInitialized = await server.initServiceChannel!(
+      handleServiceChannelMessage,
+      configuration.SERVICE_CHANNEL_CONSUMER,
+      loggerService,
+    );
+
+    if (!serviceChannelInitialized) {
+      throw new Error('Unable to initialize service-channel subscription');
     }
   }
 };
