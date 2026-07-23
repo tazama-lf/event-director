@@ -40,6 +40,15 @@ A [registry](https://github.com/tazama-lf/docs/blob/f292c9ddabf52d6fe62addc1c619
 | `CONFIGURATION_DATABASE_PASSWORD`  | PostgreSQL database password    | `password`                 |
 | `CONFIGURATION_DATABASE_CERT_PATH` | PostgreSQL certificate path     | `/path/to/certificate.crt` |
 
+##### Service Channel Variables
+
+| Variable                             | Purpose                                                       | Example                 |
+|--------------------------------------|---------------------------------------------------------------|-------------------------|
+| `SERVICE_CHANNEL_CONSUMER`           | Forward subject subscribed to for service-channel events      | `service-channel`       |
+| `SERVICE_CHANNEL_PRODUCER`           | Reply subject acknowledgements are published to               | `service-channel-ack`   |
+| `SERVICE_CHANNEL_SOURCE_URI_PREFIX`  | Optional prefix for CloudEvents source composition            | `urn:tazama:`           |
+| `SERVICE_CHANNEL_CLASS`              | Required service-channel audience class for this service      | `event-director`        |
+
 #### Build and Start
 
 ```sh
@@ -127,3 +136,13 @@ Ensure that you're on the current LTS version of Node.JS
 ### Runtime issues
 #### Network Map changes are not reflected on the application
 For changes in the network map, you will have to restart the application
+
+#### Service-channel receive seam
+At startup, event-director subscribes to the service-channel forward subject and processes each received message through a validate, dispatch, cache-bust pipeline.
+Incoming structured-mode CloudEvent bytes are decoded and the envelope is re-validated; a malformed message is dropped at `warn` without tearing down the subscription.
+The handler dispatches on the CloudEvent `type` verb (currently only `org.tazama.network-map.activated`); an unrecognised type is dropped at `warn`.
+An audience gate then applies: a message acts only when its `audience` is absent, `all`, this service's class (`event-director`), or its own function name, otherwise it is ignored at `debug`.
+For a valid, in-audience `network-map.activated` event, every cached network map entry for the event's `tenantId` is evicted so the next transaction reloads the active map from the database; other tenants' cache entries are untouched, and re-delivery is a safe idempotent no-op.
+After the matched handler runs, exactly one acknowledgement is published on the reply subject (`SERVICE_CHANNEL_PRODUCER`, default `service-channel-ack`): a CloudEvent reusing the trigger's `type` verb, with `source` composed as `${SERVICE_CHANNEL_SOURCE_URI_PREFIX}${FUNCTION_NAME}`, a fresh `id`, and `data` carrying the triggering event's `id` as `correlationId`, an `outcome` of `success` or `error`, and (on failure) the error message.
+The handler returning normally yields an `outcome: success` ack and a throw yields an `outcome: error` ack, so each handled message produces exactly one ack publish attempt; a failed publish is logged and never tears down the subscription.
+

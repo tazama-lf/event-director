@@ -8,8 +8,9 @@ import cluster from 'node:cluster';
 import os from 'node:os';
 import * as util from 'node:util';
 import { setTimeout } from 'node:timers/promises';
-import { additionalEnvironmentVariables, type Configuration } from './config';
-import { handleTransaction, loadAllNetworkConfigurations } from './services/logic.service';
+import { additionalEnvironmentVariables, type Configuration, validateServiceChannelConfiguration } from './config';
+import { handleTransaction } from './services/logic.service';
+import { handleServiceChannelMessage } from './services/service-channel.service';
 import { Singleton } from './services/services';
 
 let configuration = validateProcessorConfig(additionalEnvironmentVariables) as Configuration;
@@ -22,6 +23,7 @@ export let server: IStartupService;
 export const runServer = async (): Promise<void> => {
   server = new StartupFactory();
   if (configuration.nodeEnv !== 'test') {
+    validateServiceChannelConfiguration(configuration);
     let isConnected = false;
     for (let retryCount = 0; retryCount < 10; retryCount++) {
       loggerService.log('Connecting to nats server...');
@@ -35,6 +37,16 @@ export const runServer = async (): Promise<void> => {
     }
     if (!isConnected) {
       throw new Error('Unable to connect to nats after 10 retries');
+    }
+
+    const serviceChannelInitialized = await server.initServiceChannel!(
+      handleServiceChannelMessage,
+      configuration.SERVICE_CHANNEL_CONSUMER,
+      loggerService,
+    );
+
+    if (!serviceChannelInitialized) {
+      throw new Error('Unable to initialize service-channel subscription');
     }
   }
 };
@@ -78,8 +90,6 @@ if (cluster.isPrimary && configuration.maxCPU !== 1) {
       if (configuration.nodeEnv !== 'test') {
         await runServer();
         await dbInit();
-        // Load all tenant network configurations at startup
-        await loadAllNetworkConfigurations();
       }
     } catch (err) {
       loggerService.error(`Error while starting NATS server on Worker ${process.pid}`, util.inspect(err));

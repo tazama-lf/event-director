@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { ManagerConfig } from '@tazama-lf/frms-coe-lib';
+import { SERVICE_CHANNEL_AUDIENCE, type ManagerConfig, type ServiceChannelAudienceClass } from '@tazama-lf/frms-coe-lib';
 import type { AdditionalConfig, ProcessorConfig } from '@tazama-lf/frms-coe-lib/lib/config/processor.config';
 
 /**
@@ -10,11 +10,40 @@ import type { AdditionalConfig, ProcessorConfig } from '@tazama-lf/frms-coe-lib/
  * @example { HOST: string, PORT: number }
  */
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Placeholder for additional env
 interface AdditionalEnvironmentVariables {
-  // ENVIRONMENTVARIABLENAME: string;
+  SERVICE_CHANNEL_PRODUCER?: string;
+  SERVICE_CHANNEL_CONSUMER?: string;
+  SERVICE_CHANNEL_SOURCE_URI_PREFIX?: string;
+  SERVICE_CHANNEL_CLASS: ServiceChannelAudienceClass;
 }
 
-export const additionalEnvironmentVariables: AdditionalConfig[] = [];
+export const additionalEnvironmentVariables: AdditionalConfig[] = [
+  {
+    name: 'SERVICE_CHANNEL_PRODUCER',
+    type: 'string',
+    optional: true,
+  },
+  {
+    name: 'SERVICE_CHANNEL_CONSUMER',
+    type: 'string',
+    optional: true,
+  },
+  {
+    name: 'SERVICE_CHANNEL_SOURCE_URI_PREFIX',
+    type: 'string',
+    optional: true,
+  },
+  {
+    name: 'SERVICE_CHANNEL_CLASS',
+    type: 'string',
+    optional: false,
+  },
+];
 export type Databases = Required<Pick<ManagerConfig, 'configuration' | 'redisConfig' | 'localCacheConfig'>>;
 export type Configuration = ProcessorConfig & Databases & AdditionalEnvironmentVariables;
+
+export const validateServiceChannelConfiguration = (configuration: Configuration): void => {
+  if (configuration.SERVICE_CHANNEL_CLASS !== SERVICE_CHANNEL_AUDIENCE.EVENT_DIRECTOR) {
+    throw new Error(`Environment variable SERVICE_CHANNEL_CLASS must be '${SERVICE_CHANNEL_AUDIENCE.EVENT_DIRECTOR}'.`);
+  }
+};
