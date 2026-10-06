@@ -21,11 +21,23 @@ interface ServiceChannelAckData {
   error?: string;
 }
 
+/** Per-tenant eviction generation; bumped on every eviction so an in-flight network map read can tell it was overtaken. */
+const evictionGenerations = new Map<string, number>();
+
 /**
- * Evicts every cached network map entry for a single tenant. The cache is keyed `${tenantId}:${txTp}`
+ * Returns the current eviction generation for a tenant. logic.service.ts records it before a network map
+ * read and skips the cache write if it changed by the time the read returns.
+ */
+export const getEvictionGeneration = (tenantId: string): number => evictionGenerations.get(tenantId) ?? 0;
+
+/**
+ * Evicts every cached network map entry for a single tenant. The cache is keyed `${tenantId}:networkMap`
  * (see logic.service.ts), so a tenant's entries are exactly the keys prefixed with `${tenantId}:`.
+ * The tenant's eviction generation is bumped even when nothing is cached, so a read already in flight
+ * for that tenant does not cache the map it loaded before the activation.
  */
 const evictNetworkMap = (tenantId: string): void => {
+  evictionGenerations.set(tenantId, getEvictionGeneration(tenantId) + 1);
   const staleKeys = nodeCache.keys().filter((key) => key.startsWith(`${tenantId}:`));
   if (staleKeys.length > 0) {
     nodeCache.del(staleKeys);

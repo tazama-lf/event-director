@@ -5,6 +5,7 @@ import type { NetworkMap, DataCache, Message, Rule } from '@tazama-lf/frms-coe-l
 import type { MetaData } from '@tazama-lf/frms-coe-lib/lib/interfaces/metaData';
 import { configuration, databaseManager, loggerService, nodeCache, server } from '..';
 import * as util from 'node:util';
+import { getEvictionGeneration } from './service-channel.service';
 
 /**
  * Represents a transaction with unknown structure but guaranteed transaction type and optional tenant identifier
@@ -57,17 +58,16 @@ function getRuleMap(networkMap: NetworkMap, transactionType: string): Rule[] {
  *
  * This function is the main entry point for transaction processing. It:
  * 1. Extracts tenant information from the transaction
- * 2. Checks for cached network configurations
- * 3. Loads network configurations from database if not cached
+ * 2. Checks the cache for the tenant's network map (one entry per tenant, keyed `${tenantId}:networkMap`)
+ * 3. On a miss, reads only that tenant's active network map from the database and caches it - or, when
+ *    the tenant has none, a `null` "no map" marker with the same TTL. A read overtaken by a
+ *    network-map.activated eviction is used for this transaction but not cached.
  * 4. Routes the transaction to appropriate rule processors
  *
  * @param req - The incoming request containing transaction data, cache, and metadata
  */
 export const handleTransaction = async (req: unknown): Promise<void> => {
   const startTime = process.hrtime.bigint();
-  let networkMap: NetworkMap | undefined;
-  let cachedActiveNetworkMap: NetworkMap;
-  let prunedMessage: Message[] = [];
 
   const parsedRequest = req as { transaction: UnknownTransaction; DataCache: DataCache; metaData?: MetaData };
   const traceParent = parsedRequest.metaData?.traceParent;
@@ -77,51 +77,46 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
 
   const { TenantId: tenantId, TxTp: txTp } = parsedRequest.transaction;
 
-  loggerService.debug(`Processing transaction for tenant: ${tenantId}`);
+  loggerService.debug(`Processing transaction for tenant: ${tenantId}, TxTp: ${txTp}`);
 
-  const cacheKey = `${tenantId}:${txTp}`;
+  const cacheKey = `${tenantId}:networkMap`;
 
-  // check if there's an active network map in memory
-  const activeNetworkMap = nodeCache.get<NetworkMap>(cacheKey);
-  if (activeNetworkMap) {
-    cachedActiveNetworkMap = activeNetworkMap;
-    networkMap = cachedActiveNetworkMap;
-    prunedMessage = cachedActiveNetworkMap.messages.filter((msg) => msg.txTp === txTp);
-    loggerService.debug(`Using cached networkMap for tenant ${tenantId}: ${util.inspect(prunedMessage)}`);
-  } else {
-    // Cache miss - load from DB
+  // undefined = cache miss; null = cached "no active network map" marker
+  let networkMap = nodeCache.get<NetworkMap | null>(cacheKey);
+  let source: 'cache' | 'db' = 'cache';
+
+  if (networkMap === undefined) {
+    source = 'db';
+    const generation = getEvictionGeneration(tenantId);
+
     const spanNetworkMap = apm.startSpan('db.get.NetworkMap');
-    const networkConfigurationList = await databaseManager.getNetworkMap();
+    const loadedMaps = await databaseManager.getNetworkMap(tenantId);
     spanNetworkMap?.end();
 
-    if (networkConfigurationList.length) {
+    networkMap = loadedMaps.find((map) => map.tenantId === tenantId) ?? null;
+
+    if (getEvictionGeneration(tenantId) === generation) {
       const localCacheTTL: number = configuration.localCacheConfig?.localCacheTTL ?? 0;
-      for (const networkMap of networkConfigurationList) {
-        const { tenantId } = networkMap;
-        for (const message of networkMap.messages) {
-          const cacheKey = `${tenantId}:${message.txTp}`;
-          nodeCache.set(cacheKey, networkMap, localCacheTTL);
-          if (tenantId === parsedRequest.transaction.TenantId && message.txTp === txTp) {
-            prunedMessage = networkMap.messages.filter((msg) => msg.txTp === txTp);
-            loggerService.log(`Loaded and cached network map for tenant: ${tenantId}`);
-          }
-        }
+      for (const loadedMap of loadedMaps) {
+        nodeCache.set(`${loadedMap.tenantId}:networkMap`, loadedMap, localCacheTTL);
+      }
+      if (networkMap) {
+        loggerService.log(`Loaded and cached network map for tenant: ${tenantId}, TxTp: ${txTp}`);
+      } else {
+        nodeCache.set(cacheKey, null, localCacheTTL);
       }
     } else {
-      loggerService.log(`No network map found in DB for tenant: ${tenantId}`);
-      const result = {
-        prcgTmED: calculateDuration(startTime),
-        rulesSentTo: [],
-        failedToSend: [],
-        networkMap: {},
-        transaction: parsedRequest.transaction,
-        DataCache: parsedRequest.DataCache,
-      };
-      loggerService.debug(util.inspect(result));
+      loggerService.debug(`Discarded network map read evicted during load for tenant: ${tenantId}, TxTp: ${txTp}`);
     }
   }
 
-  if (prunedMessage.length && networkMap) {
+  const prunedMessage: Message[] = networkMap ? networkMap.messages.filter((msg) => msg.txTp === txTp) : [];
+
+  if (networkMap && source === 'cache') {
+    loggerService.debug(`Using cached network map for tenant: ${tenantId}, TxTp: ${txTp}: ${util.inspect(prunedMessage)}`);
+  }
+
+  if (networkMap && prunedMessage.length) {
     const networkSubMap: NetworkMap = {
       active: networkMap.active,
       cfg: networkMap.cfg,
@@ -129,7 +124,7 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
       tenantId: networkMap.tenantId,
     };
 
-    const rules = getRuleMap(networkMap, parsedRequest.transaction.TxTp);
+    const rules = getRuleMap(networkMap, txTp);
 
     const promises: Array<Promise<void>> = [];
     const metaData: MetaData = { prcgTmDp: 0, ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) };
@@ -139,7 +134,11 @@ export const handleTransaction = async (req: unknown): Promise<void> => {
     }
     await Promise.all(promises);
   } else {
-    loggerService.log(`No corresponding message found in Network map for tenant ${tenantId}`);
+    if (networkMap) {
+      loggerService.log(`No route in network map for tenant: ${tenantId}, TxTp: ${txTp}`);
+    } else {
+      loggerService.log(`No active network map for tenant: ${tenantId}, TxTp: ${txTp} (source: ${source})`);
+    }
     const result = {
       metaData: { ...parsedRequest.metaData, prcgTmED: calculateDuration(startTime) },
       networkMap: {},
