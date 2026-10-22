@@ -91,19 +91,24 @@ sequenceDiagram
 flowchart TD
     start([Start]) --> postRequest[Accept NATS message from TMS]
     postRequest --> note1["Data expected: Pacs002 with DataCache"]
-    note1 --> readCache[Read active network map from Redis Cache]
-    readCache --> note2["Required Parameter: Cache key"]
-    note2 --> checkMemory{Active Network map is found in memory}
-    checkMemory -->|Yes| pruneMap[prune network map]
-    checkMemory -->|No| readDB[Read active network map from Database]
+    note1 --> readCache[Read the tenant's network map from the in-process cache]
+    readCache --> note2["Cache key: tenantId:networkMap"]
+    note2 --> checkMemory{Cache entry for the tenant}
+    checkMemory -->|Network map| pruneMap[prune network map]
+    checkMemory -->|No map marker| logResult
+    checkMemory -->|Miss| readDB[Read the tenant's active network map from Database]
     readDB --> checkDB{Network map is found}
-    checkDB -->|Yes| saveCache[Save Active network map to cache]
+    checkDB -->|Yes| saveCache[Save the network map to cache]
     saveCache --> note3["Required Parameter: Cache key, Active Network Map in JSON format, Expiry time based on environment"]
     note3 --> pruneMap
-    checkDB -->|No| logResult[Return No network map found in DB and Log the result]
-    logResult --> note4["Results: rulesSentTo empty, failedToSend empty, networkMap empty, transaction req"]
+    checkDB -->|No| saveMarker[Save a no map marker to cache with the same expiry]
+    saveMarker --> logResult[Log no active network map and the result]
+    logResult --> note4["Results: metaData, networkMap empty, transaction, DataCache"]
     note4 --> stop1([Stop])
-    pruneMap --> deduplicate[deduplicate all rules]
+    pruneMap --> checkRoute{Message for the TxTp is found}
+    checkRoute -->|No| logNoRoute[Log no route in network map and the result]
+    logNoRoute --> note4
+    checkRoute -->|Yes| deduplicate[deduplicate all rules]
     deduplicate --> ruleLoop{foreach rule in the network sub-map}
     ruleLoop -->|More rules| sendData[Send Data]
     sendData --> note5["Data sent: transaction, network sub-map"]
@@ -112,6 +117,16 @@ flowchart TD
     sendResponse --> note6["Response includes: Rules sent to, Rules not sent to, Transaction, Network sub-map"]
     note6 --> stop2([Stop])
 ```
+
+### Network map cache
+
+Network maps are cached in process (not in Redis), one entry per tenant under the key `${tenantId}:networkMap`. The tenant comes from the transaction's `TenantId`.
+
+On a cache miss, event-director reads only the transaction tenant's active network map from the database and caches it for `LOCAL_CACHETTL` seconds (`0` means no expiry). A transaction whose `TxTp` has no route in the cached map is served from the cache without another database read.
+
+If the tenant has no active network map, a "no map" marker is cached under the same key with the same expiry, so the next transactions for that tenant don't each read the database. A `network-map.activated` event clears the marker along with any cached map (see [Service-channel receive seam](#service-channel-receive-seam)).
+
+If a `network-map.activated` event for the tenant arrives while a database read is in flight, the transaction is still routed with the map that was read, but the result is not cached. The next transaction reloads the newly active map.
 
 ## Outputs
 The output is the input with an added [NetworkMap](https://github.com/tazama-lf/frms-coe-lib/blob/dev/src/interfaces/NetworkMap.ts):
@@ -135,7 +150,7 @@ Ensure that you're on the current LTS version of Node.JS
 
 ### Runtime issues
 #### Network Map changes are not reflected on the application
-For changes in the network map, you will have to restart the application
+A `network-map.activated` event for the tenant evicts its cached entry, so the next transaction reloads the active map (see [Service-channel receive seam](#service-channel-receive-seam)). For deployments with more than one worker, see [Cache eviction across multiple workers](#cache-eviction-across-multiple-workers).
 
 #### Service-channel receive seam
 At startup, event-director subscribes to the service-channel forward subject and processes each received message through a validate, dispatch, cache-bust pipeline.
@@ -145,4 +160,12 @@ An audience gate then applies: a message acts only when its `audience` is absent
 For a valid, in-audience `network-map.activated` event, every cached network map entry for the event's `tenantId` is evicted so the next transaction reloads the active map from the database; other tenants' cache entries are untouched, and re-delivery is a safe idempotent no-op.
 After the matched handler runs, exactly one acknowledgement is published on the reply subject (`SERVICE_CHANNEL_PRODUCER`, default `service-channel-ack`): a CloudEvent reusing the trigger's `type` verb, with `source` composed as `${SERVICE_CHANNEL_SOURCE_URI_PREFIX}${FUNCTION_NAME}`, a fresh `id`, and `data` carrying the triggering event's `id` as `correlationId`, an `outcome` of `success` or `error`, and (on failure) the error message.
 The handler returning normally yields an `outcome: success` ack and a throw yields an `outcome: error` ack, so each handled message produces exactly one ack publish attempt; a failed publish is logged and never tears down the subscription.
+
+## Notes
+
+### Cache eviction across multiple workers
+
+Each event-director worker keeps its own in-process network map cache. A `network-map.activated` event is intended to evict the tenant's entry in every worker, but delivery to every worker cannot be guaranteed: the service reports success when the first worker acknowledges, and there is no mechanism to enumerate the workers and confirm each one evicted. A worker the event did not reach keeps serving its cached entry (map or "no map" marker) until that entry expires after `LOCAL_CACHETTL` seconds, then reloads the active map from the database.
+
+With `LOCAL_CACHETTL=0` cached entries never expire, so nothing corrects a missed worker on its own. Re-firing the event through the reload endpoint has the same reach as the original event and may miss the same worker. A worker that stays stale this way picks up the active map only when it restarts. If timely network map changes matter in a multi-worker deployment, set a non-zero `LOCAL_CACHETTL`.
 

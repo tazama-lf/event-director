@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NetworkMapSample, Pacs002Sample, Pacs008Sample, Pain001Sample, Pain013Sample } from '@tazama-lf/frms-coe-lib/lib/tests/data';
+import { SERVICE_CHANNEL_AUDIENCE, ServiceChannelType } from '@tazama-lf/frms-coe-lib';
 import * as util from 'node:util';
 import { configuration, databaseManager, dbInit, loggerService, nodeCache, runServer, server } from '../../src';
 import { handleTransaction } from '../../src/services/logic.service';
+import { handleServiceChannelMessage } from '../../src/services/service-channel.service';
 
 jest.mock('@tazama-lf/frms-coe-lib/lib/services/dbManager', () => ({
   CreateStorageManager: jest.fn().mockReturnValue({
@@ -74,7 +76,7 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme, TxTp: pain.013.001.09');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(result).toBeDefined();
     });
@@ -90,7 +92,7 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme, TxTp: pain.001.001.11');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(result).toBeDefined();
     });
@@ -106,7 +108,7 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme, TxTp: pacs.002.001.12');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(result).toBeDefined;
     });
@@ -122,7 +124,7 @@ describe('Logic Service', () => {
 
       const result = debugLog;
 
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme, TxTp: pacs.008.001.10');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(result).toBeDefined;
     });
@@ -133,8 +135,8 @@ describe('Logic Service', () => {
       const expectedReq = { transaction: transactionWithTenant };
 
       let netMap = NetworkMapSample[0];
-      // Set cache with the tenant-specific key since we're setting TenantId: 'tenantId'
-      nodeCache.set(`tenantId:${expectedReq.transaction.TxTp}`, netMap);
+      // The whole tenant map is cached under one tenant-keyed entry
+      nodeCache.set('tenantId:networkMap', netMap);
 
       const nodeCacheSpy = jest.spyOn(nodeCache, 'get');
 
@@ -144,8 +146,8 @@ describe('Logic Service', () => {
       await handleTransaction(expectedReq);
       const result = debugLog;
 
-      // The cache should be called with the tenant-specific key format
-      expect(nodeCacheSpy).toHaveBeenCalledWith(`tenantId:${expectedReq.transaction.TxTp}`);
+      // The cache should be called with the tenant-keyed format
+      expect(nodeCacheSpy).toHaveBeenCalledWith('tenantId:networkMap');
       expect(loggerSpy).toHaveBeenCalledWith('Successfully sent to 018@1.0');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       expect(result).toBeDefined;
@@ -157,8 +159,8 @@ describe('Logic Service', () => {
       const expectedReq = { transaction: transactionWithTenant };
 
       let netMap = NetworkMapSample[0];
-      // Set cache with tenant-specific key since we're setting TenantId: 'tenantId'
-      nodeCache.set(`tenantId:${expectedReq.transaction.TxTp}`, netMap);
+      // The whole tenant map is cached under one tenant-keyed entry
+      nodeCache.set('tenantId:networkMap', netMap);
 
       server.handleResponse = (response: unknown): Promise<void> => {
         return Promise.resolve();
@@ -171,7 +173,7 @@ describe('Logic Service', () => {
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
       // Cache hit is logged as debug message, not info message
       expect(debugLoggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Using cached networkMap for tenant tenantId')
+        expect.stringContaining('Using cached network map for tenant: tenantId, TxTp: pain.001.001.11')
       );
     });
 
@@ -190,9 +192,10 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      expect(loggerSpy).toHaveBeenCalledWith('No network map found in DB for tenant: tenantId');
+      expect(loggerSpy).toHaveBeenCalledWith('No active network map for tenant: tenantId, TxTp: pain.001.001.11 (source: db)');
+      expect(loggerSpy).toHaveBeenCalledTimes(1); // one line instead of the former two
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
-      expect(debugLoggerSpy).toHaveBeenCalledTimes(3); // One for tenant debug, one for result, and additional calls
+      expect(debugLoggerSpy).toHaveBeenCalledTimes(2); // processing line + one result dump
     });
 
     it('Should handle failure to post to rule', async () => {
@@ -203,9 +206,12 @@ describe('Logic Service', () => {
       });
 
       await handleTransaction(expectedReq);
-      expect(responseSpy).toHaveBeenCalledTimes(0); // No rules processed due to no matching messages
-      expect(errorLoggerSpy).toHaveBeenCalledTimes(0); // No errors since no rules were sent
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme');
+      // Pain013 is routed (rules 003@1.0 and 028@1.0, deduplicated), so both are attempted and both failures logged
+      expect(responseSpy).toHaveBeenCalledTimes(2);
+      expect(errorLoggerSpy).toHaveBeenCalledTimes(2);
+      expect(errorLoggerSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to send to Rule 003@1.0'));
+      expect(errorLoggerSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to send to Rule 028@1.0'));
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme, TxTp: pain.013.001.09');
     });
 
 
@@ -234,7 +240,7 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: tenant-123');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: tenant-123, TxTp: pain.001.001.11');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
     });
 
@@ -247,7 +253,7 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme, TxTp: pain.001.001.11');
       expect(errorLoggerSpy).toHaveBeenCalledTimes(0);
     });
 
@@ -269,7 +275,7 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      expect(loggerSpy).toHaveBeenCalledWith('No network map found in DB for tenant: requested-tenant');
+      expect(loggerSpy).toHaveBeenCalledWith('No active network map for tenant: requested-tenant, TxTp: pain.001.001.11 (source: db)');
     });
 
     it('should handle transaction with tenant but no tenant network map exists', async () => {
@@ -277,7 +283,7 @@ describe('Logic Service', () => {
       nodeCache.flushAll();
       
       jest.spyOn(databaseManager, 'getNetworkMap').mockImplementation(() => {
-        return Promise.resolve(JSON.parse('{}'));  // Return empty object, no network map
+        return Promise.resolve([]);  // No active network map (lib contract: NetworkMap[])
       });
 
       const transactionWithTenant = {
@@ -292,7 +298,7 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      expect(loggerSpy).toHaveBeenCalledWith('No network map found in DB for tenant: non-existent-tenant');
+      expect(loggerSpy).toHaveBeenCalledWith('No active network map for tenant: non-existent-tenant, TxTp: pain.001.001.11 (source: db)');
     });
 
 
@@ -363,8 +369,8 @@ describe('Logic Service', () => {
       await handleTransaction({ transaction: tenantBTransaction });
 
       // Verify tenant-specific configurations were loaded
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: tenant-a');
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: tenant-b');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: tenant-a, TxTp: pacs.008.001.10');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: tenant-b, TxTp: pacs.008.001.10');
     });
 
     it('should maintain tenant isolation in concurrent processing', async () => {
@@ -443,8 +449,8 @@ describe('Logic Service', () => {
       });
 
       // Verify tenant-specific logs were generated (indicating successful processing)
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: cache-tenant-a');
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: cache-tenant-b');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: cache-tenant-a, TxTp: pacs.008.001.10');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: cache-tenant-b, TxTp: pacs.008.001.10');
     });
 
     it('should handle cache key conflicts gracefully', async () => {
@@ -483,7 +489,7 @@ describe('Logic Service', () => {
       });
 
       // Both should process successfully without conflicts
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: test-tenant');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: test-tenant, TxTp: pacs.008.001.10');
     });
 
     it('should validate cache TTL configuration', () => {
@@ -606,7 +612,7 @@ describe('Logic Service', () => {
 
       // Should handle gracefully - no exceptions thrown
       expect(result).toBeUndefined(); // Function returns void, but should not throw
-      expect(loggerSpy).toHaveBeenCalledWith('No corresponding message found in Network map for tenant non-existent-tenant');
+      expect(loggerSpy).toHaveBeenCalledWith('No active network map for tenant: non-existent-tenant, TxTp: pacs.008.001.10 (source: db)');
     });
 
     it('should handle corrupted cache data', async () => {
@@ -637,7 +643,7 @@ describe('Logic Service', () => {
       });
 
       // Verify successful processing despite potential data validation concerns
-      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: data-validation-tenant');
+      expect(loggerSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: data-validation-tenant, TxTp: pacs.008.001.10');
     });
 
     it('should handle transaction processing errors', async () => {
@@ -766,8 +772,8 @@ describe('Logic Service', () => {
 
       await handleTransaction(expectedReq);
 
-      expect(debugSpy).toHaveBeenCalledWith(`Processing transaction for tenant: ${tenantId}`);
-      expect(localLoggerSpy).toHaveBeenCalledWith(`Loaded and cached network map for tenant: ${tenantId}`);
+      expect(debugSpy).toHaveBeenCalledWith(`Processing transaction for tenant: ${tenantId}, TxTp: pain.001.001.11`);
+      expect(localLoggerSpy).toHaveBeenCalledWith(`Loaded and cached network map for tenant: ${tenantId}, TxTp: pain.001.001.11`);
     });
 
     it('should use tenant-specific cache keys for non-DEFAULT tenants', async () => {
@@ -800,7 +806,225 @@ describe('Logic Service', () => {
       await handleTransaction(expectedReq);
 
       // Verify the transaction was processed correctly with tenant-specific logging
-      expect(debugSpy).toHaveBeenCalledWith(`Processing transaction for tenant: ${tenantId}`);
-      expect(localLoggerSpy).toHaveBeenCalledWith(`Loaded and cached network map for tenant: ${tenantId}`);
+      expect(debugSpy).toHaveBeenCalledWith(`Processing transaction for tenant: ${tenantId}, TxTp: pain.001.001.11`);
+      expect(localLoggerSpy).toHaveBeenCalledWith(`Loaded and cached network map for tenant: ${tenantId}, TxTp: pain.001.001.11`);
+      expect(nodeCache.keys()).toEqual([`${tenantId}:networkMap`]);
+    });
+  });
+
+  describe('Tenant-scoped network map read and tenant-keyed cache (#312)', () => {
+    const TTL_CONFIG = { localCacheTTL: 3600 };
+    let originalCacheConfig: unknown;
+    let logSpy: jest.SpyInstance;
+    let debugSpy: jest.SpyInstance;
+    let errorSpy: jest.SpyInstance;
+    let sendSpy: jest.Mock;
+    let getNetworkMapSpy: jest.SpyInstance;
+
+    // A map for one tenant that routes only pacs.002 (to rule 901) - pacs.008 is deliberately unrouted
+    const pacs002OnlyMap = (tenantId: string, ruleId = '901@1.0.0') => ({
+      active: true,
+      cfg: '1.0.0',
+      tenantId,
+      messages: [
+        {
+          id: '004@1.0.0',
+          cfg: '1.0.0',
+          txTp: 'pacs.002.001.12',
+          typologies: [{ id: 'typology-processor@1.0.0', cfg: '999@1.0.0', tenantId, rules: [{ id: ruleId, cfg: '1.0.0' }] }],
+        },
+      ],
+    });
+
+    const tx = (TxTp: 'pacs.002.001.12' | 'pacs.008.001.10', TenantId: string) => ({
+      transaction: { ...(TxTp === 'pacs.002.001.12' ? Pacs002Sample : Pacs008Sample), TenantId },
+    });
+
+    const evict = async (tenantId: string): Promise<void> => {
+      const event = {
+        specversion: '1.0',
+        id: `evict-${tenantId}`,
+        source: 'test://producer',
+        type: ServiceChannelType.NETWORK_MAP_ACTIVATED,
+        datacontenttype: 'application/json',
+        data: { cfg: '1.0.0', tenantId },
+      };
+      await handleServiceChannelMessage(new TextEncoder().encode(JSON.stringify(event)));
+    };
+
+    beforeEach(() => {
+      nodeCache.flushAll();
+      originalCacheConfig = configuration.localCacheConfig;
+      (configuration as any).localCacheConfig = TTL_CONFIG;
+      configuration.SERVICE_CHANNEL_CLASS = SERVICE_CHANNEL_AUDIENCE.EVENT_DIRECTOR;
+      logSpy = jest.spyOn(loggerService, 'log');
+      debugSpy = jest.spyOn(loggerService, 'debug');
+      errorSpy = jest.spyOn(loggerService, 'error');
+      jest.spyOn(loggerService, 'warn').mockImplementation(() => undefined);
+      sendSpy = jest.fn().mockResolvedValue(undefined);
+      server.handleResponse = sendSpy;
+      server.publishServiceChannel = jest.fn().mockResolvedValue(undefined);
+      getNetworkMapSpy = jest.spyOn(databaseManager, 'getNetworkMap');
+    });
+
+    afterEach(() => {
+      (configuration as any).localCacheConfig = originalCacheConfig;
+      nodeCache.flushAll();
+    });
+
+    it('reads only the transaction tenant on a cache miss (asserted on the argument)', async () => {
+      getNetworkMapSpy.mockResolvedValue([pacs002OnlyMap('acme')]);
+
+      await handleTransaction(tx('pacs.002.001.12', 'acme'));
+
+      expect(getNetworkMapSpy).toHaveBeenCalledTimes(1);
+      expect(getNetworkMapSpy).toHaveBeenCalledWith('acme');
+    });
+
+    it('dispatches the FIRST routed transaction after a cache miss (shadowing-bug regression)', async () => {
+      getNetworkMapSpy.mockResolvedValue([pacs002OnlyMap('acme')]);
+
+      await handleTransaction(tx('pacs.002.001.12', 'acme'));
+
+      expect(sendSpy).toHaveBeenCalledTimes(1);
+      expect(sendSpy).toHaveBeenCalledWith(expect.objectContaining({ networkMap: expect.objectContaining({ tenantId: 'acme' }) }), [
+        'sub-rule-901@1.0.0',
+      ]);
+      expect(logSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme, TxTp: pacs.002.001.12');
+      expect(logSpy).toHaveBeenCalledWith('Successfully sent to 901@1.0.0');
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+
+    it('caches the whole tenant map under one tenant-keyed entry (no per-TxTp keys)', async () => {
+      getNetworkMapSpy.mockResolvedValue([pacs002OnlyMap('acme')]);
+
+      await handleTransaction(tx('pacs.002.001.12', 'acme'));
+
+      expect(nodeCache.keys()).toEqual(['acme:networkMap']);
+      expect(nodeCache.get<{ tenantId: string }>('acme:networkMap')?.tenantId).toBe('acme');
+    });
+
+    it('serves an unrouted TxTp for a cached tenant from cache with no DB read', async () => {
+      getNetworkMapSpy.mockResolvedValue([pacs002OnlyMap('acme')]);
+
+      await handleTransaction(tx('pacs.008.001.10', 'acme')); // miss: loads the map, no route
+      await handleTransaction(tx('pacs.008.001.10', 'acme')); // hit: no route, no read
+      await handleTransaction(tx('pacs.002.001.12', 'acme')); // hit: routed, no read
+
+      expect(getNetworkMapSpy).toHaveBeenCalledTimes(1);
+      expect(logSpy).toHaveBeenCalledWith('Loaded and cached network map for tenant: acme, TxTp: pacs.008.001.10');
+      expect(logSpy.mock.calls.filter(([line]) => line === 'No route in network map for tenant: acme, TxTp: pacs.008.001.10')).toHaveLength(2);
+      expect(debugSpy).toHaveBeenCalledWith(expect.stringContaining('Using cached network map for tenant: acme, TxTp: pacs.002.001.12'));
+      expect(sendSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('caches a "no map" marker for a tenant with no active map: no DB read until evicted', async () => {
+      getNetworkMapSpy.mockResolvedValue([]);
+
+      await handleTransaction(tx('pacs.002.001.12', 'NEWCO'));
+      await handleTransaction(tx('pacs.008.001.10', 'NEWCO'));
+
+      expect(getNetworkMapSpy).toHaveBeenCalledTimes(1);
+      expect(logSpy).toHaveBeenCalledWith('No active network map for tenant: NEWCO, TxTp: pacs.002.001.12 (source: db)');
+      expect(logSpy).toHaveBeenCalledWith('No active network map for tenant: NEWCO, TxTp: pacs.008.001.10 (source: cache)');
+      expect(sendSpy).not.toHaveBeenCalled();
+
+      // network-map.activated clears the marker, so the next transaction reads the newly active map
+      await evict('NEWCO');
+      expect(nodeCache.keys().filter((key) => key.startsWith('NEWCO:'))).toHaveLength(0);
+      getNetworkMapSpy.mockResolvedValue([pacs002OnlyMap('NEWCO')]);
+
+      await handleTransaction(tx('pacs.002.001.12', 'NEWCO'));
+
+      expect(getNetworkMapSpy).toHaveBeenCalledTimes(2);
+      expect(sendSpy).toHaveBeenCalledWith(expect.anything(), ['sub-rule-901@1.0.0']);
+    });
+
+    it('gives the "no map" marker the same TTL as a cached map', async () => {
+      getNetworkMapSpy.mockImplementation(async (tenantId?: string) => (tenantId === 'acme' ? [pacs002OnlyMap('acme')] : []));
+
+      await handleTransaction(tx('pacs.002.001.12', 'acme'));
+      await handleTransaction(tx('pacs.002.001.12', 'NEWCO'));
+
+      const mapTtl = nodeCache.getTtl('acme:networkMap');
+      const markerTtl = nodeCache.getTtl('NEWCO:networkMap');
+      expect(mapTtl).toBeGreaterThan(Date.now() + (TTL_CONFIG.localCacheTTL - 60) * 1000);
+      expect(markerTtl).toBeGreaterThan(Date.now() + (TTL_CONFIG.localCacheTTL - 60) * 1000);
+      expect(Math.abs((markerTtl as number) - (mapTtl as number))).toBeLessThan(5000);
+    });
+
+    it('caches every returned map under its OWN tenantId and never routes with another tenant map', async () => {
+      // e.g. an all-tenants read: the requester's map is not first in the list
+      getNetworkMapSpy.mockResolvedValue([pacs002OnlyMap('other', '777@1.0.0'), pacs002OnlyMap('acme', '901@1.0.0')]);
+
+      await handleTransaction(tx('pacs.002.001.12', 'acme'));
+
+      expect(nodeCache.get<{ tenantId: string }>('other:networkMap')?.tenantId).toBe('other');
+      expect(nodeCache.get<{ tenantId: string }>('acme:networkMap')?.tenantId).toBe('acme');
+      expect(sendSpy).toHaveBeenCalledTimes(1);
+      expect(sendSpy).toHaveBeenCalledWith(expect.anything(), ['sub-rule-901@1.0.0']);
+    });
+
+    it('does not route or cache another tenant map under the requester key when the requester has none', async () => {
+      getNetworkMapSpy.mockResolvedValue([pacs002OnlyMap('other', '777@1.0.0')]);
+
+      await handleTransaction(tx('pacs.002.001.12', 'acme'));
+
+      expect(sendSpy).not.toHaveBeenCalled();
+      expect(nodeCache.get<{ tenantId: string }>('other:networkMap')?.tenantId).toBe('other');
+      expect(nodeCache.get<{ tenantId?: string } | null>('acme:networkMap')?.tenantId).not.toBe('other');
+      expect(logSpy).toHaveBeenCalledWith('No active network map for tenant: acme, TxTp: pacs.002.001.12 (source: db)');
+    });
+
+    it('discards the cache write of a read that an eviction overtook, but still routes the in-flight transaction', async () => {
+      let resolveRead!: (maps: unknown[]) => void;
+      getNetworkMapSpy.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveRead = resolve as (maps: unknown[]) => void;
+          }),
+      );
+
+      const inFlight = handleTransaction(tx('pacs.002.001.12', 'acme'));
+      await evict('acme'); // network-map.activated lands while the read is pending
+      resolveRead([pacs002OnlyMap('acme', '901@1.0.0')]); // the read returns the now-stale map
+      await inFlight;
+
+      // in-flight transaction is still routed with the map it read
+      expect(sendSpy).toHaveBeenCalledWith(expect.anything(), ['sub-rule-901@1.0.0']);
+      // ...but the stale map is not cached
+      expect(nodeCache.get('acme:networkMap')).toBeUndefined();
+      expect(debugSpy).toHaveBeenCalledWith('Discarded network map read evicted during load for tenant: acme, TxTp: pacs.002.001.12');
+
+      // next transaction misses and reloads the newly activated map
+      getNetworkMapSpy.mockResolvedValue([pacs002OnlyMap('acme', '902@1.0.0')]);
+      await handleTransaction(tx('pacs.002.001.12', 'acme'));
+      expect(getNetworkMapSpy).toHaveBeenCalledTimes(2);
+      expect(sendSpy).toHaveBeenLastCalledWith(expect.anything(), ['sub-rule-902@1.0.0']);
+    });
+
+    it('does not discard a read when a DIFFERENT tenant is evicted meanwhile', async () => {
+      let resolveRead!: (maps: unknown[]) => void;
+      getNetworkMapSpy.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveRead = resolve as (maps: unknown[]) => void;
+          }),
+      );
+
+      const inFlight = handleTransaction(tx('pacs.002.001.12', 'acme'));
+      await evict('other');
+      resolveRead([pacs002OnlyMap('acme')]);
+      await inFlight;
+
+      expect(nodeCache.get<{ tenantId: string }>('acme:networkMap')?.tenantId).toBe('acme');
+    });
+
+    it('logs every network-map resolution line with tenant and TxTp', async () => {
+      getNetworkMapSpy.mockResolvedValue([pacs002OnlyMap('acme')]);
+
+      await handleTransaction(tx('pacs.002.001.12', 'acme'));
+
+      expect(debugSpy).toHaveBeenCalledWith('Processing transaction for tenant: acme, TxTp: pacs.002.001.12');
     });
   });
